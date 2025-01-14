@@ -1,20 +1,7 @@
 name: NPM CI/CD Workflow
 
 on:
-  push:
-    branches:
-      - main
-      - release
-      - develop
-      - feature/*
-  delete:
-    branches:
-      - release
-      - feature/*
-
-permissions:
-  contents: write
-  packages: write
+  workflow_call:
 
 jobs:
   on-push:
