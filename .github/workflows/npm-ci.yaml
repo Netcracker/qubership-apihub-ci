@@ -1,0 +1,93 @@
+name: NPM CI/CD Workflow
+
+on:
+  push:
+    branches:
+      - main
+      - release
+      - develop
+      - feature/*
+  delete:
+    branches:
+      - release
+      - feature/*
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  on-push:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com/'
+
+      - name: Bump version and commit (prerelease only)
+        id: bump_version
+        if: startsWith(github.ref, 'refs/heads/develop') || startsWith(github.ref, 'refs/heads/release') || startsWith(github.ref, 'refs/heads/feature/')
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"          
+          CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')
+          if [[ "$CURRENT_BRANCH" == "develop" || "$CURRENT_BRANCH" == "release" || "$CURRENT_BRANCH" == feature/* ]]; then
+            npm version prerelease -m "chore: bump prerelease version to %s [ci skip]"
+            echo "bump_version=true" >> $GITHUB_ENV
+          else
+            echo "bump_version=false" >> $GITHUB_ENV
+          fi
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build the package
+        run: npm run build --if-present
+
+      - name: Run tests
+        run: npm test --if-present
+
+      - name: Publish to GitHub NPM Registry
+        run: |
+          CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')
+          if [ "$CURRENT_BRANCH" == "main" ]; then
+            TAG_NAME="latest"
+          elif [ "$CURRENT_BRANCH" == "release" ]; then
+            TAG_NAME="next"
+          elif [ "$CURRENT_BRANCH" == "develop" ]; then
+            TAG_NAME="dev"
+          elif [[ "$CURRENT_BRANCH" == feature/* ]]; then
+            TAG_NAME="${CURRENT_BRANCH#feature/}"
+          fi
+          if [ -n "$TAG_NAME" ]; then
+            npm publish --tag "$TAG_NAME"
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push changes back
+        if: env.bump_version == 'true'
+        run: |
+          git push origin HEAD
+
+  on-delete:
+    if: github.event_name == 'delete'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete associated tag
+        run: |
+          DELETED_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')
+          if [ "$DELETED_BRANCH" == "release" ] || [[ "$DELETED_BRANCH" == feature/* ]]; then
+            TAG_NAME=$(npm dist-tag ls | grep $DELETED_BRANCH | awk '{print $1}')
+            if [ -n "$TAG_NAME" ]; then
+              npm dist-tag rm "$TAG_NAME" "$DELETED_BRANCH"
+            fi
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
