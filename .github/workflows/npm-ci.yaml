@@ -1,4 +1,5 @@
 name: NPM CI/CD Workflow
+run-name: ${{ github.event_name == 'delete' && format('cleanup NPM dist tags') || format('') }}
 
 on:
   workflow_call:
@@ -33,6 +34,8 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build the package
         run: npm run build --if-present
@@ -42,7 +45,7 @@ jobs:
 
       - name: Publish to GitHub NPM Registry
         run: |
-          CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')
+          CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')          
           if [ "$CURRENT_BRANCH" == "main" ]; then
             TAG_NAME="latest"
           elif [ "$CURRENT_BRANCH" == "release" ]; then
@@ -50,7 +53,7 @@ jobs:
           elif [ "$CURRENT_BRANCH" == "develop" ]; then
             TAG_NAME="dev"
           elif [[ "$CURRENT_BRANCH" == feature/* ]]; then
-            TAG_NAME="${CURRENT_BRANCH#feature/}"
+            TAG_NAME="${CURRENT_BRANCH//\//-}"
           fi
           if [ -n "$TAG_NAME" ]; then
             npm publish --tag "$TAG_NAME"
@@ -67,14 +70,34 @@ jobs:
     if: github.event_name == 'delete'
     runs-on: ubuntu-latest
     steps:
-      - name: Delete associated tag
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com/'
+
+      - name: Get package name from package.json
         run: |
-          DELETED_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')
-          if [ "$DELETED_BRANCH" == "release" ] || [[ "$DELETED_BRANCH" == feature/* ]]; then
-            TAG_NAME=$(npm dist-tag ls | grep $DELETED_BRANCH | awk '{print $1}')
-            if [ -n "$TAG_NAME" ]; then
-              npm dist-tag rm "$TAG_NAME" "$DELETED_BRANCH"
-            fi
+          if [ -f package.json ]; then
+            PACKAGE_NAME=$(jq -r '.name' package.json)
+            echo "PACKAGE_NAME=$PACKAGE_NAME" >> $GITHUB_ENV
+          else
+            echo "No package.json found." && exit 1
+          fi
+
+      - name: Delete associated NPM dist tag
+        run: |
+          DELETED_BRANCH=${{ github.event.ref }}
+          if [ "$DELETED_BRANCH" == "release" ]; then
+            TAG_NAME="next"
+          elif [ "$DELETED_BRANCH" == feature/* ]; then
+            TAG_NAME="${CURRENT_BRANCH//\//-}"          
+          fi          
+          if [ -n "$TAG_NAME" ]; then            
+            npm dist-tag rm "$PACKAGE_NAME" "$TAG_NAME"
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
