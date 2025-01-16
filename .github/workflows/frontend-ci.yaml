@@ -40,7 +40,7 @@ jobs:
 
       # This step is to update internal dependencies specified via tag version to their latest available versions
       - name: Update dependencies
-        run: npm outdated --json | jq -r 'keys[]' | grep "@b41ex" | xargs npm update
+        run: npm outdated --json | jq -r 'keys[]' | grep "@netcracker" | xargs npm update
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
