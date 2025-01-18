@@ -12,6 +12,9 @@ on:
       context:
         required: true
         type: string
+      platforms:
+        required: true
+        type: string
 
 env:
   TAG_NAME: ${{ github.event.release.tag_name || github.ref }}
@@ -49,7 +52,7 @@ jobs:
           no-cache: true
           context: ${{ inputs.context }}
           file: ${{ inputs.file }}
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ inputs.platforms }}
           push: true
           tags: ghcr.io/netcracker/${{ inputs.name }}:${{ env.TAG_NAME }}
           provenance: false
