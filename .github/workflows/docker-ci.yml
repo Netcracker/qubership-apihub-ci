@@ -40,7 +40,7 @@ jobs:
         id: get-ids-for-delete
         uses: Netcracker/get-package-ids@v0.0.1
         with:
-          component-name: ${{ name }}
+          component-name: ${{ inputs.name }}
           component-tag: ${{ env.TAG_NAME }}
           access-token: ${{ secrets.GH_ACCESS_TOKEN }}
       - name: Build and push
