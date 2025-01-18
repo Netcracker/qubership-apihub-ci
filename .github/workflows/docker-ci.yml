@@ -34,24 +34,24 @@ jobs:
         id: get-ids-for-delete
         uses: Netcracker/get-package-ids@v0.0.1
         with:
-          component-name: ${{ component.name }}
+          component-name: ${{ inputs.component.name }}
           component-tag: ${{ env.TAG_NAME }}
           access-token: ${{ secrets.GH_ACCESS_TOKEN }}
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           no-cache: true
-          context: ${{ component.context }}
-          file: ${{ component.file }}
+          context: ${{ inputs.component.context }}
+          file: ${{ inputs.component.file }}
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/netcracker/${{ component.name }}:${{ env.TAG_NAME }}
+          tags: ghcr.io/netcracker/${{ inputs.component.name }}:${{ env.TAG_NAME }}
           provenance: false
           build-args: |
             GH_ACCESS_TOKEN=${{ secrets.GH_ACCESS_TOKEN }}
       - uses: actions/delete-package-versions@v5
         with:
-          package-name: ${{ component.name }}
+          package-name: ${{ inputs.component.name }}
           package-type: 'container'
           package-version-ids: ${{ steps.get-ids-for-delete.outputs.ids-for-delete }}
         if: ${{ steps.get-ids-for-delete.outputs.ids-for-delete != '' }}
