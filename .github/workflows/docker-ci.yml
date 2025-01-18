@@ -3,9 +3,15 @@ name: Docker CI Workflow
 on:
   workflow_call:
     inputs:
-      component:
+      name:
         required: true
-        type: object
+        type: string
+      file:
+        required: true
+        type: string
+      context:
+        required: true
+        type: string
 
 env:
   TAG_NAME: ${{ github.event.release.tag_name || github.ref }}
@@ -34,24 +40,24 @@ jobs:
         id: get-ids-for-delete
         uses: Netcracker/get-package-ids@v0.0.1
         with:
-          component-name: ${{ inputs.component.name }}
+          component-name: ${{ name }}
           component-tag: ${{ env.TAG_NAME }}
           access-token: ${{ secrets.GH_ACCESS_TOKEN }}
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           no-cache: true
-          context: ${{ inputs.component.context }}
-          file: ${{ inputs.component.file }}
+          context: ${{ inputs.context }}
+          file: ${{ inputs.file }}
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/netcracker/${{ inputs.component.name }}:${{ env.TAG_NAME }}
+          tags: ghcr.io/netcracker/${{ inputs.name }}:${{ env.TAG_NAME }}
           provenance: false
           build-args: |
             GH_ACCESS_TOKEN=${{ secrets.GH_ACCESS_TOKEN }}
       - uses: actions/delete-package-versions@v5
         with:
-          package-name: ${{ inputs.component.name }}
+          package-name: ${{ inputs.name }}
           package-type: 'container'
           package-version-ids: ${{ steps.get-ids-for-delete.outputs.ids-for-delete }}
         if: ${{ steps.get-ids-for-delete.outputs.ids-for-delete != '' }}
