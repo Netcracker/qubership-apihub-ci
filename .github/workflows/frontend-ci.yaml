@@ -1,4 +1,4 @@
-name: NPM CI/CD Workflow
+name: Frontend CI Workflow
 run-name: ${{ github.event_name == 'delete' && format('cleanup NPM dist tags') || format('') }}
 
 on:
@@ -33,7 +33,13 @@ jobs:
           fi
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # This step is to update internal dependencies specified via tag version to their latest available versions
+      - name: Update dependencies
+        run: npm ls --json |  jq -r '.dependencies | keys[]' | grep "@netcracker" | xargs npm update
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
