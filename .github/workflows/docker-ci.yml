@@ -58,6 +58,7 @@ jobs:
           provenance: false
           build-args: |
             GH_ACCESS_TOKEN=${{ secrets.GH_ACCESS_TOKEN }}
+            TAG=${{ env.TAG_NAME }}
       - uses: actions/delete-package-versions@v5
         with:
           package-name: ${{ inputs.name }}
