@@ -92,51 +92,51 @@ jobs:
         run: |
           git push origin HEAD
 
-on-delete:
-  if: github.event_name == 'delete'
-  runs-on: ubuntu-latest
-  steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+  on-delete:
+    if: github.event_name == 'delete'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        registry-url: 'https://npm.pkg.github.com/'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com/'
 
-    - name: Determine Project Type and Get Package Names      
-      run: |
-        # Determine if it's a Lerna or single npm project
-        if [ -f lerna.json ]; then
-          echo "Detected Lerna project."
-          PACKAGE_NAMES=$(lerna list --json | jq -r '.[].name')
-        elif [ -f package.json ]; then
-          echo "Detected single package npm project."
-          PACKAGE_NAMES=$(jq -r '.name' package.json)
-        else
-          echo "No package.json or lerna.json found." && exit 1
-        fi
-        echo "PACKAGE_NAMES=$PACKAGE_NAMES" >> $GITHUB_ENV
-
-    - name: Delete associated NPM dist tags
-      run: |
-        DELETED_BRANCH=${{ github.event.ref }}
-
-        if [ "$DELETED_BRANCH" == "release" ]; then
-          TAG_NAME="next"
-        elif [[ "$DELETED_BRANCH" == feature/* ]]; then
-          TAG_NAME="${DELETED_BRANCH//\//-}"
-        else
-          echo "No corresponding npm dist tag for this branch." && exit 0
-        fi
-
-        # Loop through all package names and remove tags
-        for PACKAGE_NAME in $PACKAGE_NAMES; do
-          echo "Processing package: $PACKAGE_NAME"
-          if [ -n "$PACKAGE_NAME" ] && [ -n "$TAG_NAME" ]; then
-            npm dist-tag rm "$PACKAGE_NAME" "$TAG_NAME"
+      - name: Determine Project Type and Get Package Names      
+        run: |
+          # Determine if it's a Lerna or single npm project
+          if [ -f lerna.json ]; then
+            echo "Detected Lerna project."
+            PACKAGE_NAMES=$(lerna list --json | jq -r '.[].name')
+          elif [ -f package.json ]; then
+            echo "Detected single package npm project."
+            PACKAGE_NAMES=$(jq -r '.name' package.json)
+          else
+            echo "No package.json or lerna.json found." && exit 1
           fi
-        done
-      env:        
-        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo "PACKAGE_NAMES=$PACKAGE_NAMES" >> $GITHUB_ENV
+
+      - name: Delete associated NPM dist tags
+        run: |
+          DELETED_BRANCH=${{ github.event.ref }}
+
+          if [ "$DELETED_BRANCH" == "release" ]; then
+            TAG_NAME="next"
+          elif [[ "$DELETED_BRANCH" == feature/* ]]; then
+            TAG_NAME="${DELETED_BRANCH//\//-}"
+          else
+            echo "No corresponding npm dist tag for this branch." && exit 0
+          fi
+
+          # Loop through all package names and remove tags
+          for PACKAGE_NAME in $PACKAGE_NAMES; do
+            echo "Processing package: $PACKAGE_NAME"
+            if [ -n "$PACKAGE_NAME" ] && [ -n "$TAG_NAME" ]; then
+              npm dist-tag rm "$PACKAGE_NAME" "$TAG_NAME"
+            fi
+          done
+        env:        
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
