@@ -43,6 +43,8 @@ jobs:
           if [[ "$CURRENT_BRANCH" == "develop" || "$CURRENT_BRANCH" == "release" || "$CURRENT_BRANCH" == feature/* ]]; then
             if [ "$IS_LERNA" == "true" ]; then
               lerna version prerelease -m "chore: bump prerelease version to %s" --no-private --no-push --no-git-tag-version --yes
+              git add .
+              git commit -m "chore: bump prerelease version"
             else
               npm version prerelease -m "chore: bump prerelease version to %s"
             fi
