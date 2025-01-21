@@ -16,7 +16,22 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          registry-url: 'https://npm.pkg.github.com/'          
+          registry-url: 'https://npm.pkg.github.com/'
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check is Lerna project
+         run: |
+          if [ -f lerna.json ]; then
+            echo "Project is a Lerna project."
+            echo "IS_LERNA=true" >> $GITHUB_ENV
+          else
+            echo "Project is NOT a Lerna project."
+            echo "IS_LERNA=false" >> $GITHUB_ENV
+          fi
 
       - name: Bump version and commit (prerelease only)
         id: bump_version
@@ -26,16 +41,15 @@ jobs:
           git config --global user.email "github-actions@github.com"          
           CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')
           if [[ "$CURRENT_BRANCH" == "develop" || "$CURRENT_BRANCH" == "release" || "$CURRENT_BRANCH" == feature/* ]]; then
-            npm version prerelease -m "chore: bump prerelease version to %s [ci skip]"
+            if [ "$IS_LERNA" == "true" ]; then
+              lerna version prerelease -m "chore: bump prerelease version to %s" --no-private --no-push --no-git-tag-version --yes
+            else
+              npm version prerelease -m "chore: bump prerelease version to %s"
+            fi
             echo "bump_version=true" >> $GITHUB_ENV
           else
             echo "bump_version=false" >> $GITHUB_ENV
           fi
-
-      - name: Install dependencies
-        run: npm ci
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # This step is to update internal dependencies specified via tag version to their latest available versions
       - name: Update dependencies
@@ -62,7 +76,11 @@ jobs:
             TAG_NAME="${CURRENT_BRANCH//\//-}"
           fi
           if [ -n "$TAG_NAME" ]; then
-            npm publish --tag "$TAG_NAME"
+            if [ "$IS_LERNA" == "true" ]; then
+              lerna publish from-package --yes --no-push --no-git-reset --no-git-tag-version --dist-tag "$TAG_NAME"
+            else
+              npm publish --tag "$TAG_NAME"
+            fi            
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
