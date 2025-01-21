@@ -121,7 +121,7 @@ jobs:
           else
             echo "No package.json or lerna.json found." && exit 1
           fi
-          echo "::set-output name=packages::$PACKAGE_NAMES
+          echo "::set-output name=packages::$PACKAGE_NAMES"
         shell: bash
 
       - name: Delete associated NPM dist tags
