@@ -39,24 +39,29 @@ jobs:
             echo "IS_LERNA=false" >> $GITHUB_ENV
           fi
 
-      - name: Bump version and commit (prerelease only)
-        id: bump_version
+      - name: Bump version (prerelease only)        
         if: startsWith(github.ref, 'refs/heads/develop') || startsWith(github.ref, 'refs/heads/release') || startsWith(github.ref, 'refs/heads/feature/')
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"          
+        run: |          
           CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')
           if [[ "$CURRENT_BRANCH" == "develop" || "$CURRENT_BRANCH" == "release" || "$CURRENT_BRANCH" == feature/* ]]; then
             if [ "$IS_LERNA" == "true" ]; then
-              lerna version prerelease -m "chore: bump prerelease version to %s" --no-private --no-push --no-git-tag-version --yes
-              git add .
-              git commit -m "chore: bump prerelease version"
+              lerna version prerelease --no-git-tag-version --no-private --no-push --yes              
             else
-              npm version prerelease -m "chore: bump prerelease version to %s"
-            fi
-            echo "bump_version=true" >> $GITHUB_ENV
+              npm version prerelease --no-git-tag-version
+            fi          
+          fi
+      
+      - name: Commit changes (if any)                
+        run: |
+          # Check if there are any changes to commit
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Changes detected. Preparing to commit."
+            git config --global user.name "github-actions"
+            git config --global user.email "github-actions@github.com"
+            git add .
+            git commit -m "chore: bump prerelease version"            
           else
-            echo "bump_version=false" >> $GITHUB_ENV
+            echo "No changes to commit."
           fi
 
       - name: Build the package
@@ -87,8 +92,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push changes back
-        if: env.bump_version == 'true'
+      - name: Push changes back        
         run: |
           git push origin HEAD
 
@@ -106,8 +110,7 @@ jobs:
           registry-url: 'https://npm.pkg.github.com/'
 
       - name: Determine Project Type and Get Package Names      
-        run: |
-          # Determine if it's a Lerna or single npm project
+        run: |          
           if [ -f lerna.json ]; then
             echo "Detected Lerna project."
             PACKAGE_NAMES=$(lerna list --json | jq -r '.[].name')
