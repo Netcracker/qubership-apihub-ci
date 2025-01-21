@@ -24,7 +24,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check is Lerna project
-         run: |
+        run: |
           if [ -f lerna.json ]; then
             echo "Project is a Lerna project."
             echo "IS_LERNA=true" >> $GITHUB_ENV
