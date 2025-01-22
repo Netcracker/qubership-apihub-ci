@@ -108,22 +108,7 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://npm.pkg.github.com/'
-
-      - name: Determine Project Type and Get Package Names      
-        id: get-packages
-        run: |          
-          if [ -f lerna.json ]; then
-            echo "Detected Lerna project."
-            PACKAGE_NAMES=$(lerna list --json | jq -r '.[].name' | tr '\n' ' ')
-          elif [ -f package.json ]; then
-            echo "Detected single package npm project."
-            PACKAGE_NAMES=$(jq -r '.name' package.json)
-          else
-            echo "No package.json or lerna.json found." && exit 1
-          fi
-          echo "::set-output name=packages::$PACKAGE_NAMES"
-        shell: bash
-
+      
       - name: Delete associated NPM dist tags
         run: |
           DELETED_BRANCH=${{ github.event.ref }}
@@ -136,8 +121,19 @@ jobs:
             echo "No corresponding npm dist tag for this branch." && exit 0
           fi
 
+          # Get package names to process
+          if [ -f lerna.json ]; then
+            echo "Detected Lerna project."
+            PACKAGE_NAMES=$(lerna list --json | jq -r '.[].name')
+          elif [ -f package.json ]; then
+            echo "Detected single package npm project."
+            PACKAGE_NAMES=$(jq -r '.name' package.json)
+          else
+            echo "No package.json or lerna.json found." && exit 1
+          fi
+
           # Loop through all package names and remove tags
-          for PACKAGE_NAME in ${{ steps.get-packages.outputs.packages }}; do
+          for PACKAGE_NAME in $PACKAGE_NAMES; do
             echo "Processing package: $PACKAGE_NAME"
             if [ -n "$PACKAGE_NAME" ] && [ -n "$TAG_NAME" ]; then
               npm dist-tag rm "$PACKAGE_NAME" "$TAG_NAME"
