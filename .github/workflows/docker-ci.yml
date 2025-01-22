@@ -15,7 +15,7 @@ on:
       platforms:
         required: true
         type: string
-      label:
+      labels:
         required: false
         type: string
     secrets:
@@ -65,7 +65,7 @@ jobs:
           build-args: |
             GH_ACCESS_TOKEN=${{ secrets.GH_ACCESS_TOKEN }}
             TAG=${{ env.TAG_NAME }}
-            LABEL=${{ inputs.label }}
+          labels: ${{ inputs.labels }}
           secrets: |
             "npmrc=${{ secrets.NPMRC }}"
       - uses: actions/delete-package-versions@v5
