@@ -16,32 +16,53 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          registry-url: 'https://npm.pkg.github.com/'          
-
-      - name: Bump version and commit (prerelease only)
-        id: bump_version
-        if: startsWith(github.ref, 'refs/heads/develop') || startsWith(github.ref, 'refs/heads/release') || startsWith(github.ref, 'refs/heads/feature/')
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"          
-          CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')
-          if [[ "$CURRENT_BRANCH" == "develop" || "$CURRENT_BRANCH" == "release" || "$CURRENT_BRANCH" == feature/* ]]; then
-            npm version prerelease -m "chore: bump prerelease version to %s [ci skip]"
-            echo "bump_version=true" >> $GITHUB_ENV
-          else
-            echo "bump_version=false" >> $GITHUB_ENV
-          fi
+          registry-url: 'https://npm.pkg.github.com/'
 
       - name: Install dependencies
         run: npm ci
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+      
       # This step is to update internal dependencies specified via tag version to their latest available versions
       - name: Update dependencies
         run: npm ls --json |  jq -r '.dependencies | keys[]' | grep "@netcracker" | xargs --no-run-if-empty npm update
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}          
+
+      - name: Check is Lerna project
+        run: |
+          if [ -f lerna.json ]; then
+            echo "Project is a Lerna project."
+            echo "IS_LERNA=true" >> $GITHUB_ENV
+          else
+            echo "Project is NOT a Lerna project."
+            echo "IS_LERNA=false" >> $GITHUB_ENV
+          fi
+
+      - name: Bump version (prerelease only)        
+        if: startsWith(github.ref, 'refs/heads/develop') || startsWith(github.ref, 'refs/heads/release') || startsWith(github.ref, 'refs/heads/feature/')
+        run: |          
+          CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')
+          if [[ "$CURRENT_BRANCH" == "develop" || "$CURRENT_BRANCH" == "release" || "$CURRENT_BRANCH" == feature/* ]]; then
+            if [ "$IS_LERNA" == "true" ]; then
+              lerna version prerelease --no-git-tag-version --no-private --no-push --yes              
+            else
+              npm version prerelease --no-git-tag-version
+            fi          
+          fi
+      
+      - name: Commit changes (if any)                
+        run: |
+          # Check if there are any changes to commit
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Changes detected. Preparing to commit."
+            git config --global user.name "github-actions"
+            git config --global user.email "github-actions@github.com"
+            git add .
+            git commit -m "chore: bump prerelease version"            
+          else
+            echo "No changes to commit."
+          fi
 
       - name: Build the package
         run: npm run build --if-present
@@ -62,13 +83,16 @@ jobs:
             TAG_NAME="${CURRENT_BRANCH//\//-}"
           fi
           if [ -n "$TAG_NAME" ]; then
-            npm publish --tag "$TAG_NAME"
+            if [ "$IS_LERNA" == "true" ]; then
+              lerna publish from-package --yes --no-push --no-git-reset --no-git-tag-version --dist-tag "$TAG_NAME"
+            else
+              npm publish --tag "$TAG_NAME"
+            fi            
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push changes back
-        if: env.bump_version == 'true'
+      - name: Push changes back        
         run: |
           git push origin HEAD
 
@@ -83,27 +107,37 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          registry-url: 'https://npm.pkg.github.com/'          
+          registry-url: 'https://npm.pkg.github.com/'
       
-      - name: Get package name from package.json
-        run: |
-          if [ -f package.json ]; then
-            PACKAGE_NAME=$(jq -r '.name' package.json)
-            echo "PACKAGE_NAME=$PACKAGE_NAME" >> $GITHUB_ENV
-          else
-            echo "No package.json found." && exit 1
-          fi
-
-      - name: Delete associated NPM dist tag
+      - name: Delete associated NPM dist tags
         run: |
           DELETED_BRANCH=${{ github.event.ref }}
+
           if [ "$DELETED_BRANCH" == "release" ]; then
             TAG_NAME="next"
-          elif [ "$DELETED_BRANCH" == feature/* ]; then
-            TAG_NAME="${CURRENT_BRANCH//\//-}"          
-          fi          
-          if [ -n "$TAG_NAME" ]; then            
-            npm dist-tag rm "$PACKAGE_NAME" "$TAG_NAME"
+          elif [[ "$DELETED_BRANCH" == feature/* ]]; then
+            TAG_NAME="${DELETED_BRANCH//\//-}"
+          else
+            echo "No corresponding npm dist tag for this branch." && exit 0
           fi
-        env:
+
+          # Get package names to process
+          if [ -f lerna.json ]; then
+            echo "Detected Lerna project."
+            PACKAGE_NAMES=$(lerna list --json | jq -r '.[].name')
+          elif [ -f package.json ]; then
+            echo "Detected single package npm project."
+            PACKAGE_NAMES=$(jq -r '.name' package.json)
+          else
+            echo "No package.json or lerna.json found." && exit 1
+          fi
+
+          # Loop through all package names and remove tags
+          for PACKAGE_NAME in $PACKAGE_NAMES; do
+            echo "Processing package: $PACKAGE_NAME"
+            if [ -n "$PACKAGE_NAME" ] && [ -n "$TAG_NAME" ]; then
+              npm dist-tag rm "$PACKAGE_NAME" "$TAG_NAME"
+            fi
+          done
+        env:        
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
