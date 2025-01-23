@@ -4,8 +4,12 @@ run-name: ${{ github.event_name == 'delete' && format('cleanup NPM dist tags') |
 on:
   workflow_call:
     outputs:
-      npm_dist_tag: ${{ jobs.on-push.outputs.npm_dist_tag }}
-      package_version: ${{ jobs.on-push.outputs.package_version }}
+      npm_dist_tag:
+        description: "NPM dist-tag of the published package."
+        value: ${{ jobs.on-push.outputs.npm_dist_tag }}
+      package_version:
+        description: "NPM version of the published package."
+        value: ${{ jobs.on-push.outputs.package_version }}      
 
 jobs:
   on-push:
