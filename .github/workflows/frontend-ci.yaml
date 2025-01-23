@@ -3,6 +3,9 @@ run-name: ${{ github.event_name == 'delete' && format('cleanup NPM dist tags') |
 
 on:
   workflow_call:
+    outputs:
+      npm_dist_tag: ${{ jobs.on-push.outputs.npm_dist_tag }}
+      package_version: ${{ jobs.on-push.outputs.package_version }}
 
 jobs:
   on-push:
@@ -10,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       npm_dist_tag: ${{ steps.publish.outputs.npm_dist_tag }}
-      package_version: ${{ steps.get_version.outputs.version }}
+      package_version: ${{ steps.get_version.outputs.package_version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -86,7 +89,7 @@ jobs:
             cat package.json
             VERSION=$(jq -r '.version' package.json)
           fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "package_version=$VERSION" >> $GITHUB_OUTPUT
           echo "Package version: $VERSION"
 
       - name: Publish to GitHub NPM Registry
