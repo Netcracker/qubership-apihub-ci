@@ -76,12 +76,18 @@ jobs:
       - name: Get package version
         id: get_version
         run: |
+          echo "IS_LERNA=$IS_LERNA"
           if [ "$IS_LERNA" == "true" ]; then
+            echo "Lerna project detected"
+            lerna list --json
             VERSION=$(lerna list --json | jq -r '.[0].version')
           else
+            echo "Non-Lerna project detected"
+            cat package.json
             VERSION=$(jq -r '.version' package.json)
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Package version: $VERSION"
 
       - name: Publish to GitHub NPM Registry
         id: publish
