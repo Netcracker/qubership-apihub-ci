@@ -49,6 +49,26 @@ jobs:
       - name: Run tests
         run: npm test --if-present
 
+      - uses: actions/checkout@v3
+      - name: Check for build:showcase script
+        id: check_script
+        run: |
+          if grep -q '"build:showcase":' package.json; then
+            echo "::set-output name=has_script::true"
+          fi
+
+      - name: Build Storybook
+        if: steps.check_script.outputs.has_script == 'true'
+        run: npm run build:showcase
+
+      - name: Deploy Storybook to GitHub Pages
+        if: steps.check_script.outputs.has_script == 'true'
+        uses: JamesIves/github-pages-deploy-action@v4.7.2
+        with:
+          branch: gh-pages
+          folder: ./dist-showcase
+          target-folder: ${{ github.ref_name }}
+
       - name: Publish to GitHub NPM Registry
         run: |
           CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')          
