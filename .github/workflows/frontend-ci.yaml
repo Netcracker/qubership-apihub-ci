@@ -49,7 +49,6 @@ jobs:
       - name: Run tests
         run: npm test --if-present
 
-      - uses: actions/checkout@v3
       - name: Check for build:showcase script
         id: check_script
         run: |
