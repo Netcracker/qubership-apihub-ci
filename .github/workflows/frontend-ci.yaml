@@ -68,6 +68,28 @@ jobs:
           folder: ./dist-showcase
           target-folder: ${{ github.ref_name }}
 
+      - name: Checkout gh-pages branch
+        run: |
+                git fetch origin
+                git checkout gh-pages
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "./"
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Checkout feature/workflow-for-storybook branch
+        run: |
+          git fetch origin
+          git checkout feature/workflow-for-storybook
+
       - name: Publish to GitHub NPM Registry
         run: |
           CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')          
