@@ -4,11 +4,6 @@ run-name: ${{ github.event_name == 'delete' && format('cleanup NPM dist tags') |
 on:
   workflow_call:
 
-permissions:
-  contents: write
-  pages: write
-  id-token: write
-
 jobs:
   on-push:
     if: github.event_name == 'push'
