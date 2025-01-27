@@ -1,0 +1,122 @@
+on:
+  workflow_call:
+
+jobs:
+  on-push:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      npm_dist_tag: ${{ steps.publish.outputs.npm_dist_tag }}
+      package_version: ${{ steps.get_version.outputs.package_version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com/'
+
+      - name: Run tests
+        run: npm test --if-present
+
+      - name: Get package version
+        id: get_version
+        run: |
+          if [ "$IS_LERNA" == "true" ]; then
+            VERSION=$(lerna list --json | jq -r '.[0].version')
+          else
+            VERSION=$(jq -r '.version' package.json)
+          fi
+          echo "package_version=$VERSION" >> $GITHUB_OUTPUT          
+
+      - name: Publish to GitHub NPM Registry
+        id: publish
+        run: |
+          CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')          
+          if [ "$CURRENT_BRANCH" == "main" ]; then
+            TAG_NAME="latest"
+          elif [ "$CURRENT_BRANCH" == "release" ]; then
+            TAG_NAME="next"
+          elif [ "$CURRENT_BRANCH" == "develop" ]; then
+            TAG_NAME="dev"
+          elif [[ "$CURRENT_BRANCH" == feature/* ]]; then
+            TAG_NAME="${CURRENT_BRANCH//\//-}"
+          fi
+          echo "npm_dist_tag=$TAG_NAME" >> $GITHUB_OUTPUT
+          if [ -n "$TAG_NAME" ]; then
+            if [ "$IS_LERNA" == "true" ]; then
+              lerna publish from-package --yes --no-push --no-git-reset --no-git-tag-version --dist-tag "$TAG_NAME"
+            else
+              npm publish --tag "$TAG_NAME"
+            fi            
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check Storybook exist
+        id: check_script
+        run: |
+          if grep -q '"build:showcase":' package.json; then
+            echo "::set-output name=has_script::true"
+          fi
+
+      - name: Build Storybook
+        if: steps.check_script.outputs.has_script == 'true'
+        run: npm run build:showcase
+
+      - name: Deploy Storybook to GitHub Pages
+        if: steps.check_script.outputs.has_script == 'true'
+        uses: JamesIves/github-pages-deploy-action@v4.7.2
+        with:
+          branch: gh-pages
+          folder: ./dist-showcase
+          target-folder: ${{ github.ref_name }}
+
+      - name: Checkout gh-pages branch
+        run: |
+          git fetch origin
+          git stash
+          git checkout gh-pages
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "./"
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Checkout feature/workflow-for-storybook branch
+        run: |
+          git fetch origin
+          git checkout feature/workflow-for-storybook
+          git stash pop
+
+      - name: Publish to GitHub NPM Registry
+        run: |
+          CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')          
+          if [ "$CURRENT_BRANCH" == "main" ]; then
+            TAG_NAME="latest"
+          elif [ "$CURRENT_BRANCH" == "release" ]; then
+            TAG_NAME="next"
+          elif [ "$CURRENT_BRANCH" == "develop" ]; then
+            TAG_NAME="dev"
+          elif [[ "$CURRENT_BRANCH" == feature/* ]]; then
+            TAG_NAME="${CURRENT_BRANCH//\//-}"
+          fi
+          if [ -n "$TAG_NAME" ]; then
+            npm publish --tag "$TAG_NAME"
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push changes back
+        if: env.bump_version == 'true'
+        run: |
+          git push origin HEAD

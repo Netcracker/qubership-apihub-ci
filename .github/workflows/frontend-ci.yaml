@@ -5,128 +5,19 @@ on:
   workflow_call:
 
 jobs:
-  build:
-    if: github.event_name == 'push'
+  on-build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Build
+        uses: ./.github/workflows/run-build
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          registry-url: 'https://npm.pkg.github.com/'
-
-      - name: Bump version and commit (prerelease only)
-        id: bump_version
-        if: startsWith(github.ref, 'refs/heads/develop') || startsWith(github.ref, 'refs/heads/release') || startsWith(github.ref, 'refs/heads/feature/')
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"          
-          CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')
-          if [[ "$CURRENT_BRANCH" == "develop" || "$CURRENT_BRANCH" == "release" || "$CURRENT_BRANCH" == feature/* ]]; then
-            npm version prerelease -m "chore: bump prerelease version to %s [ci skip]"
-            echo "bump_version=true" >> $GITHUB_ENV
-          else
-            echo "bump_version=false" >> $GITHUB_ENV
-          fi
-
-      - name: Install dependencies
-        run: npm ci
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Update dependencies
-        run: npm ls --json |  jq -r '.dependencies | keys[]' | grep "@netcracker" | xargs npm update
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build the package
-        run: npm run build --if-present
   on-push:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
+    needs: on-build
     steps:
-      - name: Checkout code
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-      - uses: actions/setup-node@v4
-      - with:
-      - node-version: '20'
-      - registry-url: 'https://npm.pkg.github.com/'
-
-      - name: Run tests
-        run: npm test --if-present
-
-      - name: Check Storybook exist
-        id: check_script
-        run: |
-          if grep -q '"build:showcase":' package.json; then
-            echo "::set-output name=has_script::true"
-          fi
-
-      - name: Build Storybook
-        if: steps.check_script.outputs.has_script == 'true'
-        run: npm run build:showcase
-
-      - name: Deploy Storybook to GitHub Pages
-        if: steps.check_script.outputs.has_script == 'true'
-        uses: JamesIves/github-pages-deploy-action@v4.7.2
-        with:
-          branch: gh-pages
-          folder: ./dist-showcase
-          target-folder: ${{ github.ref_name }}
-
-      - name: Checkout gh-pages branch
-        run: |
-                git fetch origin
-                git stash
-                git checkout gh-pages
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: "./"
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
-      - name: Checkout feature/workflow-for-storybook branch
-        run: |
-          git fetch origin
-          git checkout feature/workflow-for-storybook
-          git stash pop
-
-      - name: Publish to GitHub NPM Registry
-        run: |
-          CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')          
-          if [ "$CURRENT_BRANCH" == "main" ]; then
-            TAG_NAME="latest"
-          elif [ "$CURRENT_BRANCH" == "release" ]; then
-            TAG_NAME="next"
-          elif [ "$CURRENT_BRANCH" == "develop" ]; then
-            TAG_NAME="dev"
-          elif [[ "$CURRENT_BRANCH" == feature/* ]]; then
-            TAG_NAME="${CURRENT_BRANCH//\//-}"
-          fi
-          if [ -n "$TAG_NAME" ]; then
-            npm publish --tag "$TAG_NAME"
-          fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Push changes back
-        if: env.bump_version == 'true'
-        run: |
-          git push origin HEAD
+      - name: Tests
+        uses: ./.github/workflows/on-push
 
   on-delete:
     if: github.event_name == 'delete'
