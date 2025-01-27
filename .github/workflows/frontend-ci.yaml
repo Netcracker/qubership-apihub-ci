@@ -4,11 +4,8 @@ run-name: ${{ github.event_name == 'delete' && format('cleanup NPM dist tags') |
 on:
   workflow_call:
 
-permissions:
-  id-token: write
-
 jobs:
-  on-push:
+  build:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
@@ -40,7 +37,6 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # This step is to update internal dependencies specified via tag version to their latest available versions
       - name: Update dependencies
         run: npm ls --json |  jq -r '.dependencies | keys[]' | grep "@netcracker" | xargs npm update
         env:
@@ -48,6 +44,20 @@ jobs:
 
       - name: Build the package
         run: npm run build --if-present
+  on-push:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - name: Checkout code
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+      - uses: actions/setup-node@v4
+      - with:
+      - node-version: '20'
+      - registry-url: 'https://npm.pkg.github.com/'
 
       - name: Run tests
         run: npm test --if-present
