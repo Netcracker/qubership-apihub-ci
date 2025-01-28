@@ -162,15 +162,15 @@ jobs:
       - if: steps.check_script.outputs.has_script == 'true'
         run: npm run build:showcase
 
-      - name: Deploy Storybook to GitHub Pages
-        if: steps.check_script.outputs.has_script == 'true'
-        uses: JamesIves/github-pages-deploy-action@v4.7.2
-        with:
-          branch: gh-pages
-          folder: ./dist-showcase
-          target-folder: ${{ github.ref_name }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      - name: Deploy Storybook to GitHub Pages
+#        if: steps.check_script.outputs.has_script == 'true'
+#        uses: JamesIves/github-pages-deploy-action@v4.7.2
+#        with:
+#          branch: gh-pages
+#          folder: ./dist-showcase
+#          target-folder: ${{ github.ref_name }}
+#        env:
+#          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 #      - name: Checkout gh-pages branch
 #        run: |
@@ -178,21 +178,22 @@ jobs:
 #          git stash
 #          git checkout gh-pages
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
+#      - name: Setup Pages
+#        uses: actions/configure-pages@v5
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: "./"
+#      - name: Upload artifact
+#        uses: actions/upload-pages-artifact@v3
+#        with:
+#          path: "./"
 
       - name: List files
         run: ls -la
 
       - name: Deploy Storybook to gh-pages
+        if: steps.check_script.outputs.has_script == 'true'
         uses: peaceiris/actions-gh-pages@v4
         with:
-          destination_dir: ./
+          destination_dir: ${{ github.ref_name }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist-showcase
 
@@ -213,23 +214,23 @@ jobs:
 #          git checkout feature/workflow-for-storybook
 #          git stash pop
 
-      - name: Publish to GitHub NPM Registry
-        run: |
-          CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')          
-          if [ "$CURRENT_BRANCH" == "main" ]; then
-            TAG_NAME="latest"
-          elif [ "$CURRENT_BRANCH" == "release" ]; then
-            TAG_NAME="next"
-          elif [ "$CURRENT_BRANCH" == "develop" ]; then
-            TAG_NAME="dev"
-          elif [[ "$CURRENT_BRANCH" == feature/* ]]; then
-            TAG_NAME="${CURRENT_BRANCH//\//-}"
-          fi
-          if [ -n "$TAG_NAME" ]; then
-            npm publish --tag "$TAG_NAME"
-          fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      - name: Publish to GitHub NPM Registry
+#        run: |
+#          CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')
+#          if [ "$CURRENT_BRANCH" == "main" ]; then
+#            TAG_NAME="latest"
+#          elif [ "$CURRENT_BRANCH" == "release" ]; then
+#            TAG_NAME="next"
+#          elif [ "$CURRENT_BRANCH" == "develop" ]; then
+#            TAG_NAME="dev"
+#          elif [[ "$CURRENT_BRANCH" == feature/* ]]; then
+#            TAG_NAME="${CURRENT_BRANCH//\//-}"
+#          fi
+#          if [ -n "$TAG_NAME" ]; then
+#            npm publish --tag "$TAG_NAME"
+#          fi
+#        env:
+#          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push changes back
         if: env.bump_version == 'true'
