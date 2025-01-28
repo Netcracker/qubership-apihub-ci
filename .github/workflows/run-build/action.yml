@@ -1,3 +1,5 @@
+name: Run Build
+run-name: ${{ github.event_name == 'delete' && format('cleanup NPM dist tags') || format('') }}
 
 on:
   workflow_call:
