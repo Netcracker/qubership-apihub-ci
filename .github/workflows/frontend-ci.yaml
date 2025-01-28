@@ -121,7 +121,7 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
+      contents: read
     needs: on-build
     steps:
       - name: Checkout code
@@ -189,8 +189,9 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          commit_message: Deploy to GitHub Pages
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout feature/workflow-for-storybook branch
         run: |
