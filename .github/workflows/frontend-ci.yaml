@@ -2,15 +2,73 @@ name: Frontend CI Workflow
 run-name: ${{ github.event_name == 'delete' && format('cleanup NPM dist tags') || format('') }}
 
 on:
-  push:
+  workflow_call:
 
 jobs:
   on-build:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    outputs:
+      npm_dist_tag: ${{ steps.publish.outputs.npm_dist_tag }}
+      package_version: ${{ steps.get_version.outputs.package_version }}
     steps:
-      - uses: actions/checkout@v3
-        name: Run Build Workflow
-      - uses: ./.github/workflows/run-build
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com/'
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # This step is to update internal dependencies specified via tag version to their latest available versions
+      - name: Update dependencies
+        run: npm ls --json |  jq -r '.dependencies | keys[]' | grep "@netcracker" | xargs --no-run-if-empty npm update
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check is Lerna project
+        run: |
+          if [ -f lerna.json ]; then
+            echo "Project is a Lerna project."
+            echo "IS_LERNA=true" >> $GITHUB_ENV
+          else
+            echo "Project is NOT a Lerna project."
+            echo "IS_LERNA=false" >> $GITHUB_ENV
+          fi
+
+      - name: Bump version (prerelease only)
+        if: startsWith(github.ref, 'refs/heads/develop') || startsWith(github.ref, 'refs/heads/release') || startsWith(github.ref, 'refs/heads/feature/')
+        run: |
+          CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')
+          if [[ "$CURRENT_BRANCH" == "develop" || "$CURRENT_BRANCH" == "release" || "$CURRENT_BRANCH" == feature/* ]]; then
+            if [ "$IS_LERNA" == "true" ]; then
+              lerna version prerelease --no-git-tag-version --no-private --no-push --yes              
+            else
+              npm version prerelease --no-git-tag-version
+            fi          
+          fi
+
+      - name: Commit changes (if any)
+        run: |
+          # Check if there are any changes to commit
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Changes detected. Preparing to commit."
+            git config --global user.name "github-actions"
+            git config --global user.email "github-actions@github.com"
+            git add .
+            git commit -m "chore: bump prerelease version"            
+          else
+            echo "No changes to commit."
+          fi
+
+      - name: Build the package
+        run: npm run build --if-present
 
   on-push:
     if: github.event_name == 'push'
