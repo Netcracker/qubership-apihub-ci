@@ -192,6 +192,7 @@ jobs:
       - name: Deploy Storybook to gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
+          destination_dir: ./
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist-showcase
 
