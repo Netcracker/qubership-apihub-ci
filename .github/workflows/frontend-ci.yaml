@@ -73,6 +73,9 @@ jobs:
   on-push:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    needs: on-build
     outputs:
       npm_dist_tag: ${{ steps.publish.outputs.npm_dist_tag }}
       package_version: ${{ steps.get_version.outputs.package_version }}
