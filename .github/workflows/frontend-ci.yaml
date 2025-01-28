@@ -120,12 +120,18 @@ jobs:
   on-push:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-#    permissions:
-#      id-token: write
+    permissions:
+      id-token: write
     needs: on-build
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Do something with the token
+        run: |
+          # Generate the JWT
+          token=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://token.api.github.com)
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
