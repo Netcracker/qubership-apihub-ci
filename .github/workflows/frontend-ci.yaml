@@ -188,10 +188,14 @@ jobs:
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: JamesIves/github-pages-deploy-action@v4.7.2
         with:
-          commit_message: Deploy to GitHub Pages
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: gh-pages
+          folder: ./dist-showcase
+          target-folder: ${{ github.ref_name }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
       - name: Checkout feature/workflow-for-storybook branch
         run: |
