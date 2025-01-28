@@ -186,12 +186,15 @@ jobs:
         with:
           path: "./"
 
+      - name: List files
+        run: ls -la
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: JamesIves/github-pages-deploy-action@v4.7.2
         with:
           branch: gh-pages
-          folder: build
+          folder: ./
           commit-message: Deploy to GitHub Pages
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
