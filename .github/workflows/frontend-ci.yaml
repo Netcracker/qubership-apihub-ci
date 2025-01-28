@@ -120,8 +120,8 @@ jobs:
   on-push:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+#    permissions:
+#      contents: read
     needs: on-build
     steps:
       - name: Checkout code
