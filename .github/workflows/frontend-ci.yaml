@@ -172,11 +172,11 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Checkout gh-pages branch
-        run: |
-          git fetch origin
-          git stash
-          git checkout gh-pages
+#      - name: Checkout gh-pages branch
+#        run: |
+#          git fetch origin
+#          git stash
+#          git checkout gh-pages
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -189,22 +189,28 @@ jobs:
       - name: List files
         run: ls -la
 
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: JamesIves/github-pages-deploy-action@v4.7.2
+      - name: Deploy Storybook to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          branch: gh-pages
-          folder: ./
-          commit-message: Deploy to GitHub Pages
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist-showcase
+
+#      - name: Deploy to GitHub Pages
+#        id: deployment
+#        uses: JamesIves/github-pages-deploy-action@v4.7.2
+#        with:
+#          branch: gh-pages
+#          folder: ./
+#          commit-message: Deploy to GitHub Pages
+#        env:
+#          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
-      - name: Checkout feature/workflow-for-storybook branch
-        run: |
-          git fetch origin
-          git checkout feature/workflow-for-storybook
-          git stash pop
+#      - name: Checkout feature/workflow-for-storybook branch
+#        run: |
+#          git fetch origin
+#          git checkout feature/workflow-for-storybook
+#          git stash pop
 
       - name: Publish to GitHub NPM Registry
         run: |
