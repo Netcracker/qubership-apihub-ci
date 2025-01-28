@@ -120,8 +120,8 @@ jobs:
   on-push:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-#    permissions:
-#      contents: read
+    permissions:
+      contents: write
     needs: on-build
     steps:
       - name: Checkout code
@@ -196,6 +196,7 @@ jobs:
           destination_dir: ${{ github.ref_name }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist-showcase
+          force_orphan: true
 
 #      - name: Deploy to GitHub Pages
 #        id: deployment
