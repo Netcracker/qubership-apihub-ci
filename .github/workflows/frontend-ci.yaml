@@ -86,6 +86,11 @@ jobs:
           node-version: '20'
           registry-url: 'https://npm.pkg.github.com/'
 
+      - name: Install dependencies
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run tests
         run: npm test --if-present
 
