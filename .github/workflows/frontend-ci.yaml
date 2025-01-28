@@ -109,19 +109,19 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Cache node modules
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-npm-cache-${{ steps.install-cache.outputs.cache-hit }}
-          restore-keys: |
-            ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-npm-cache-
+#      - name: Cache node modules
+#        uses: actions/cache@v3
+#        with:
+#          path: ~/.npm
+#          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-npm-cache-${{ steps.install-cache.outputs.cache-hit }}
+#          restore-keys: |
+#            ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-npm-cache-
 
   on-push:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
+#    permissions:
+#      id-token: write
     needs: on-build
     steps:
       - name: Checkout code
@@ -133,13 +133,18 @@ jobs:
           node-version: '20'
           registry-url: 'https://npm.pkg.github.com/'
 
-      - name: Cache node modules
-        uses: actions/cache@v3
-        with:
-            path: ~/.npm
-            key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-npm-cache-${{ steps.install-cache.outputs.cache-hit }}
-            restore-keys: |
-              ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-npm-cache-
+      - name: npm ci
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+#      - name: Cache node modules
+#        uses: actions/cache@v3
+#        with:
+#            path: ~/.npm
+#            key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-npm-cache-${{ steps.install-cache.outputs.cache-hit }}
+#            restore-keys: |
+#              ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-npm-cache-
 
       - name: Check Storybook exist
         id: check_script
@@ -147,10 +152,6 @@ jobs:
           if grep -q '"build:showcase":' package.json; then
             echo "::set-output name=has_script::true"
           fi
-          
-
-      - if: steps.check_script.outputs.has_script == 'true'
-        run: npm ci
 
       - if: steps.check_script.outputs.has_script == 'true'
         run: npm run build:showcase
@@ -162,6 +163,8 @@ jobs:
           branch: gh-pages
           folder: ./dist-showcase
           target-folder: ${{ github.ref_name }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout gh-pages branch
         run: |
