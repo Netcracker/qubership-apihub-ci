@@ -147,9 +147,12 @@ jobs:
           if grep -q '"build:showcase":' package.json; then
             echo "::set-output name=has_script::true"
           fi
+          
 
-      - name: Build Storybook
-        if: steps.check_script.outputs.has_script == 'true'
+      - if: steps.check_script.outputs.has_script == 'true'
+        run: npm ci
+
+      - if: steps.check_script.outputs.has_script == 'true'
         run: npm run build:showcase
 
       - name: Deploy Storybook to GitHub Pages
