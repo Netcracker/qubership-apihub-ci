@@ -67,6 +67,14 @@ jobs:
             echo "No changes to commit."
           fi
 
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-npm-cache-${{ steps.install-cache.outputs.cache-hit }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-npm-cache-
+
       - name: Build the package
         run: npm run build --if-present
 
@@ -89,10 +97,13 @@ jobs:
           node-version: '20'
           registry-url: 'https://npm.pkg.github.com/'
 
-      - name: Install dependencies
-        run: npm ci
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+            path: ~/.npm
+            key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-npm-cache-${{ steps.install-cache.outputs.cache-hit }}
+            restore-keys: |
+              ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-npm-cache-
 
       - name: Run tests
         run: npm test --if-present
