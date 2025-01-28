@@ -191,8 +191,8 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4.7.2
         with:
           branch: gh-pages
-          folder: ./dist-showcase
-          target-folder: ${{ github.ref_name }}
+          folder: build
+          commit-message: Deploy to GitHub Pages
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
