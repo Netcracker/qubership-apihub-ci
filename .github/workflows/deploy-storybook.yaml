@@ -17,6 +17,12 @@ jobs:
         - name: Checkout
           uses: actions/checkout@v4
 
+        - name: Checkout gh-pages branch
+          run: |
+            git fetch origin
+            git stash
+            git checkout gh-pages
+
         - name: Setup Pages
           uses: actions/configure-pages@v5
 
