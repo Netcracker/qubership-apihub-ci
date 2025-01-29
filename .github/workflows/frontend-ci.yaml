@@ -194,6 +194,7 @@ jobs:
           destination_dir: ${{ github.ref_name }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist-showcase
+          keep_files: true
           force_orphan: true
 
 #      - name: Deploy to GitHub Pages
