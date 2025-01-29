@@ -1,10 +1,8 @@
-name: Frontend CI Workflow
-run-name: ${{ github.event_name == 'delete' && format('cleanup NPM dist tags') || format('') }}
+name: Deploy storybook
 
 on:
-  push:
-    branches:
-      - gh-pages
+  workflow_call:
+
 
 permissions:
   contents: read
@@ -13,6 +11,7 @@ permissions:
 
 jobs:
     deploy:
+      if: ${{ github.ref == 'refs/heads/gh-pages' }}
       runs-on: ubuntu-latest
       steps:
         - name: Checkout
