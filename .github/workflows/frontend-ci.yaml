@@ -151,14 +151,14 @@ jobs:
 #        run: |
 #          git push origin HEAD
   build-ci:
-    uses: netcracker/qubership-apihub-ci/.github/workflows/frontend-ci/build-ci.yaml@feature/workflow-for-storybook
+    uses: netcracker/qubership-apihub-ci/.github/workflows/fe-build-ci.yaml@feature/workflow-for-storybook
   test-ci:
-    uses: netcracker/qubership-apihub-ci/.github/workflows/frontend-ci/test-ci.yaml@feature/workflow-for-storybook
+    uses: netcracker/qubership-apihub-ci/.github/workflows/fe-test-ci.yaml@feature/workflow-for-storybook
   build-storybook-ci:
-    uses: netcracker/qubership-apihub-ci/.github/workflows/frontend-ci/build-storybook-ci.yaml@feature/workflow-for-storybook
+    uses: netcracker/qubership-apihub-ci/.github/workflows/fe-build-storybook-ci.yaml@feature/workflow-for-storybook
   deploy-storybook-ci:
     needs: build-storybook-ci
-    uses: netcracker/qubership-apihub-ci/.github/workflows/frontend-ci/deploy-storybook-ci.yaml@feature/workflow-for-storybook
+    uses: netcracker/qubership-apihub-ci/.github/workflows/fe-deploy-storybook-ci.yaml@feature/workflow-for-storybook
   on-delete:
     if: github.event_name == 'delete'
     runs-on: ubuntu-latest
