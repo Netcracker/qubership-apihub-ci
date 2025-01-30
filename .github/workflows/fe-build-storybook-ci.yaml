@@ -41,3 +41,28 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist-showcase
           keep_files: true
+  on-delete:
+    if: github.event_name == 'delete'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Получить имя текущей ветки
+        id: get_init_branch_name
+        run: echo "::set-output name=branch_name::$(echo $GITHUB_REF_NAME)"
+
+      - name: Checkout gh-pages
+        uses: actions/checkout@v3
+        with:
+          ref: gh-pages
+
+      - name: Удаление папки ${{ steps.get_init_branch_name.outputs.branch_name }}
+        run: |
+          if [ -d ${{ steps.get_init_branch_name.outputs.branch_name }} ]; then
+            rm -rf ${{ steps.get_init_branch_name.outputs.branch_name }}
+            git add .
+            git commit -m "Delete folder ${{ steps.get_init_branch_name.outputs.branch_name }} from branch gh-pages"
+            git push origin gh-pages
+          fi
+
