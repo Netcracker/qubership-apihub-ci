@@ -109,14 +109,6 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-#      - name: Cache node modules
-#        uses: actions/cache@v3
-#        with:
-#          path: ~/.npm
-#          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-npm-cache-${{ steps.install-cache.outputs.cache-hit }}
-#          restore-keys: |
-#            ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-npm-cache-
-
   on-push:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -124,12 +116,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-#      - name: Do something with the token
-#        run: |
-#          # Generate the JWT
-#          token=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-#            https://token.api.github.com)
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -142,14 +128,6 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-#      - name: Cache node modules
-#        uses: actions/cache@v3
-#        with:
-#            path: ~/.npm
-#            key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-npm-cache-${{ steps.install-cache.outputs.cache-hit }}
-#            restore-keys: |
-#              ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-npm-cache-
-
       - name: Check Storybook exist
         id: check_script
         run: |
@@ -159,30 +137,6 @@ jobs:
 
       - if: steps.check_script.outputs.has_script == 'true'
         run: npm run build:showcase
-
-#      - name: Deploy Storybook to GitHub Pages
-#        if: steps.check_script.outputs.has_script == 'true'
-#        uses: JamesIves/github-pages-deploy-action@v4.7.2
-#        with:
-#          branch: gh-pages
-#          folder: ./dist-showcase
-#          target-folder: ${{ github.ref_name }}
-#        env:
-#          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-#      - name: Checkout gh-pages branch
-#        run: |
-#          git fetch origin
-#          git stash
-#          git checkout gh-pages
-
-#      - name: Setup Pages
-#        uses: actions/configure-pages@v5
-
-#      - name: Upload artifact
-#        uses: actions/upload-pages-artifact@v3
-#        with:
-#          path: "./"
 
       - name: List files
         run: ls -la
@@ -195,41 +149,6 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist-showcase
           keep_files: true
-
-#      - name: Deploy to GitHub Pages
-#        id: deployment
-#        uses: JamesIves/github-pages-deploy-action@v4.7.2
-#        with:
-#          branch: gh-pages
-#          folder: ./
-#          commit-message: Deploy to GitHub Pages
-#        env:
-#          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
-#      - name: Checkout feature/workflow-for-storybook branch
-#        run: |
-#          git fetch origin
-#          git checkout feature/workflow-for-storybook
-#          git stash pop
-
-#      - name: Publish to GitHub NPM Registry
-#        run: |
-#          CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')
-#          if [ "$CURRENT_BRANCH" == "main" ]; then
-#            TAG_NAME="latest"
-#          elif [ "$CURRENT_BRANCH" == "release" ]; then
-#            TAG_NAME="next"
-#          elif [ "$CURRENT_BRANCH" == "develop" ]; then
-#            TAG_NAME="dev"
-#          elif [[ "$CURRENT_BRANCH" == feature/* ]]; then
-#            TAG_NAME="${CURRENT_BRANCH//\//-}"
-#          fi
-#          if [ -n "$TAG_NAME" ]; then
-#            npm publish --tag "$TAG_NAME"
-#          fi
-#        env:
-#          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push changes back
         if: env.bump_version == 'true'

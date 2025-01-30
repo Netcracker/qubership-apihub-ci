@@ -10,26 +10,37 @@ permissions:
   id-token: write
 
 jobs:
-    deploy:
+    on-push:
       runs-on: ubuntu-latest
       steps:
         - name: Checkout
           uses: actions/checkout@v4
 
-        - name: Checkout gh-pages branch
+        - name: Check storybook exist
+          id: check_script
+          run: |
+            if grep -q '"build:showcase":' package.json; then
+              echo "::set-output name=has_script::true"
+            fi
+
+        - if: steps.check_script.outputs.has_script == 'true'
+          name: Checkout gh-pages branch
           run: |
             git fetch origin
             git stash
             git checkout gh-pages
 
-        - name: Setup Pages
+        - if: steps.check_script.outputs.has_script == 'true'
+          name: Setup Pages
           uses: actions/configure-pages@v5
 
-        - name: Upload artifact
+        - if: steps.check_script.outputs.has_script == 'true'
+          name: Upload artifact
           uses: actions/upload-pages-artifact@v3
           with:
             path: "./"
 
-        - name: Deploy to GitHub Pages
+        - if: steps.check_script.outputs.has_script == 'true'
+          name: Deploy to GitHub Pages
           id: deployment
           uses: actions/deploy-pages@v4
