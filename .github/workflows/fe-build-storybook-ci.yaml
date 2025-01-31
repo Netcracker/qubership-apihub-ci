@@ -64,4 +64,6 @@ jobs:
             git commit -m "Delete folder ${{ steps.get_init_branch_name.outputs.branch_name }} from branch gh-pages"
             git push origin gh-pages
           fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
