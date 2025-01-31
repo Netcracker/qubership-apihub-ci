@@ -45,12 +45,11 @@ jobs:
     if: github.event_name == 'delete'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Получить имя текущей ветки
+      - name: Get branch name
         id: get_init_branch_name
-        run: echo "::set-output name=branch_name::$(echo $GITHUB_REF_NAME)"
+        run: |
+            BRANCH_NAME="${{ github.event.ref }}"
+            echo "::set-output name=branch_name::$BRANCH_NAME" # устанавливаем переменную окружения
 
       - name: Checkout gh-pages
         uses: actions/checkout@v3
