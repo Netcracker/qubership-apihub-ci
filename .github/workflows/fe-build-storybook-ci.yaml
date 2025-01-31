@@ -56,6 +56,11 @@ jobs:
         with:
           ref: gh-pages
 
+      - name: Configure Git user
+        run: |
+            git config --global user.email "${{ github.actor }}.qubership@gmail.com"
+            git config --global user.name "${{ github.actor }}"
+
       - name: Удаление папки ${{ steps.get_init_branch_name.outputs.branch_name }}
         run: |
           if [ -d ${{ steps.get_init_branch_name.outputs.branch_name }} ]; then
