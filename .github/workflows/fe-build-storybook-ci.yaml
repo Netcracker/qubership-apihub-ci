@@ -61,7 +61,7 @@ jobs:
             git config --global user.email "${{ github.actor }}.qubership@gmail.com"
             git config --global user.name "${{ github.actor }}"
 
-      - name: Удаление папки ${{ steps.get_init_branch_name.outputs.branch_name }}
+      - name: Folder ${{ steps.get_init_branch_name.outputs.branch_name }} delete
         run: |
           if [ -d ${{ steps.get_init_branch_name.outputs.branch_name }} ]; then
             rm -rf ${{ steps.get_init_branch_name.outputs.branch_name }}
