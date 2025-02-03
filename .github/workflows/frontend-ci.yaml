@@ -5,73 +5,15 @@ on:
   workflow_call:
 
 jobs:
-  on-push:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          registry-url: 'https://npm.pkg.github.com/'
-
-      - name: Bump version and commit (prerelease only)
-        id: bump_version
-        if: startsWith(github.ref, 'refs/heads/develop') || startsWith(github.ref, 'refs/heads/release') || startsWith(github.ref, 'refs/heads/feature/')
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"          
-          CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')
-          if [[ "$CURRENT_BRANCH" == "develop" || "$CURRENT_BRANCH" == "release" || "$CURRENT_BRANCH" == feature/* ]]; then
-            npm version prerelease -m "chore: bump prerelease version to %s [ci skip]"
-            echo "bump_version=true" >> $GITHUB_ENV
-          else
-            echo "bump_version=false" >> $GITHUB_ENV
-          fi
-
-      - name: Install dependencies
-        run: npm ci
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # This step is to update internal dependencies specified via tag version to their latest available versions
-      - name: Update dependencies
-        run: npm ls --json |  jq -r '.dependencies | keys[]' | grep "@netcracker" | xargs npm update
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build the package
-        run: npm run build --if-present
-
-      - name: Run tests
-        run: npm test --if-present
-
-      - name: Publish to GitHub NPM Registry
-        run: |
-          CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')          
-          if [ "$CURRENT_BRANCH" == "main" ]; then
-            TAG_NAME="latest"
-          elif [ "$CURRENT_BRANCH" == "release" ]; then
-            TAG_NAME="next"
-          elif [ "$CURRENT_BRANCH" == "develop" ]; then
-            TAG_NAME="dev"
-          elif [[ "$CURRENT_BRANCH" == feature/* ]]; then
-            TAG_NAME="${CURRENT_BRANCH//\//-}"
-          fi
-          if [ -n "$TAG_NAME" ]; then
-            npm publish --tag "$TAG_NAME"
-          fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Push changes back
-        if: env.bump_version == 'true'
-        run: |
-          git push origin HEAD
-
+  build-ci:
+    uses: netcracker/qubership-apihub-ci/.github/workflows/fe-build-ci.yaml@feature/workflow-for-storybook
+  test-ci:
+    uses: netcracker/qubership-apihub-ci/.github/workflows/fe-test-ci.yaml@feature/workflow-for-storybook
+  build-storybook-ci:
+    uses: netcracker/qubership-apihub-ci/.github/workflows/fe-build-storybook-ci.yaml@feature/workflow-for-storybook
+  deploy-storybook-ci:
+    needs: build-storybook-ci
+    uses: netcracker/qubership-apihub-ci/.github/workflows/fe-deploy-storybook-ci.yaml@feature/workflow-for-storybook
   on-delete:
     if: github.event_name == 'delete'
     runs-on: ubuntu-latest

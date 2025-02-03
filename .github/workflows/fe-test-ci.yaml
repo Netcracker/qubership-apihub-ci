@@ -1,0 +1,31 @@
+name: Run tests workflow
+run-name: ${{ github.event_name == 'delete' && format('cleanup NPM dist tags') || format('') }}
+
+on:
+  workflow_call:
+
+jobs:
+  on-push:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      npm_dist_tag: ${{ steps.publish.outputs.npm_dist_tag }}
+      package_version: ${{ steps.get_version.outputs.package_version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com/'
+
+      - name: Install dependencies
+        run: npm ci
+        id: install-cache
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run tests
+        run: npm test --if-present

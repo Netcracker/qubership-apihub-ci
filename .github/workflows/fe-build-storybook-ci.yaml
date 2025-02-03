@@ -1,0 +1,74 @@
+name: Build storybook workflow
+run-name: ${{ github.event_name == 'delete' && format('cleanup NPM dist tags') || format('') }}
+
+on:
+  workflow_call:
+
+jobs:
+  on-push:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com/'
+
+      - name: npm ci
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check Storybook exist
+        id: check_script
+        run: |
+          if grep -q '"build:showcase":' package.json; then
+            echo "::set-output name=has_script::true"
+          fi
+
+      - if: steps.check_script.outputs.has_script == 'true'
+        run: npm run build:showcase
+
+      - name: Deploy Storybook to gh-pages
+        if: steps.check_script.outputs.has_script == 'true'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          destination_dir: ${{ github.ref_name }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist-showcase
+          keep_files: true
+  on-delete:
+    if: github.event_name == 'delete'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get branch name
+        id: get_init_branch_name
+        run: |
+            BRANCH_NAME="${{ github.event.ref }}"
+            echo "::set-output name=branch_name::$BRANCH_NAME" # устанавливаем переменную окружения
+
+      - name: Checkout gh-pages
+        uses: actions/checkout@v3
+        with:
+          ref: gh-pages
+
+      - name: Configure Git user
+        run: |
+            git config --global user.email "${{ github.actor }}.qubership@gmail.com"
+            git config --global user.name "${{ github.actor }}"
+
+      - name: Folder ${{ steps.get_init_branch_name.outputs.branch_name }} delete
+        run: |
+          if [ -d ${{ steps.get_init_branch_name.outputs.branch_name }} ]; then
+            rm -rf ${{ steps.get_init_branch_name.outputs.branch_name }}
+            git add .
+            git commit -m "Delete folder ${{ steps.get_init_branch_name.outputs.branch_name }} from branch gh-pages"
+            git push origin gh-pages
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
