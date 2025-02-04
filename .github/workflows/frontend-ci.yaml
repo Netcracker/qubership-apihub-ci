@@ -92,16 +92,17 @@ jobs:
 
       - name: Publish to GitHub NPM Registry
         id: publish
+        if: startsWith(github.ref, 'refs/heads/develop') || startsWith(github.ref, 'refs/heads/release') || startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/tags/')
         run: |
-          CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')          
-          if [ "$CURRENT_BRANCH" == "main" ]; then
-            TAG_NAME="latest"
-          elif [ "$CURRENT_BRANCH" == "release" ]; then
+          CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')
+          if [ "$CURRENT_BRANCH" == "release" ]; then
             TAG_NAME="next"
           elif [ "$CURRENT_BRANCH" == "develop" ]; then
             TAG_NAME="dev"
           elif [[ "$CURRENT_BRANCH" == feature/* ]]; then
             TAG_NAME="${CURRENT_BRANCH//\//-}"
+          else
+            TAG_NAME="latest"
           fi
           echo "npm_dist_tag=$TAG_NAME" >> $GITHUB_OUTPUT
           if [ -n "$TAG_NAME" ]; then
@@ -114,7 +115,8 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push changes back        
+      - name: Push changes back
+        if: startsWith(github.ref, 'refs/heads/develop') || startsWith(github.ref, 'refs/heads/release') || startsWith(github.ref, 'refs/heads/feature/')
         run: |
           git push origin HEAD
 
