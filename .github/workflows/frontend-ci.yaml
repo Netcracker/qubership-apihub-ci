@@ -101,7 +101,7 @@ jobs:
             TAG_NAME="dev"
           elif [[ "$CURRENT_BRANCH" == feature/* ]]; then
             TAG_NAME="${CURRENT_BRANCH//\//-}"
-          else
+          elif [[ "$CURRENT_BRANCH" == refs/tags/* ]]; then
             TAG_NAME="latest"
           fi
           echo "npm_dist_tag=$TAG_NAME" >> $GITHUB_OUTPUT
