@@ -39,6 +39,31 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}          
 
+      - name: Calculate NPM dist tag
+        id: calculate_npm_dist_tag
+        run: |
+          CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')
+          if [ "$CURRENT_BRANCH" == "release" ]; then
+            NPM_DIST_TAG="next"
+          elif [ "$CURRENT_BRANCH" == "develop" ]; then
+            NPM_DIST_TAG="dev"
+          elif [[ "$CURRENT_BRANCH" == refs/tags/* ]]; then
+            NPM_DIST_TAG="latest"
+          elif [[ "$CURRENT_BRANCH" != "main" ]]; then
+            NPM_DIST_TAG="${CURRENT_BRANCH//\//-}"          
+          fi
+          echo "NPM_DIST_TAG: $NPM_DIST_TAG"
+          echo "npm_dist_tag=$NPM_DIST_TAG" >> $GITHUB_OUTPUT                  
+
+      - name: Calculate prerelease suffix
+        id: calculate_prerelease_suffix        
+        run: |          
+          if [ ${{ steps.calculate_npm_dist_tag.npm_dist_tag }} != "latest" ]; then
+            PRERELEASE_SUFFIX=${{ steps.calculate_npm_dist_tag.npm_dist_tag }}
+          fi
+          echo "PRERELEASE_SUFFIX: $PRERELEASE_SUFFIX"
+          echo "prerelease_suffix=$PRERELEASE_SUFFIX" >> $GITHUB_OUTPUT        
+
       - name: Check is Lerna project
         run: |
           if [ -f lerna.json ]; then
@@ -50,16 +75,40 @@ jobs:
           fi
 
       - name: Bump version (prerelease only)        
-        if: startsWith(github.ref, 'refs/heads/develop') || startsWith(github.ref, 'refs/heads/release') || startsWith(github.ref, 'refs/heads/feature/')
+        if: steps.calculate_prerelease_suffix.outputs.prerelease_suffix != ''
         run: |          
-          CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')
-          if [[ "$CURRENT_BRANCH" == "develop" || "$CURRENT_BRANCH" == "release" || "$CURRENT_BRANCH" == feature/* ]]; then
-            if [ "$IS_LERNA" == "true" ]; then
-              lerna version prerelease --no-git-tag-version --no-private --no-push --yes              
-            else
-              npm version prerelease --no-git-tag-version
-            fi          
+          # Get the current version and extract release part
+          if [ "$IS_LERNA" == "true" ]; then
+            CURRENT_VERSION=$(lerna list --json | jq -r '.[0].version')
+          else
+            CURRENT_VERSION=$(jq -r '.version' package.json)
           fi
+          
+          # Extract release part (remove any prerelease suffix if exists)
+          RELEASE_VERSION=$(echo "$CURRENT_VERSION" | sed -E 's/(-[^+]+)?.*//')
+          
+          # Generate timestamp in YYYYMMDDHHmmss format
+          TIMESTAMP=$(date -u '+%Y%m%d%H%M%S')
+          
+          # Construct new version
+          NEW_VERSION="${RELEASE_VERSION}-${{ steps.calculate_prerelease_suffix.outputs.prerelease_suffix }}.${TIMESTAMP}"
+          
+          # Set the new version
+          if [ "$IS_LERNA" == "true" ]; then
+            lerna version "${NEW_VERSION}" --no-git-tag-version --no-private --no-push --yes              
+          else
+            npm version "${NEW_VERSION}" --no-git-tag-version
+          fi
+
+      - name: Get package version
+        id: get_version
+        run: |
+          if [ "$IS_LERNA" == "true" ]; then
+            VERSION=$(lerna list --json | jq -r '.[0].version')
+          else
+            VERSION=$(jq -r '.version' package.json)
+          fi
+          echo "package_version=$VERSION" >> $GITHUB_OUTPUT
       
       - name: Commit changes (if any)                
         run: |
@@ -80,45 +129,19 @@ jobs:
       - name: Run tests
         run: npm test --if-present
 
-      - name: Get package version
-        id: get_version
-        run: |
-          if [ "$IS_LERNA" == "true" ]; then
-            VERSION=$(lerna list --json | jq -r '.[0].version')
-          else
-            VERSION=$(jq -r '.version' package.json)
-          fi
-          echo "package_version=$VERSION" >> $GITHUB_OUTPUT          
-
       - name: Publish to GitHub NPM Registry
         id: publish
-        if: startsWith(github.ref, 'refs/heads/develop') || startsWith(github.ref, 'refs/heads/release') || startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/tags/')
         run: |
-          CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')
-          if [ "$CURRENT_BRANCH" == "release" ]; then
-            TAG_NAME="next"
-          elif [ "$CURRENT_BRANCH" == "develop" ]; then
-            TAG_NAME="dev"
-          elif [[ "$CURRENT_BRANCH" == feature/* ]]; then
-            TAG_NAME="${CURRENT_BRANCH//\//-}"
-          elif [[ "$CURRENT_BRANCH" == refs/tags/* ]]; then
-            TAG_NAME="latest"
-          fi
-          echo "npm_dist_tag=$TAG_NAME" >> $GITHUB_OUTPUT
-          if [ -n "$TAG_NAME" ]; then
+          NPM_DIST_TAG=${{ steps.calculate_npm_dist_tag.npm_dist_tag }}          
+          if [ -n "$NPM_DIST_TAG" ]; then
             if [ "$IS_LERNA" == "true" ]; then
-              lerna publish from-package --yes --no-push --no-git-reset --no-git-tag-version --dist-tag "$TAG_NAME"
+              lerna publish from-package --yes --no-push --no-git-reset --no-git-tag-version --dist-tag "$NPM_DIST_TAG"
             else
-              npm publish --tag "$TAG_NAME"
+              npm publish --tag "$NPM_DIST_TAG"
             fi            
           fi
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Push changes back
-        if: startsWith(github.ref, 'refs/heads/develop') || startsWith(github.ref, 'refs/heads/release') || startsWith(github.ref, 'refs/heads/feature/')
-        run: |
-          git push origin HEAD
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}      
 
   on-delete:
     if: github.event_name == 'delete'
