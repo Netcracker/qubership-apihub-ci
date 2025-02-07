@@ -90,7 +90,7 @@ jobs:
           fi
           
           # Extract release part (remove any prerelease suffix if exists)
-          RELEASE_VERSION=$(echo "$CURRENT_VERSION" | sed -E 's/(-[^+]+)?.*//')
+          RELEASE_VERSION=$(echo "$CURRENT_VERSION" | sed -E 's/(-[^+]+)?(\+[^+]+)?$//')
           
           # Generate timestamp in YYYYMMDDHHmmss format
           TIMESTAMP=$(date -u '+%Y%m%d%H%M%S')
