@@ -98,6 +98,8 @@ jobs:
           # Construct new version
           NEW_VERSION="${RELEASE_VERSION}-${{ steps.calculate_prerelease_suffix.outputs.prerelease_suffix }}.${TIMESTAMP}"
           
+          echo "NEW_VERSION: $NEW_VERSION"
+          
           # Set the new version
           if [ "$IS_LERNA" == "true" ]; then
             lerna version "${NEW_VERSION}" --no-git-tag-version --no-private --no-push --yes              
