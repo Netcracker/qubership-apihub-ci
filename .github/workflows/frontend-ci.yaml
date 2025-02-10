@@ -42,6 +42,8 @@ jobs:
       - name: Calculate NPM dist tag
         id: calculate_npm_dist_tag
         run: |
+          echo "GITHUB_REF: $GITHUB_REF"
+          echo "github.event.ref: ${{ github.event.ref }}"
           CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')
           if [ "$CURRENT_BRANCH" == "release" ]; then
             NPM_DIST_TAG="next"
@@ -165,8 +167,7 @@ jobs:
       - name: Calculate NPM dist tag
         id: calculate_npm_dist_tag
         run: |
-          echo "GITHUB_REF: $GITHUB_REF"
-          echo "github.event.ref: ${{ github.event.ref }}"
+          # $GITHUB_REF is 'refs/heads/main' on delete branch event, hence we use ${{ github.event.ref }}
           CURRENT_BRANCH=$(echo ${{ github.event.ref }} | sed 's/refs\/heads\///')
           if [ "$CURRENT_BRANCH" == "release" ]; then
             NPM_DIST_TAG="next"
