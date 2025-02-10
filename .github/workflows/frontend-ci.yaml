@@ -79,7 +79,7 @@ jobs:
             echo "IS_LERNA=false" >> $GITHUB_ENV
           fi
 
-      - name: Bump version (prerelease only)        
+      - name: Bump version (dev branches only)        
         if: steps.calculate_prerelease_suffix.outputs.prerelease_suffix != ''
         run: |          
           # Get the current version and extract release part
@@ -117,6 +117,7 @@ jobs:
           fi
           echo "package_version=$VERSION" >> $GITHUB_OUTPUT
       
+      # lerna won't publish packages with working directory changes
       - name: Commit changes (if any)                
         run: |
           # Check if there are any changes to commit
