@@ -161,20 +161,30 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://npm.pkg.github.com/'
+
+      - name: Calculate NPM dist tag
+        id: calculate_npm_dist_tag
+        run: |
+          CURRENT_BRANCH=$(echo $GITHUB_REF | sed 's/refs\/heads\///')
+          if [ "$CURRENT_BRANCH" == "release" ]; then
+            NPM_DIST_TAG="next"
+          elif [ "$CURRENT_BRANCH" == "develop" ]; then
+            NPM_DIST_TAG="dev"
+          elif [[ "$CURRENT_BRANCH" == refs/tags/* ]]; then
+            NPM_DIST_TAG="latest"
+          elif [[ "$CURRENT_BRANCH" != "main" ]]; then
+            NPM_DIST_TAG="${CURRENT_BRANCH//\//-}"
+          else
+            NPM_DIST_TAG=''
+          fi
+          echo "NPM_DIST_TAG: $NPM_DIST_TAG"
+          echo "npm_dist_tag=$NPM_DIST_TAG" >> $GITHUB_OUTPUT
       
       - name: Delete associated NPM dist tags
+        if: steps.calculate_npm_dist_tag.outputs.npm_dist_tag != ''
         run: |
-          DELETED_BRANCH=${{ github.event.ref }}
-
-          if [ "$DELETED_BRANCH" == "release" ]; then
-            TAG_NAME="next"
-          elif [[ "$DELETED_BRANCH" == feature/* ]]; then
-            TAG_NAME="${DELETED_BRANCH//\//-}"
-          else
-            echo "No corresponding npm dist tag for this branch." && exit 0
-          fi
-
           # Get package names to process
+          TAG_NAME=${{ steps.calculate_npm_dist_tag.outputs.npm_dist_tag }}
           if [ -f lerna.json ]; then
             echo "Detected Lerna project."
             PACKAGE_NAMES=$(lerna list --json | jq -r '.[].name')
