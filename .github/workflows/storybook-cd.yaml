@@ -51,8 +51,7 @@ jobs:
           ref: gh-pages
 
       - name: Delete corresponding folder in gh-pages branch
-        run: |
-          echo "Deleting folder ${{ github.event.ref }} from branch gh-pages"
+        run: |          
           if [ -d ${{ github.event.ref }} ]; then            
             rm -rf ${{ github.event.ref }}
             git config --global user.name "github-actions"
