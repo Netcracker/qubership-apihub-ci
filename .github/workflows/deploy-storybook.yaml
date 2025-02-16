@@ -1,0 +1,99 @@
+name: Deploy Storybook
+
+on:
+  workflow_call
+
+jobs:
+  build:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write      
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com/'
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      # This step is to update internal dependencies specified via tag version to their latest available versions
+      - name: Update dependencies
+        run: npm ls --json |  jq -r '.dependencies | keys[]' | grep "@netcracker" | xargs --no-run-if-empty npm update
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}          
+
+      - name: Build the showcase
+        run: npm run build:showcase
+
+      - name: Deploy Storybook to gh-pages        
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          destination_dir: ${{ github.ref_name }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist-showcase
+          keep_files: false
+
+  on-delete:
+    if: github.event_name == 'delete' && github.event.ref_type == 'branch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com/'
+
+      - name: Calculate NPM dist tag
+        id: calculate_npm_dist_tag
+        run: |          
+          CURRENT_BRANCH=$(echo ${{ github.event.ref }} | sed 's/refs\/heads\///')
+          if [ "$CURRENT_BRANCH" == "release" ]; then
+            NPM_DIST_TAG="next"
+          elif [ "$CURRENT_BRANCH" == "develop" ]; then
+            NPM_DIST_TAG="dev"
+          elif [[ "$CURRENT_BRANCH" == refs/tags/* ]]; then
+            NPM_DIST_TAG="latest"
+          elif [[ "$CURRENT_BRANCH" != "main" ]]; then
+            NPM_DIST_TAG="${CURRENT_BRANCH//\//-}"
+          else
+            NPM_DIST_TAG=''
+          fi
+          echo "NPM_DIST_TAG: $NPM_DIST_TAG"
+          echo "npm_dist_tag=$NPM_DIST_TAG" >> $GITHUB_OUTPUT
+      
+      - name: Delete associated NPM dist tags
+        if: steps.calculate_npm_dist_tag.outputs.npm_dist_tag != ''
+        run: |
+          # Get package names to process
+          TAG_NAME=${{ steps.calculate_npm_dist_tag.outputs.npm_dist_tag }}
+          if [ -f lerna.json ]; then
+            echo "Detected Lerna project."
+            PACKAGE_NAMES=$(lerna list --json | jq -r '.[].name')
+          elif [ -f package.json ]; then
+            echo "Detected single package npm project."
+            PACKAGE_NAMES=$(jq -r '.name' package.json)
+          else
+            echo "No package.json or lerna.json found." && exit 1
+          fi
+
+          # Loop through all package names and remove tags
+          for PACKAGE_NAME in $PACKAGE_NAMES; do
+            echo "Processing package: $PACKAGE_NAME"
+            if [ -n "$PACKAGE_NAME" ] && [ -n "$TAG_NAME" ]; then
+              npm dist-tag rm "$PACKAGE_NAME" "$TAG_NAME"
+            fi
+          done
+        env:        
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
