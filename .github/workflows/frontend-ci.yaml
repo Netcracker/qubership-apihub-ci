@@ -25,7 +25,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '21'
           registry-url: 'https://npm.pkg.github.com/'
 
       - name: Install dependencies
@@ -35,7 +35,9 @@ jobs:
       
       # This step is to update internal dependencies specified via tag version to their latest available versions
       - name: Update dependencies
-        run: npm ls --json |  jq -r '.dependencies | keys[]' | grep "@netcracker" | xargs --no-run-if-empty npm update
+        run:  |          
+          npm ls --json |  jq -r '.dependencies | keys[]' | grep "@netcracker" | xargs --no-run-if-empty npm update
+          cat ./package-lock.json
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}          
 
