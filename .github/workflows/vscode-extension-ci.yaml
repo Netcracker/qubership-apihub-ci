@@ -96,7 +96,7 @@ jobs:
           echo "package_version=$VERSION" >> $GITHUB_OUTPUT
       
       - name: Build the package
-        run: vsce package
+        run: npm run package
 
       - name: Get VSIX filename
         id: get_vsix
