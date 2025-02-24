@@ -111,6 +111,6 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.get_vsix.outputs.vsix_path }}
+          name: extension
           path: "*.vsix"
           retention-days: 30
