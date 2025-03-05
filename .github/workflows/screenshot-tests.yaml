@@ -22,10 +22,16 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # This step is to update internal dependencies specified via tag version to their latest available versions
+      - name: Update dependencies
+        run: npm ls --json |  jq -r '.dependencies | keys[]' | grep "@netcracker" | xargs --no-run-if-empty npm update
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run tests
         id: tests
         continue-on-error: true
-        run: npm run screenshot-test:ci --if-present
+        run: npm run screenshot-test:ci
 
       - name: Upload differences
         if: steps.tests.outcome == 'failure'
