@@ -1,0 +1,49 @@
+name: Run screenshot tests
+
+on:
+  workflow_call
+
+jobs:
+  screenshot-tests:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    container: ghcr.io/netcracker/qubership-apihub-nodejs-dev-image:1.7.3
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Configure npm registry URL since we're using GitHub packages. Node.js environment is pre-installed in the qubership-apihub-nodejs-dev-image:1.7.3 container.
+      - name: Setup npm registry
+        uses: actions/setup-node@v4
+        with:
+          registry-url: 'https://npm.pkg.github.com/'
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # This step is to update internal dependencies specified via tag version to their latest available versions
+      - name: Update dependencies
+        run: npm ls --json |  jq -r '.dependencies | keys[]' | grep "@netcracker" | xargs --no-run-if-empty npm update
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run tests
+        id: tests
+        continue-on-error: true
+        run: npm run screenshot-test:ci
+
+      - name: Upload differences
+        if: steps.tests.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshot-test-differences
+          path: |
+            **/__diff_output__
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Check test results
+        if: steps.tests.outcome == 'failure'
+        run: exit 1
