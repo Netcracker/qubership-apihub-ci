@@ -12,7 +12,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      # Configure npm registry URL since we're using GitHub packages. Node.js environment is pre-installed in the qubership-apihub-nodejs-dev-image:1.7.3 container.
+      - name: Setup npm registry
         uses: actions/setup-node@v4
         with:
           registry-url: 'https://npm.pkg.github.com/'
