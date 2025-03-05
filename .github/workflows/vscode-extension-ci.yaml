@@ -101,7 +101,7 @@ jobs:
           if [[ "$CURRENT_BRANCH" == refs/tags/* ]]; then
             CURRENT_BRANCH="main"          
           fi
-          vsce package --githubBranch $CURRENT_BRANCH
+          npx vsce package --githubBranch $CURRENT_BRANCH
 
       - name: Get VSIX filename
         id: get_vsix
