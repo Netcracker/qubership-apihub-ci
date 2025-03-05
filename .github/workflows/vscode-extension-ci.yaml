@@ -16,7 +16,7 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     outputs:
-      npm_dist_tag: ${{ steps.publish.outputs.npm_dist_tag }}
+      npm_dist_tag: ${{ steps.calculate_npm_dist_tag.outputs.npm_dist_tag }}
       package_version: ${{ steps.get_version.outputs.package_version }}
     steps:
       - name: Checkout code
@@ -96,7 +96,12 @@ jobs:
           echo "package_version=$VERSION" >> $GITHUB_OUTPUT
       
       - name: Build the package
-        run: npm run package
+        run: |
+          CURRENT_BRANCH=$(echo ${{ github.event.ref }} | sed 's/refs\/heads\///')
+          if [[ "$CURRENT_BRANCH" == refs/tags/* ]]; then
+            CURRENT_BRANCH="main"          
+          fi
+          vsce package --githubBranch $CURRENT_BRANCH
 
       - name: Get VSIX filename
         id: get_vsix
