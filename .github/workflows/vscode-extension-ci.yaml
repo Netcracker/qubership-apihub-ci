@@ -103,15 +103,15 @@ jobs:
           fi
           npx vsce package --githubBranch $CURRENT_BRANCH
 
+      - name: Run tests
+        run: npm test --if-present
+
       - name: Get VSIX filename
         id: get_vsix
         run: |
           VSIX_PATH=$(ls *.vsix)
           echo "vsix_path=$VSIX_PATH" >> $GITHUB_OUTPUT
           echo "Found VSIX: $VSIX_PATH"
-
-      #- name: Run tests
-      #  run: npm test --if-present
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
