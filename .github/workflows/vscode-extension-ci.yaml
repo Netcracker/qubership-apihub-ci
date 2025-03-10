@@ -1,5 +1,4 @@
-name: Frontend CI Workflow
-run-name: ${{ github.event_name == 'delete' && format('cleanup NPM dist tags') || format('') }}
+name: build VSCode extension
 
 on:
   workflow_call:
@@ -12,9 +11,12 @@ on:
         value: ${{ jobs.on-push.outputs.package_version }}      
 
 jobs:
-  on-push:
+  build:
     if: github.event_name == 'push'
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     outputs:
       npm_dist_tag: ${{ steps.calculate_npm_dist_tag.outputs.npm_dist_tag }}
       package_version: ${{ steps.get_version.outputs.package_version }}
@@ -41,6 +43,7 @@ jobs:
 
       - name: Calculate NPM dist tag
         id: calculate_npm_dist_tag
+        shell: bash
         run: |          
           CURRENT_BRANCH=$(echo ${{ github.event.ref }} | sed 's/refs\/heads\///')
           if [ "$CURRENT_BRANCH" == "release" ]; then
@@ -59,6 +62,7 @@ jobs:
 
       - name: Calculate prerelease suffix
         id: calculate_prerelease_suffix        
+        shell: bash
         run: |          
           NPM_DIST_TAG="${{ steps.calculate_npm_dist_tag.outputs.npm_dist_tag }}"
           if [ -n "$NPM_DIST_TAG" ] && [ "$NPM_DIST_TAG" != "latest" ]; then
@@ -71,6 +75,7 @@ jobs:
 
       - name: Bump version (dev branches only)        
         if: steps.calculate_prerelease_suffix.outputs.prerelease_suffix != ''
+        shell: bash
         run: |          
           # Get the current version and extract release part
           CURRENT_VERSION=$(jq -r '.version' package.json)          
@@ -91,11 +96,13 @@ jobs:
 
       - name: Get package version
         id: get_version
+        shell: bash
         run: |
           VERSION=$(jq -r '.version' package.json)          
           echo "package_version=$VERSION" >> $GITHUB_OUTPUT
       
       - name: Build the package
+        shell: bash
         run: |
           CURRENT_BRANCH=$(echo ${{ github.event.ref }} | sed 's/refs\/heads\///')
           if [[ "$CURRENT_BRANCH" == refs/tags/* ]]; then
@@ -103,16 +110,17 @@ jobs:
           fi
           npx vsce package --githubBranch $CURRENT_BRANCH
 
-      - name: Run tests (Linux)
+      - name: Run tests Linux
         run: xvfb-run -a npm test
         if: runner.os == 'Linux'
-      
-      - name: Run tests (non Linux)
+
+      - name: Run tests non-Linux
         run: npm test
         if: runner.os != 'Linux'
 
       - name: Get VSIX filename
         id: get_vsix
+        shell: bash 
         run: |
           VSIX_PATH=$(ls *.vsix)
           echo "vsix_path=$VSIX_PATH" >> $GITHUB_OUTPUT
@@ -121,6 +129,6 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: extension
+          name: extension-${{ matrix.os }}
           path: "*.vsix"
           retention-days: 30
