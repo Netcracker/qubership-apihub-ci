@@ -16,10 +16,7 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    outputs:
-      npm_dist_tag: ${{ steps.calculate_npm_dist_tag.outputs.npm_dist_tag }}
-      package_version: ${{ steps.get_version.outputs.package_version }}
+    runs-on: ${{ matrix.os }}    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -41,8 +38,9 @@ jobs:
       #   env:
       #     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}          
 
-      - name: Calculate NPM dist tag
-        id: calculate_npm_dist_tag
+      - name: Calculate NPM dist tag (Unix)
+        id: calculate_npm_dist_tag_unix
+        if: runner.os != 'Windows'
         run: |          
           CURRENT_BRANCH=$(echo ${{ github.event.ref }} | sed 's/refs\/heads\///')
           if [ "$CURRENT_BRANCH" == "release" ]; then
@@ -57,45 +55,82 @@ jobs:
             NPM_DIST_TAG=''
           fi
           echo "NPM_DIST_TAG: $NPM_DIST_TAG"
-          echo "npm_dist_tag=$NPM_DIST_TAG" >> $GITHUB_OUTPUT                  
+          echo "npm_dist_tag=$NPM_DIST_TAG" >> $GITHUB_OUTPUT
 
-      - name: Calculate prerelease suffix
-        id: calculate_prerelease_suffix        
+      - name: Calculate NPM dist tag (Windows)
+        id: calculate_npm_dist_tag_windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $currentBranch = $env:GITHUB_REF -replace 'refs/heads/', ''
+          $npmDistTag = switch ($currentBranch) {
+            'release' { 'next' }
+            'develop' { 'dev' }
+            { $_ -match '^refs/tags/' } { 'latest' }
+            { $_ -ne 'main' } { $_ -replace '/', '-' }
+            default { '' }
+          }
+          Write-Host "NPM_DIST_TAG: $npmDistTag"
+          echo "npm_dist_tag=$npmDistTag" >> $env:GITHUB_OUTPUT
+
+      - name: Calculate prerelease suffix (Unix)
+        id: calculate_prerelease_suffix_unix
+        if: runner.os != 'Windows'
         run: |          
-          NPM_DIST_TAG="${{ steps.calculate_npm_dist_tag.outputs.npm_dist_tag }}"
+          NPM_DIST_TAG="${{ steps.calculate_npm_dist_tag_unix.outputs.npm_dist_tag }}"
           if [ -n "$NPM_DIST_TAG" ] && [ "$NPM_DIST_TAG" != "latest" ]; then
             PRERELEASE_SUFFIX="$NPM_DIST_TAG"
           else
             PRERELEASE_SUFFIX=''
           fi
           echo "PRERELEASE_SUFFIX: $PRERELEASE_SUFFIX"
-          echo "prerelease_suffix=$PRERELEASE_SUFFIX" >> $GITHUB_OUTPUT        
+          echo "prerelease_suffix=$PRERELEASE_SUFFIX" >> $GITHUB_OUTPUT
 
-      - name: Bump version (dev branches only)        
-        if: steps.calculate_prerelease_suffix.outputs.prerelease_suffix != ''
+      - name: Calculate prerelease suffix (Windows)
+        id: calculate_prerelease_suffix_windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $npmDistTag = $env:NPM_DIST_TAG
+          $prereleaseSuffix = if ($npmDistTag -and $npmDistTag -ne 'latest') { $npmDistTag } else { '' }
+          Write-Host "PRERELEASE_SUFFIX: $prereleaseSuffix"
+          echo "prerelease_suffix=$prereleaseSuffix" >> $env:GITHUB_OUTPUT
+
+      - name: Bump version (dev branches only) (Unix)
+        if: steps.calculate_prerelease_suffix_unix.outputs.prerelease_suffix != '' && runner.os != 'Windows'
         run: |          
-          # Get the current version and extract release part
           CURRENT_VERSION=$(jq -r '.version' package.json)          
-          
-          # Extract release part (remove any prerelease suffix if exists)
           RELEASE_VERSION=$(echo "$CURRENT_VERSION" | sed -E 's/(-[^+]+)?(\+[^+]+)?$//')
-          
-          # Generate timestamp in YYYYMMDDHHmmss format
           TIMESTAMP=$(date -u '+%Y%m%d%H%M%S')
-          
-          # Construct new version
-          NEW_VERSION="${RELEASE_VERSION}-${{ steps.calculate_prerelease_suffix.outputs.prerelease_suffix }}.${TIMESTAMP}"
-          
+          NEW_VERSION="${RELEASE_VERSION}-${{ steps.calculate_prerelease_suffix_unix.outputs.prerelease_suffix }}.${TIMESTAMP}"
           echo "NEW_VERSION: $NEW_VERSION"
-          
-          # Set the new version
-          npm version "${NEW_VERSION}" --no-git-tag-version          
+          npm version "${NEW_VERSION}" --no-git-tag-version
 
-      - name: Get package version
-        id: get_version
+      - name: Bump version (dev branches only) (Windows)
+        if: steps.calculate_prerelease_suffix_windows.outputs.prerelease_suffix != '' && runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $currentVersion = (Get-Content package.json | ConvertFrom-Json).version
+          $releaseVersion = $currentVersion -replace '(-[^+]+)?(\+[^+]+)?$', ''
+          $timestamp = Get-Date -Format "yyyyMMddHHmmss" -Utc
+          $newVersion = "$releaseVersion-${{ steps.calculate_prerelease_suffix_windows.outputs.prerelease_suffix }}.$timestamp"
+          Write-Host "NEW_VERSION: $newVersion"
+          npm version $newVersion --no-git-tag-version
+
+      - name: Get package version (Unix)
+        id: get_version_unix
+        if: runner.os != 'Windows'
         run: |
           VERSION=$(jq -r '.version' package.json)          
           echo "package_version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Get package version (Windows)
+        id: get_version_windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          echo "package_version=$version" >> $env:GITHUB_OUTPUT
       
       - name: Build the package
         run: |
@@ -113,12 +148,22 @@ jobs:
         run: npm test
         if: runner.os != 'Linux'
 
-      - name: Get VSIX filename
-        id: get_vsix
+      - name: Get VSIX filename (Unix)
+        id: get_vsix_unix
+        if: runner.os != 'Windows'
         run: |
           VSIX_PATH=$(ls *.vsix)
           echo "vsix_path=$VSIX_PATH" >> $GITHUB_OUTPUT
           echo "Found VSIX: $VSIX_PATH"
+
+      - name: Get VSIX filename (Windows)
+        id: get_vsix_windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $vsixPath = Get-ChildItem *.vsix | Select-Object -First 1
+          echo "vsix_path=$($vsixPath.Name)" >> $env:GITHUB_OUTPUT
+          Write-Host "Found VSIX: $($vsixPath.Name)"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
