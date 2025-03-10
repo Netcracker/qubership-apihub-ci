@@ -16,7 +16,7 @@ jobs:
     # strategy:
     #   matrix:
     #     os: [macos-latest, ubuntu-latest, windows-latest]
-    runs-on: windows-latest # ${{ matrix.os }}
+    runs-on: macos-latest # ${{ matrix.os }}
     outputs:
       npm_dist_tag: ${{ steps.calculate_npm_dist_tag.outputs.npm_dist_tag }}
       package_version: ${{ steps.get_version.outputs.package_version }}
