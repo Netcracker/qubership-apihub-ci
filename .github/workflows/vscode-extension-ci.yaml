@@ -1,5 +1,4 @@
-name: Frontend CI Workflow
-run-name: ${{ github.event_name == 'delete' && format('cleanup NPM dist tags') || format('') }}
+name: build VSCode extension
 
 on:
   workflow_call:
@@ -12,9 +11,12 @@ on:
         value: ${{ jobs.on-push.outputs.package_version }}      
 
 jobs:
-  on-push:
+  build:
     if: github.event_name == 'push'
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     outputs:
       npm_dist_tag: ${{ steps.calculate_npm_dist_tag.outputs.npm_dist_tag }}
       package_version: ${{ steps.get_version.outputs.package_version }}
@@ -103,11 +105,12 @@ jobs:
           fi
           npx vsce package --githubBranch $CURRENT_BRANCH
 
-      - name: Run tests
-        run: xvfb-run -a npm test --if-present
+      - name: Run tests Linux
+        run: xvfb-run -a npm test
         if: runner.os == 'Linux'
 
-      - run: npm test --if-present
+      - name: Run tests non-Linux
+        run: npm test
         if: runner.os != 'Linux'
 
       - name: Get VSIX filename
