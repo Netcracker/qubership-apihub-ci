@@ -13,10 +13,10 @@ on:
 jobs:
   build:
     if: github.event_name == 'push'
-    strategy:
-      matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}    
+    #strategy:
+    #  matrix:
+    #    os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: windows-latest # ${{ matrix.os }}    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
