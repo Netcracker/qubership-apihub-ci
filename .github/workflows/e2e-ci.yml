@@ -1,0 +1,242 @@
+name: E2E CI Workflow
+
+on:
+  workflow_call:
+    inputs:
+        compose-repository-url:
+            description: "URL of the repository to clone"
+            type: string
+            default: "https://github.com/Netcracker/qubership-apihub"
+        compose-repository-branch:
+            description: "Branch to clone"
+            type: string
+            default: "main"
+        compose-repository-compose-folder:
+            description: "Path to the folder with docker-compose file"
+            type: string
+            default: "docker-compose"
+        compose-repository-compose-file:
+            description: "docker-compose filename"
+            type: string
+            default: "docker-compose.yml"
+        postman-collections-run:
+            description: "Flag for executing postman collections"
+            type: boolean
+            default: true
+        postman-repository-url:
+            description: "URL of the repository to clone"
+            type: string
+            default: "https://github.com/Netcracker/qubership-apihub-postman-collections"
+        postman-repository-branch:
+            description: "Branch to clone"
+            type: string
+            default: "main"
+        postman-collections-list:
+            description: "Collections to execute"
+            type: string
+            default: "./e2e/1_1_Smoke_Portal.postman_collection.json"
+        playwright-tests-run:
+            description: "Flag for executing playwright tests"
+            type: boolean
+            default: true
+        playwright-repository-url:
+            description: "URL of the repository to clone"
+            type: string
+            default: "https://github.com/Netcracker/qubership-apihub-ui-tests"
+        playwright-repository-branch:
+            description: "Branch to clone"
+            type: string
+            default: "main"
+        fail-because-of-tests:
+            description: "Flag for make the job green even if there are failed tests"
+            type: boolean
+            default: true
+        backend-image-tag:
+            description: "BE image tag to be executed"
+            type: string
+            default: "dev"
+        task-consumer-image-tag:
+            description: "Build Task Consumer image tag to be executed"
+            type: string
+            default: "dev"
+        ui-image-tag:
+            description: "UI image tag to be executed"
+            type: string
+            default: "dev"
+    secrets:
+        JWT_PRIVATE_KEY:
+            required: true
+        APIHUB_ADMIN_EMAIL:
+            required: true
+        APIHUB_ADMIN_PASSWORD:
+            required: true
+        APIHUB_ACCESS_TOKEN:
+            required: true
+        NPMRC:
+            required: true
+
+jobs:
+  run_compose_and_run_tests:
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone compose repository
+        run: |
+          git clone --branch ${{ inputs.compose-repository-branch }} ${{ inputs.compose-repository-url }} compose-repo
+      
+      - name: Install Podman and envsubst (required for files templating)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman podman-compose gettext-base
+
+      - name: Install Node.js (required for Newman and Playwright)
+        if: ${{ inputs.postman-collections-run }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Newman
+        if: ${{ inputs.postman-collections-run }}
+        run: |
+          npm install -g newman newman-reporter-htmlextra
+
+      - name: Template .env files with environment variables
+        env:
+          JWT_PRIVATE_KEY: ${{ secrets.JWT_PRIVATE_KEY }}
+          APIHUB_ADMIN_EMAIL: ${{ secrets.APIHUB_ADMIN_EMAIL }}
+          APIHUB_ADMIN_PASSWORD: ${{ secrets.APIHUB_ADMIN_PASSWORD }}
+          APIHUB_ACCESS_TOKEN: ${{ secrets.APIHUB_ACCESS_TOKEN }}
+        run: |
+          cd compose-repo
+          set
+          for env_file in $(find . -name "*.env"); do
+            envsubst < "$env_file" > "${env_file}.tmp"
+            mv "${env_file}.tmp" "$env_file"
+          done
+
+      - name: Substitute docker tags in compose file
+        run: |
+          cd compose-repo
+          cd ${{ inputs.compose-repository-compose-folder }}
+          sed -i "s|ghcr.io/netcracker/qubership-apihub-backend:dev|ghcr.io/netcracker/qubership-apihub-backend:${{ inputs.backend-image-tag }}|g" ./${{ inputs.compose-repository-compose-file }}
+          sed -i "s|ghcr.io/netcracker/qubership-apihub-build-task-consumer:dev|ghcr.io/netcracker/qubership-apihub-build-task-consumer:${{ inputs.task-consumer-image-tag }}|g" ./${{ inputs.compose-repository-compose-file }}
+          sed -i "s|ghcr.io/netcracker/qubership-apihub-ui:dev|ghcr.io/netcracker/qubership-apihub-ui:${{ inputs.ui-image-tag }}|g" ./${{ inputs.compose-repository-compose-file }}
+          echo "$(<./${{ inputs.compose-repository-compose-file }})"
+
+
+      - name: Run podman-compose up
+        run: |
+          cd compose-repo
+          cd ${{ inputs.compose-repository-compose-folder }}
+          podman-compose -f ${{ inputs.compose-repository-compose-file }} up -d
+
+      - name: Wait for APIHUB startup
+        run: |
+          echo "Waiting for http://localhost:8081/login to return 200..."
+          end_time=$((SECONDS + 60))  
+          while [ $SECONDS -lt $end_time ]; do
+            status_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8081/login)
+            if [ "$status_code" -eq 200 ]; then
+              echo "Received HTTP 200!"
+              exit 0
+            else
+              echo "Received HTTP $status_code. Retrying in 5 seconds..."
+              sleep 5
+            fi
+          done
+          echo "Timeout reached. Did not receive HTTP 200 within 1 minute."
+          exit 1
+
+      - name: Clone apihub-postman-collections repository
+        if: ${{ inputs.postman-collections-run }}
+        run: |
+          git clone --branch ${{ inputs.postman-repository-branch }} ${{ inputs.postman-repository-url }} postman-repo
+
+      - name: Prepare env file for Newman
+        if: ${{ inputs.postman-collections-run }}
+        env:
+          JWT_PRIVATE_KEY: ${{ secrets.JWT_PRIVATE_KEY }}
+          APIHUB_ADMIN_EMAIL: ${{ secrets.APIHUB_ADMIN_EMAIL }}
+          APIHUB_ADMIN_PASSWORD: ${{ secrets.APIHUB_ADMIN_PASSWORD }}
+          APIHUB_ACCESS_TOKEN: ${{ secrets.APIHUB_ACCESS_TOKEN }}
+        run: |
+          cd postman-repo
+          envsubst < ./environment/local.postman_environment.json > ./ci.postman_environment.json
+
+      - name: Run Postman Collections with Newman
+        if: ${{ inputs.postman-collections-run }}
+        run: |
+          cd postman-repo
+          IFS=',' read -ra COLLECTIONS <<< "${{ inputs.postman-collections-list }}"
+          for collection in "${COLLECTIONS[@]}"; do
+            sanitized_collection_name=$(echo "$collection" | tr -d './')
+            echo "Running collection: $collection"
+            newman run "$collection" -e ./ci.postman_environment.json -x --reporters cli,htmlextra --reporter-htmlextra-export "./reports/${sanitized_collection_name}_results.html"
+          done
+
+      - name: Upload Newman reports as artifacts
+        if: ${{ inputs.postman-collections-run }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-reports
+          path: |
+            ${{ github.workspace }}/postman-repo/reports/*.html
+            retention-days: 7
+
+      - name: Clone playwright tests repository
+        if: ${{ inputs.playwright-tests-run }}
+        run: |
+          git clone --branch ${{ inputs.playwright-repository-branch }} ${{ inputs.playwright-repository-url }} playwright-repo
+
+      - name: Run Playwright
+        if: ${{ inputs.playwright-tests-run }}
+        env:
+          BASE_URL: "http://localhost:8081"
+          TEST_USER_PASSWORD: ${{ secrets.APIHUB_ADMIN_PASSWORD }}
+          PLAYGROUND_BACKEND_HOST: "http://host.docker.internal:8081"
+        run: |
+          cd playwright-repo
+          echo "${{ secrets.NPMRC }}" > ./.npmrc
+          npm install
+          npx playwright install
+          npx playwright test --project=Portal --workers=3 || true
+
+      - name: Upload Playwright reports as artifacts
+        if: ${{ inputs.playwright-tests-run }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-reports
+          path: |
+            ${{ github.workspace }}/playwright-repo/reports
+            retention-days: 7
+
+
+      - name: Run Newman tests results check
+        if: ${{ (inputs.postman-collections-run) && (inputs.fail-because-of-tests) }}
+        run: |
+          TOTAL_FAILED=0
+
+          for file in ${{ github.workspace }}/postman-repo/reports/*.html; do
+            FAILED_TESTS=$(grep -A1 '<h6 class="text-uppercase">Total Failed Tests</h6>' "$file" | grep -oP '(?<=<h1 class="display-1">)[0-9]+(?=</h1>)')
+            TOTAL_FAILED=$((TOTAL_FAILED + FAILED_TESTS))
+          done
+
+          if [ "$TOTAL_FAILED" -ne 0 ]; then
+            echo "Non zero failed Newman tests"
+            exit 1
+          else
+            echo "Newman tests - all green"
+          fi
+
+      - name: Run Playwright tests results check
+        if: ${{ (inputs.playwright-tests-run) && (inputs.fail-because-of-tests) }}
+        run: |
+          FAILED_TESTS=$(cat ${{ github.workspace }}/playwright-repo/reports/summary/summary-report.html | grep -A2 '<th>Failed</th>' | grep -oP '(?<=<td><span class="type-red">● </span>)[0-9]+(?=</td>)' || echo "0")
+
+          if [ "$FAILED_TESTS" -ne 0 ]; then
+            echo "Non zero failed Playwright tests"
+            exit 1
+          else
+            echo "Playwright tests - all green"
+          fi
