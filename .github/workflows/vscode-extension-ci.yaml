@@ -128,7 +128,8 @@ jobs:
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
+        if: runner.os == 'Linux'
         with:
-          name: extension-${{ matrix.os }}
+          name: extension
           path: "*.vsix"
           retention-days: 30
