@@ -1,4 +1,4 @@
-name: E2E CI Workflow
+name: docker-compose run and run BE and FE tests CI workflow
 
 on:
   workflow_call:
@@ -51,15 +51,15 @@ on:
             description: "Flag for make the job green even if there are failed tests"
             type: boolean
             default: true
-        backend-image-tag:
+        apihub-backend-image-tag:
             description: "BE image tag to be executed"
             type: string
             default: "dev"
-        task-consumer-image-tag:
+        apihub-build-task-consumer-image-tag:
             description: "Build Task Consumer image tag to be executed"
             type: string
             default: "dev"
-        ui-image-tag:
+        apihub-ui-image-tag:
             description: "UI image tag to be executed"
             type: string
             default: "dev"
