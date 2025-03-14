@@ -71,10 +71,10 @@ on:
         APIHUB_ADMIN_PASSWORD:
             required: true
         APIHUB_ACCESS_TOKEN:
-            required: true        
+            required: true
 
 jobs:
-  run_compose_and_run_tests:    
+  run_compose_and_run_tests:
     runs-on: ubuntu-latest
     steps:
       - name: Clone compose repository
@@ -86,11 +86,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y podman podman-compose gettext-base
 
-      - name: Install Node.js        
+      - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          registry-url: 'https://npm.pkg.github.com/'      
+          registry-url: 'https://npm.pkg.github.com/'
 
       - name: Template .env files with environment variables
         env:
@@ -185,7 +185,7 @@ jobs:
 
       - name: Run Newman tests results check
         id: check_newman_tests
-        if: ${{ inputs.postman-collections-run }}        
+        if: ${{ inputs.postman-collections-run }}
         continue-on-error: true
         run: |
           TOTAL_FAILED=0
@@ -207,10 +207,10 @@ jobs:
         if: ${{ inputs.playwright-tests-run }}
         working-directory: ./playwright-repo
         run: |          
-          npm install
-          npx playwright install          
+          npm ci
+          npx playwright install --with-deps chromium
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}                            
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run Playwright tests
         id: run_playwright_tests
@@ -221,6 +221,7 @@ jobs:
           BASE_URL: "http://localhost:8081"
           TEST_USER_PASSWORD: ${{ secrets.APIHUB_ADMIN_PASSWORD }}
           PLAYGROUND_BACKEND_HOST: "http://host.docker.internal:8081"
+          CLEAR_TD: "skip"
         run: |          
           npx playwright test ${{ inputs.playwright-test-args }}          
 
@@ -232,7 +233,7 @@ jobs:
           path: |
             ${{ github.workspace }}/playwright-repo/reports
             retention-days: 7
-      
+
       - name: Fail job if there are failed tests
         run: |
           if [ "${{ steps.check_newman_tests.outcome }}" == "failure" ]; then
@@ -244,4 +245,3 @@ jobs:
           if [ "${{ steps.check_newman_tests.outcome }}" == "failure" ] || [ "${{ steps.run_playwright_tests.outcome }}" == "failure" ]; then
             exit 1
           fi
-          
