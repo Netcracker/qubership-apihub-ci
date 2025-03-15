@@ -190,8 +190,8 @@ jobs:
 
       - name: Install Playwright
         if: ${{ inputs.playwright-tests-run }} && '!cancelled()'
-        run: |
-          cd playwright-repo          
+        working-directory: ./playwright-repo
+        run: |          
           npm install
           npx playwright install
         env:
@@ -199,6 +199,7 @@ jobs:
 
       - name: Run Playwright
         if: ${{ inputs.playwright-tests-run }} && '!cancelled()'
+        working-directory: ./playwright-repo
         env:
           BASE_URL: "http://localhost:8081"
           TEST_USER_PASSWORD: ${{ secrets.APIHUB_ADMIN_PASSWORD }}
