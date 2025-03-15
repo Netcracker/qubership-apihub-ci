@@ -175,7 +175,7 @@ jobs:
           done
 
       - name: Upload Newman reports as artifacts
-        if: ${{ inputs.postman-collections-run }} && '!cancelled()'
+        if: (success() || failure()) &&  ${{ inputs.postman-collections-run }}
         uses: actions/upload-artifact@v4
         with:
           name: newman-reports
@@ -184,12 +184,12 @@ jobs:
             retention-days: 7
 
       - name: Clone playwright tests repository
-        if: ${{ inputs.playwright-tests-run }} && '!cancelled()'
+        if: (success() || failure()) && ${{ inputs.playwright-tests-run }}
         run: |
           git clone --branch ${{ inputs.playwright-repository-branch }} ${{ inputs.playwright-repository-url }} playwright-repo
 
       - name: Install Playwright
-        if: ${{ inputs.playwright-tests-run }} && '!cancelled()'
+        if: (success() || failure()) && ${{ inputs.playwright-tests-run }}
         working-directory: ./playwright-repo
         run: |          
           npm install
@@ -198,7 +198,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}                            
 
       - name: Run Playwright
-        if: ${{ inputs.playwright-tests-run }} && '!cancelled()'
+        if: (success() || failure()) && ${{ inputs.playwright-tests-run }}
         working-directory: ./playwright-repo
         env:
           BASE_URL: "http://localhost:8081"
@@ -208,7 +208,7 @@ jobs:
           npx playwright test ${{ inputs.playwright-test-args }}
 
       - name: Upload Playwright reports as artifacts
-        if: ${{ inputs.playwright-tests-run }} && '!cancelled()'
+        if: (success() || failure()) && ${{ inputs.playwright-tests-run }}
         uses: actions/upload-artifact@v4
         with:
           name: playwright-reports
@@ -217,7 +217,7 @@ jobs:
             retention-days: 7
 
       - name: Run Newman tests results check
-        if: ${{ (inputs.postman-collections-run) }} && '!cancelled()'
+        if: (success() || failure()) && ${{ (inputs.postman-collections-run) }}
         run: |
           TOTAL_FAILED=0
 
