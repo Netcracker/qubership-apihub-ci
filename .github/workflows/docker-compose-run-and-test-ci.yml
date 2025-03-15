@@ -117,9 +117,11 @@ jobs:
         run: |
           cd compose-repo
           cd ${{ inputs.compose-repository-compose-folder }}
-          sed -i "s|ghcr.io/netcracker/qubership-apihub-backend:dev|ghcr.io/netcracker/qubership-apihub-backend:${{ inputs.backend-image-tag }}|g" ./${{ inputs.compose-repository-compose-file }}
-          sed -i "s|ghcr.io/netcracker/qubership-apihub-build-task-consumer:dev|ghcr.io/netcracker/qubership-apihub-build-task-consumer:${{ inputs.task-consumer-image-tag }}|g" ./${{ inputs.compose-repository-compose-file }}
-          sed -i "s|ghcr.io/netcracker/qubership-apihub-ui:dev|ghcr.io/netcracker/qubership-apihub-ui:${{ inputs.ui-image-tag }}|g" ./${{ inputs.compose-repository-compose-file }}
+          sed -i \
+            -e "s|\(ghcr.io/netcracker/qubership-apihub-backend:\)[^ ]*|\1${{ inputs.apihub-backend-image-tag }}|g" \
+            -e "s|\(ghcr.io/netcracker/qubership-apihub-build-task-consumer:\)[^ ]*|\1${{ inputs.apihub-build-task-consumer-image-tag }}|g" \
+            -e "s|\(ghcr.io/netcracker/qubership-apihub-ui:\)[^ ]*|\1${{ inputs.apihub-ui-image-tag }}|g" \
+            ./${{ inputs.compose-repository-compose-file }}
           echo "$(<./${{ inputs.compose-repository-compose-file }})"
 
       - name: Run podman-compose up
