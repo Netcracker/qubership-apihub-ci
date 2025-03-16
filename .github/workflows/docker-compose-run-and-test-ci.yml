@@ -50,7 +50,7 @@ on:
         playwright-test-args:
             description: "Playwright test command CLI arguments"
             type: string
-            default: "--project=Portal --workers=10"            
+            default: "--project=Portal --workers=10"
         apihub-backend-image-tag:
             description: "BE image tag to be executed"
             type: string
@@ -74,7 +74,9 @@ on:
             required: true        
 
 jobs:
-  run_compose_and_run_tests:    
+  run_compose_and_run_tests:
+    strategy:
+      fail-fast: false    
     runs-on: ubuntu-latest
     steps:
       - name: Clone compose repository
