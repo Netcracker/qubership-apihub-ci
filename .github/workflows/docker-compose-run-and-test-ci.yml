@@ -77,6 +77,12 @@ jobs:
   run_compose_and_run_tests:    
     runs-on: ubuntu-latest
     steps:
+      - name: Check inputs
+        if: ${{ !inputs.postman-collections-run && !inputs.playwright-tests-run }}        
+        run: |
+          echo "Should request at least one test type (Postman or Playwright) to run"
+          exit 1
+
       - name: Clone compose repository
         run: |
           git clone --branch ${{ inputs.compose-repository-branch }} ${{ inputs.compose-repository-url }} compose-repo
@@ -90,14 +96,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          registry-url: 'https://npm.pkg.github.com/'
-
-      - name: Install Newman
-        if: ${{ inputs.postman-collections-run }}
-        run: |
-          npm install -g newman newman-reporter-htmlextra
-        #env:
-        #  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          registry-url: 'https://npm.pkg.github.com/'      
 
       - name: Template .env files with environment variables
         env:
@@ -146,6 +145,13 @@ jobs:
           done
           echo "Timeout reached. Did not receive HTTP 200 within 1 minute."
           exit 1
+
+      - name: Install Newman
+        if: ${{ inputs.postman-collections-run }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npm install -g newman newman-reporter-htmlextra
 
       - name: Clone apihub-postman-collections repository
         if: ${{ inputs.postman-collections-run }}
@@ -197,7 +203,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}                            
 
-      - name: Run Playwright
+      - name: Run Playwright tests
         id: run_playwright_tests
         if: ${{ inputs.playwright-tests-run }}
         continue-on-error: true
