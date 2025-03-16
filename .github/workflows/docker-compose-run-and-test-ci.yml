@@ -193,9 +193,11 @@ jobs:
       - name: Install Playwright
         if: (success() || failure()) && ${{ inputs.playwright-tests-run }}
         working-directory: ./playwright-repo
-        run: |          
+        run: |
+          date
           npm install
           npx playwright install
+          date
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}                            
 
@@ -206,8 +208,10 @@ jobs:
           BASE_URL: "http://localhost:8081"
           TEST_USER_PASSWORD: ${{ secrets.APIHUB_ADMIN_PASSWORD }}
           PLAYGROUND_BACKEND_HOST: "http://host.docker.internal:8081"
-        run: |          
+        run: |
+          date          
           npx playwright test ${{ inputs.playwright-test-args }}
+          date
 
       - name: Upload Playwright reports as artifacts
         if: (success() || failure()) && ${{ inputs.playwright-tests-run }}
