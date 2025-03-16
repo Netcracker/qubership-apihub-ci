@@ -74,9 +74,7 @@ on:
             required: true        
 
 jobs:
-  run_compose_and_run_tests:
-    strategy:
-      fail-fast: false    
+  run_compose_and_run_tests:    
     runs-on: ubuntu-latest
     steps:
       - name: Clone compose repository
@@ -177,7 +175,7 @@ jobs:
           done
 
       - name: Upload Newman reports as artifacts
-        if: (success() || failure()) &&  ${{ inputs.postman-collections-run }}
+        if: ${{ inputs.postman-collections-run }}
         uses: actions/upload-artifact@v4
         with:
           name: newman-reports
@@ -186,12 +184,12 @@ jobs:
             retention-days: 7
 
       - name: Clone playwright tests repository
-        if: (success() || failure()) && ${{ inputs.playwright-tests-run }}
+        if: ${{ inputs.playwright-tests-run }}
         run: |
           git clone --branch ${{ inputs.playwright-repository-branch }} ${{ inputs.playwright-repository-url }} playwright-repo
 
       - name: Install Playwright
-        if: (success() || failure()) && ${{ inputs.playwright-tests-run }}
+        if: ${{ inputs.playwright-tests-run }}
         working-directory: ./playwright-repo
         run: |
           date
@@ -202,7 +200,9 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}                            
 
       - name: Run Playwright
-        if: (success() || failure()) && ${{ inputs.playwright-tests-run }}
+        id: run_playwright_tests
+        if: ${{ inputs.playwright-tests-run }}
+        continue-on-error: true
         working-directory: ./playwright-repo
         env:
           BASE_URL: "http://localhost:8081"
@@ -214,7 +214,7 @@ jobs:
           date
 
       - name: Upload Playwright reports as artifacts
-        if: (success() || failure()) && ${{ inputs.playwright-tests-run }}
+        if: ${{ inputs.playwright-tests-run }}
         uses: actions/upload-artifact@v4
         with:
           name: playwright-reports
@@ -223,7 +223,7 @@ jobs:
             retention-days: 7
 
       - name: Run Newman tests results check
-        if: (success() || failure()) && ${{ (inputs.postman-collections-run) }}
+        if: ${{ inputs.postman-collections-run }}        
         run: |
           TOTAL_FAILED=0
 
@@ -238,3 +238,9 @@ jobs:
           else
             echo "Newman tests - all green"
           fi
+      
+      - name: Run Playwright tests results check
+        if: ${{ inputs.playwright-tests-run &&  steps.run_playwright_tests.outcome == 'failure' }}
+        run: |
+          echo "Playwright tests failed"
+          exit 1
