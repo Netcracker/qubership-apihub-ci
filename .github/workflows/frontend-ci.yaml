@@ -52,7 +52,7 @@ jobs:
             NPM_DIST_TAG="latest"
           elif [ "$REF_NAME" == "refs/pull/*" ]; then
             NPM_DIST_TAG=$(echo ${REF_NAME} | sed 's@refs/pull/@pull/@;s@/@-@g;')
-          elif [ [ "$REF_NAME" == "refs/heads/*" ] && [ "$REF_NAME" != "refs/heads/main" ] ]; then
+          elif [[ "$REF_NAME" == "refs/heads/*" && "$REF_NAME" != "refs/heads/main" ]]; then
             NPM_DIST_TAG=$(echo ${REF_NAME} | sed 's@refs/heads/@@;s@/@-@g;')
           else
             NPM_DIST_TAG=''
