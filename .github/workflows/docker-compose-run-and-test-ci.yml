@@ -235,13 +235,13 @@ jobs:
       
       - name: Fail job if there are failed tests
         run: |
-          if [ ${{ steps.check_newman_tests.outcome == 'failure' }}]; then
+          if [ "${{ steps.check_newman_tests.outcome }}" == "failure" ]; then
             echo "Newman tests failed"
           fi
-          if [ ${{ steps.run_playwright_tests.outcome == 'failure' }}]; then
+          if [ "${{ steps.run_playwright_tests.outcome }}" == "failure" ]; then
             echo "Playwright tests failed"
           fi
-          if [ ${{ steps.check_newman_tests.outcome == 'failure' || steps.run_playwright_tests.outcome == 'failure' }}]; then
+          if [ "${{ steps.check_newman_tests.outcome }}" == "failure" ] || [ "${{ steps.run_playwright_tests.outcome }}" == "failure" ]; then
             exit 1
           fi
           
