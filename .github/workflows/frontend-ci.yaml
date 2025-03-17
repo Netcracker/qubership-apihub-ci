@@ -42,16 +42,18 @@ jobs:
       - name: Calculate NPM dist tag
         id: calculate_npm_dist_tag
         run: |          
-          echo "github.event.ref: ${{ github.event.ref }}"
-          CURRENT_BRANCH=$(echo ${{ github.event.ref }} | sed 's/refs\/heads\///')
-          if [ "$CURRENT_BRANCH" == "release" ]; then
+          echo "github.ref: ${{ github.ref }}"          
+          REF_NAME=${{ github.ref }}
+          if [ "$REF_NAME" == "refs/heads/release" ]; then
             NPM_DIST_TAG="next"
-          elif [ "$CURRENT_BRANCH" == "develop" ]; then
+          elif [ "$REF_NAME" == "refs/heads/develop" ]; then
             NPM_DIST_TAG="dev"
-          elif [[ "$CURRENT_BRANCH" == refs/tags/* ]]; then
+          elif [ "$REF_NAME" == "refs/tags/*" ]; then
             NPM_DIST_TAG="latest"
-          elif [[ "$CURRENT_BRANCH" != "main" ]]; then
-            NPM_DIST_TAG="${CURRENT_BRANCH//\//-}"
+          elif [ "$REF_NAME" == "refs/pull/*" ]; then
+            NPM_DIST_TAG=$(echo ${REF_NAME} | sed 's@refs/pull/@pull/@;s@/@-@g;')
+          elif [ [ "$REF_NAME" == "refs/heads/*" ] && [ "$REF_NAME" != "refs/heads/main" ] ]; then
+            NPM_DIST_TAG=$(echo ${REF_NAME} | sed 's@refs/heads/@@;s@/@-@g;')
           else
             NPM_DIST_TAG=''
           fi
