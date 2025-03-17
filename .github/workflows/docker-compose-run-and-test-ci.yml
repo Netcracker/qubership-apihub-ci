@@ -50,7 +50,7 @@ on:
         playwright-test-args:
             description: "Playwright test command CLI arguments"
             type: string
-            default: "--project=Portal --workers=10"
+            default: "--project=Portal --workers=8"
         apihub-backend-image-tag:
             description: "BE image tag to be executed"
             type: string
