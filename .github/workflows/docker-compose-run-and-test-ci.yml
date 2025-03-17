@@ -77,12 +77,6 @@ jobs:
   run_compose_and_run_tests:    
     runs-on: ubuntu-latest
     steps:
-      - name: Check inputs
-        if: ${{ !inputs.postman-collections-run && !inputs.playwright-tests-run }}        
-        run: |
-          echo "Should request at least one test type (Postman or Playwright) to run"
-          exit 1
-
       - name: Clone compose repository
         run: |
           git clone --branch ${{ inputs.compose-repository-branch }} ${{ inputs.compose-repository-url }} compose-repo
@@ -189,6 +183,21 @@ jobs:
             ${{ github.workspace }}/postman-repo/reports/*.html
             retention-days: 7
 
+      - name: Run Newman tests results check
+        id: check_newman_tests
+        if: ${{ inputs.postman-collections-run }}        
+        continue-on-error: true
+        run: |
+          TOTAL_FAILED=0
+               for file in ${{ github.workspace }}/postman-repo/reports/*.html; do
+            FAILED_TESTS=$(grep -A1 '<h6 class="text-uppercase">Total Failed Tests</h6>' "$file" | grep -oP '(?<=<h1 class="display-1">)[0-9]+(?=</h1>)')
+            TOTAL_FAILED=$((TOTAL_FAILED + FAILED_TESTS))
+          done
+    
+          if [ "$TOTAL_FAILED" -ne 0 ]; then            
+            exit 1          
+          fi                
+
       - name: Clone playwright tests repository
         if: ${{ inputs.playwright-tests-run }}
         run: |
@@ -223,26 +232,16 @@ jobs:
           path: |
             ${{ github.workspace }}/playwright-repo/reports
             retention-days: 7
-
-      - name: Run Newman tests results check
-        if: ${{ inputs.postman-collections-run }}        
-        run: |
-          TOTAL_FAILED=0
-
-          for file in ${{ github.workspace }}/postman-repo/reports/*.html; do
-            FAILED_TESTS=$(grep -A1 '<h6 class="text-uppercase">Total Failed Tests</h6>' "$file" | grep -oP '(?<=<h1 class="display-1">)[0-9]+(?=</h1>)')
-            TOTAL_FAILED=$((TOTAL_FAILED + FAILED_TESTS))
-          done
-
-          if [ "$TOTAL_FAILED" -ne 0 ]; then
-            echo "Non zero failed Newman tests"
-            exit 1
-          else
-            echo "Newman tests - all green"
-          fi
       
-      - name: Run Playwright tests results check
-        if: ${{ inputs.playwright-tests-run &&  steps.run_playwright_tests.outcome == 'failure' }}
+      - name: Fail job if there are failed tests
         run: |
-          echo "Playwright tests failed"
-          exit 1
+          if [ ${{ steps.check_newman_tests.outcome == 'failure' }}]
+            echo "Newman tests failed"
+          fi
+          if [ ${{ steps.run_playwright_tests.outcome == 'failure' }}]
+            echo "Playwright tests failed"
+          fi
+          if [ ${{ steps.check_newman_tests.outcome == 'failure' || steps.run_playwright_tests.outcome == 'failure' }}]
+            exit 1
+          fi
+          
