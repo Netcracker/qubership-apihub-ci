@@ -27,7 +27,7 @@ on:
         value: ${{ jobs.build_and_push_image.outputs.image_tag }}
 
 env:
-  REF_NAME: ${{ github.event.release.tag_name || github.event.pull_request.head.ref || github.ref }}
+  REF_NAME: ${{ github.ref }}
 
 jobs:
   build_and_push_image:

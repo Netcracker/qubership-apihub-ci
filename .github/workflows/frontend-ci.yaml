@@ -42,7 +42,8 @@ jobs:
       - name: Calculate NPM dist tag
         id: calculate_npm_dist_tag
         run: |          
-          CURRENT_BRANCH=$(echo ${{ github.event.pull_request.head.ref || github.event.ref }} | sed 's/refs\/heads\///')
+          echo "github.event.ref: ${{ github.event.ref }}"
+          CURRENT_BRANCH=$(echo ${{ github.event.ref }} | sed 's/refs\/heads\///')
           if [ "$CURRENT_BRANCH" == "release" ]; then
             NPM_DIST_TAG="next"
           elif [ "$CURRENT_BRANCH" == "develop" ]; then
