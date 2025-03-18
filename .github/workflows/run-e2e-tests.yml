@@ -30,7 +30,7 @@ on:
         postman-repository-branch:
             description: "Branch to clone"
             type: string
-            default: "main"
+            default: "develop"
         postman-collections-list:
             description: "Collections to execute"
             type: string
@@ -46,7 +46,7 @@ on:
         playwright-repository-branch:
             description: "Branch to clone"
             type: string
-            default: "main"
+            default: "develop"
         playwright-test-args:
             description: "Playwright test command CLI arguments"
             type: string
