@@ -79,7 +79,7 @@ jobs:
     steps:
       - name: Clone compose repository
         run: |
-          git clone --branch ${{ inputs.compose-repository-branch }} ${{ inputs.compose-repository-url }} compose-repo
+          git clone --branch ${{ inputs.compose-repository-branch }} --single-branch ${{ inputs.compose-repository-url }} compose-repo
       
       - name: Install Podman and envsubst
         run: |
@@ -150,7 +150,7 @@ jobs:
       - name: Clone apihub-postman-collections repository
         if: ${{ inputs.postman-collections-run }}
         run: |
-          git clone --branch ${{ inputs.postman-repository-branch }} ${{ inputs.postman-repository-url }} postman-repo
+          git clone --branch ${{ inputs.postman-repository-branch }} --single-branch ${{ inputs.postman-repository-url }} postman-repo
 
       - name: Prepare env file for Newman
         if: ${{ inputs.postman-collections-run }}
@@ -201,7 +201,7 @@ jobs:
       - name: Clone playwright tests repository
         if: ${{ inputs.playwright-tests-run }}
         run: |
-          git clone --branch ${{ inputs.playwright-repository-branch }} ${{ inputs.playwright-repository-url }} playwright-repo
+          git clone --branch ${{ inputs.playwright-repository-branch }} --single-branch ${{ inputs.playwright-repository-url }} playwright-repo
 
       - name: Install Playwright
         if: ${{ inputs.playwright-tests-run }}
