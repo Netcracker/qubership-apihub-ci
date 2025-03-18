@@ -52,7 +52,7 @@ jobs:
       - name: Prepare Tag
         id: prepare_tag
         run: |
-          TAG=$(echo ${REF_NAME} | sed 's@refs/tags/@@;s@refs/heads/@@;s@refs/pull/@pull/@;/^develop$/s//dev/;/^release$/s//next/;s@/@-@g;')
+          TAG=$(echo ${REF_NAME} | sed 's@refs/tags/@@;s@refs/heads/@@;s@refs/pull/@pull/@;s@^develop$@dev@;s@^release$@next@;s@/@-@g;')
           echo "TAG=$TAG"
           echo "TAG=$TAG" >> $GITHUB_OUTPUT
       - name: Build and push
