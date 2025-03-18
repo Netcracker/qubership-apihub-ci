@@ -27,7 +27,7 @@ on:
         value: ${{ jobs.build_and_push_image.outputs.image_tag }}
 
 env:
-  REF_NAME: ${{ github.event.release.tag_name || github.ref }}
+  REF_NAME: ${{ github.ref }}
 
 jobs:
   build_and_push_image:
@@ -52,7 +52,7 @@ jobs:
       - name: Prepare Tag
         id: prepare_tag
         run: |
-          TAG=$(echo ${REF_NAME} | sed 's@refs/tags/@@;s@refs/heads/@@;0,/develop/s//dev/;0,/release/s//next/;s@/@-@g;')
+          TAG=$(echo ${REF_NAME} | sed 's@refs/tags/@@;s@refs/heads/@@;s@refs/pull/@pull/@;s@^develop$@dev@;s@^release$@next@;s@/@-@g;')
           echo "TAG=$TAG"
           echo "TAG=$TAG" >> $GITHUB_OUTPUT
       - name: Build and push

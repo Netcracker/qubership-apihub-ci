@@ -13,7 +13,7 @@ on:
 
 jobs:
   on-push:
-    if: github.event_name == 'push'
+    if: (github.event_name == 'push') || (github.event_name == 'pull_request')
     runs-on: ubuntu-latest
     outputs:
       npm_dist_tag: ${{ steps.publish.outputs.npm_dist_tag }}
@@ -42,20 +42,10 @@ jobs:
       - name: Calculate NPM dist tag
         id: calculate_npm_dist_tag
         run: |          
-          CURRENT_BRANCH=$(echo ${{ github.event.ref }} | sed 's/refs\/heads\///')
-          if [ "$CURRENT_BRANCH" == "release" ]; then
-            NPM_DIST_TAG="next"
-          elif [ "$CURRENT_BRANCH" == "develop" ]; then
-            NPM_DIST_TAG="dev"
-          elif [[ "$CURRENT_BRANCH" == refs/tags/* ]]; then
-            NPM_DIST_TAG="latest"
-          elif [[ "$CURRENT_BRANCH" != "main" ]]; then
-            NPM_DIST_TAG="${CURRENT_BRANCH//\//-}"
-          else
-            NPM_DIST_TAG=''
-          fi
+          echo "github.ref: ${{ github.ref }}"
+          NPM_DIST_TAG=$(echo ${{ github.ref }} | sed 's@refs/tags/@@;s@refs/heads/@@;s@refs/pull/@pull/@;s@^develop$@dev@;s@^release$@next@;s@^main$@@;s@/@-@g;')
           echo "NPM_DIST_TAG: $NPM_DIST_TAG"
-          echo "npm_dist_tag=$NPM_DIST_TAG" >> $GITHUB_OUTPUT                  
+          echo "npm_dist_tag=$NPM_DIST_TAG" >> $GITHUB_OUTPUT
 
       - name: Calculate prerelease suffix
         id: calculate_prerelease_suffix        
@@ -165,18 +155,8 @@ jobs:
       - name: Calculate NPM dist tag
         id: calculate_npm_dist_tag
         run: |          
-          CURRENT_BRANCH=$(echo ${{ github.event.ref }} | sed 's/refs\/heads\///')
-          if [ "$CURRENT_BRANCH" == "release" ]; then
-            NPM_DIST_TAG="next"
-          elif [ "$CURRENT_BRANCH" == "develop" ]; then
-            NPM_DIST_TAG="dev"
-          elif [[ "$CURRENT_BRANCH" == refs/tags/* ]]; then
-            NPM_DIST_TAG="latest"
-          elif [[ "$CURRENT_BRANCH" != "main" ]]; then
-            NPM_DIST_TAG="${CURRENT_BRANCH//\//-}"
-          else
-            NPM_DIST_TAG=''
-          fi
+          echo "github.ref: ${{ github.ref }}"
+          NPM_DIST_TAG=$(echo ${{ github.ref }} | sed 's@refs/tags/@@;s@refs/heads/@@;s@refs/pull/@pull/@;s@^develop$@dev@;s@^release$@next@;s@^main$@@;s@/@-@g;')
           echo "NPM_DIST_TAG: $NPM_DIST_TAG"
           echo "npm_dist_tag=$NPM_DIST_TAG" >> $GITHUB_OUTPUT
       

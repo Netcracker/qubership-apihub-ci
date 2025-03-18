@@ -1,4 +1,4 @@
-name: docker-compose run and run BE and FE tests CI workflow
+name: run E2E tests
 
 on:
   workflow_call:
@@ -14,7 +14,7 @@ on:
         compose-repository-compose-folder:
             description: "Path to the folder with docker-compose file"
             type: string
-            default: "docker-compose"
+            default: "docker-compose/apihub-generic"
         compose-repository-compose-file:
             description: "docker-compose filename"
             type: string
@@ -30,7 +30,7 @@ on:
         postman-repository-branch:
             description: "Branch to clone"
             type: string
-            default: "main"
+            default: "develop"
         postman-collections-list:
             description: "Collections to execute"
             type: string
@@ -46,11 +46,11 @@ on:
         playwright-repository-branch:
             description: "Branch to clone"
             type: string
-            default: "main"
-        fail-because-of-tests:
-            description: "Flag for make the job green even if there are failed tests"
-            type: boolean
-            default: true
+            default: "develop"
+        playwright-test-args:
+            description: "Playwright test command CLI arguments"
+            type: string
+            default: "--project=Portal --workers=8"
         apihub-backend-image-tag:
             description: "BE image tag to be executed"
             type: string
@@ -71,35 +71,26 @@ on:
         APIHUB_ADMIN_PASSWORD:
             required: true
         APIHUB_ACCESS_TOKEN:
-            required: true
-        NPMRC:
-            required: true
+            required: true        
 
 jobs:
-  run_compose_and_run_tests:
-    strategy:
-      fail-fast: false
+  run_compose_and_run_tests:    
     runs-on: ubuntu-latest
     steps:
       - name: Clone compose repository
         run: |
           git clone --branch ${{ inputs.compose-repository-branch }} ${{ inputs.compose-repository-url }} compose-repo
       
-      - name: Install Podman and envsubst (required for files templating)
+      - name: Install Podman and envsubst
         run: |
           sudo apt-get update
           sudo apt-get install -y podman podman-compose gettext-base
 
-      - name: Install Node.js (required for Newman and Playwright)
-        if: ${{ inputs.postman-collections-run }}
-        uses: actions/setup-node@v3
+      - name: Install Node.js        
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
-
-      - name: Install Newman
-        if: ${{ inputs.postman-collections-run }}
-        run: |
-          npm install -g newman newman-reporter-htmlextra
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com/'      
 
       - name: Template .env files with environment variables
         env:
@@ -119,11 +110,12 @@ jobs:
         run: |
           cd compose-repo
           cd ${{ inputs.compose-repository-compose-folder }}
-          sed -i "s|ghcr.io/netcracker/qubership-apihub-backend:dev|ghcr.io/netcracker/qubership-apihub-backend:${{ inputs.backend-image-tag }}|g" ./${{ inputs.compose-repository-compose-file }}
-          sed -i "s|ghcr.io/netcracker/qubership-apihub-build-task-consumer:dev|ghcr.io/netcracker/qubership-apihub-build-task-consumer:${{ inputs.task-consumer-image-tag }}|g" ./${{ inputs.compose-repository-compose-file }}
-          sed -i "s|ghcr.io/netcracker/qubership-apihub-ui:dev|ghcr.io/netcracker/qubership-apihub-ui:${{ inputs.ui-image-tag }}|g" ./${{ inputs.compose-repository-compose-file }}
+          sed -i \
+            -e "s|\(ghcr.io/netcracker/qubership-apihub-backend:\)[^ ]*|\1${{ inputs.apihub-backend-image-tag }}|g" \
+            -e "s|\(ghcr.io/netcracker/qubership-apihub-build-task-consumer:\)[^ ]*|\1${{ inputs.apihub-build-task-consumer-image-tag }}|g" \
+            -e "s|\(ghcr.io/netcracker/qubership-apihub-ui:\)[^ ]*|\1${{ inputs.apihub-ui-image-tag }}|g" \
+            ./${{ inputs.compose-repository-compose-file }}
           echo "$(<./${{ inputs.compose-repository-compose-file }})"
-
 
       - name: Run podman-compose up
         run: |
@@ -147,6 +139,13 @@ jobs:
           done
           echo "Timeout reached. Did not receive HTTP 200 within 1 minute."
           exit 1
+
+      - name: Install Newman
+        if: ${{ inputs.postman-collections-run }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npm install -g newman newman-reporter-htmlextra
 
       - name: Clone apihub-postman-collections repository
         if: ${{ inputs.postman-collections-run }}
@@ -184,23 +183,46 @@ jobs:
             ${{ github.workspace }}/postman-repo/reports/*.html
             retention-days: 7
 
+      - name: Run Newman tests results check
+        id: check_newman_tests
+        if: ${{ inputs.postman-collections-run }}        
+        continue-on-error: true
+        run: |
+          TOTAL_FAILED=0
+               for file in ${{ github.workspace }}/postman-repo/reports/*.html; do
+            FAILED_TESTS=$(grep -A1 '<h6 class="text-uppercase">Total Failed Tests</h6>' "$file" | grep -oP '(?<=<h1 class="display-1">)[0-9]+(?=</h1>)')
+            TOTAL_FAILED=$((TOTAL_FAILED + FAILED_TESTS))
+          done
+    
+          if [ "$TOTAL_FAILED" -ne 0 ]; then            
+            exit 1          
+          fi                
+
       - name: Clone playwright tests repository
         if: ${{ inputs.playwright-tests-run }}
         run: |
           git clone --branch ${{ inputs.playwright-repository-branch }} ${{ inputs.playwright-repository-url }} playwright-repo
 
-      - name: Run Playwright
+      - name: Install Playwright
         if: ${{ inputs.playwright-tests-run }}
+        working-directory: ./playwright-repo
+        run: |          
+          npm install
+          npx playwright install          
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}                            
+
+      - name: Run Playwright tests
+        id: run_playwright_tests
+        if: ${{ inputs.playwright-tests-run }}
+        continue-on-error: true
+        working-directory: ./playwright-repo
         env:
           BASE_URL: "http://localhost:8081"
           TEST_USER_PASSWORD: ${{ secrets.APIHUB_ADMIN_PASSWORD }}
           PLAYGROUND_BACKEND_HOST: "http://host.docker.internal:8081"
-        run: |
-          cd playwright-repo
-          echo "${{ secrets.NPMRC }}" > ./.npmrc
-          npm install
-          npx playwright install
-          npx playwright test --project=Portal --workers=3 || true
+        run: |          
+          npx playwright test ${{ inputs.playwright-test-args }}          
 
       - name: Upload Playwright reports as artifacts
         if: ${{ inputs.playwright-tests-run }}
@@ -210,33 +232,16 @@ jobs:
           path: |
             ${{ github.workspace }}/playwright-repo/reports
             retention-days: 7
-
-
-      - name: Run Newman tests results check
-        if: ${{ (inputs.postman-collections-run) && (inputs.fail-because-of-tests) }}
+      
+      - name: Fail job if there are failed tests
         run: |
-          TOTAL_FAILED=0
-
-          for file in ${{ github.workspace }}/postman-repo/reports/*.html; do
-            FAILED_TESTS=$(grep -A1 '<h6 class="text-uppercase">Total Failed Tests</h6>' "$file" | grep -oP '(?<=<h1 class="display-1">)[0-9]+(?=</h1>)')
-            TOTAL_FAILED=$((TOTAL_FAILED + FAILED_TESTS))
-          done
-
-          if [ "$TOTAL_FAILED" -ne 0 ]; then
-            echo "Non zero failed Newman tests"
-            exit 1
-          else
-            echo "Newman tests - all green"
+          if [ "${{ steps.check_newman_tests.outcome }}" == "failure" ]; then
+            echo "Newman tests failed"
           fi
-
-      - name: Run Playwright tests results check
-        if: ${{ (inputs.playwright-tests-run) && (inputs.fail-because-of-tests) }}
-        run: |
-          FAILED_TESTS=$(cat ${{ github.workspace }}/playwright-repo/reports/summary/summary-report.html | grep -A2 '<th>Failed</th>' | grep -oP '(?<=<td><span class="type-red">● </span>)[0-9]+(?=</td>)' || echo "0")
-
-          if [ "$FAILED_TESTS" -ne 0 ]; then
-            echo "Non zero failed Playwright tests"
-            exit 1
-          else
-            echo "Playwright tests - all green"
+          if [ "${{ steps.run_playwright_tests.outcome }}" == "failure" ]; then
+            echo "Playwright tests failed"
           fi
+          if [ "${{ steps.check_newman_tests.outcome }}" == "failure" ] || [ "${{ steps.run_playwright_tests.outcome }}" == "failure" ]; then
+            exit 1
+          fi
+          
