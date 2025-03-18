@@ -109,7 +109,9 @@ jobs:
             CURRENT_BRANCH="main"          
           fi
           npx vsce package --githubBranch $CURRENT_BRANCH
-          
+        
+      # This step is necessary to receive access to the test resources 
+      # Based on https://github.com/redhat-developer/vscode-extension-tester-example/
       - name: Allow unprivileged user namespace (ubuntu)
         if: ${{ startsWith(matrix.os, 'ubuntu') }}
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
