@@ -14,7 +14,7 @@ on:
         compose-repository-compose-folder:
             description: "Path to the folder with docker-compose file"
             type: string
-            default: "docker-compose"
+            default: "docker-compose/apihub-generic"
         compose-repository-compose-file:
             description: "docker-compose filename"
             type: string
