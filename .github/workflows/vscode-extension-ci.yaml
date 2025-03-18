@@ -109,6 +109,10 @@ jobs:
             CURRENT_BRANCH="main"          
           fi
           npx vsce package --githubBranch $CURRENT_BRANCH
+          
+      - name: Allow unprivileged user namespace (ubuntu)
+        if: ${{ startsWith(matrix.os, 'ubuntu') }}
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
       - name: Run tests Linux
         run: xvfb-run -a npm test
