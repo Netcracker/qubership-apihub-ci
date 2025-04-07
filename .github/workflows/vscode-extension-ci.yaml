@@ -46,7 +46,7 @@ jobs:
         shell: bash
         run: |          
           echo "github.ref: ${{ github.ref }}"
-          NPM_DIST_TAG=$(echo ${{ github.ref }} | sed 's@refs/tags/@@;s@refs/heads/@@;s@refs/pull/@pull/@;s@^develop$@dev@;s@^release$@next@;s@^main$@@;s@/@-@g;')
+          NPM_DIST_TAG=$(echo ${{ github.ref }} | sed 's@^refs/tags/.*@latest@;s@^refs/heads/@@;s@^refs/pull/@pull/@;s@^develop$@dev@;s@^release$@next@;s@^main$@@;s@/@-@g;')
           echo "NPM_DIST_TAG: $NPM_DIST_TAG"
           echo "npm_dist_tag=$NPM_DIST_TAG" >> $GITHUB_OUTPUT
 
