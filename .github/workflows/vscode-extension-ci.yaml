@@ -95,6 +95,7 @@ jobs:
         shell: bash
         run: |
           CURRENT_BRANCH=$(echo ${{ github.event.ref }} | sed 's/refs\/heads\///')
+          echo "CURRENT_BRANCH: $CURRENT_BRANCH"
           if [[ "$CURRENT_BRANCH" == refs/tags/* ]]; then
             CURRENT_BRANCH="main"          
           fi
