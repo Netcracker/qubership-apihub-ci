@@ -1,0 +1,133 @@
+name: build VSCode extension
+
+on:
+  workflow_call:
+    outputs:
+      npm_dist_tag:
+        description: "NPM dist-tag of the published package."
+        value: ${{ jobs.on-push.outputs.npm_dist_tag }}
+      package_version:
+        description: "NPM version of the published package."
+        value: ${{ jobs.on-push.outputs.package_version }}      
+
+jobs:
+  build:
+    if: github.event_name == 'push'
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    outputs:
+      npm_dist_tag: ${{ steps.calculate_npm_dist_tag.outputs.npm_dist_tag }}
+      package_version: ${{ steps.get_version.outputs.package_version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com/'
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      # This step is to update internal dependencies specified via tag version to their latest available versions
+      - name: Update dependencies
+        shell: bash
+        run: npm ls --json |  jq -r '.dependencies | keys[]' | grep "@netcracker" | xargs --no-run-if-empty npm update
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}          
+
+      - name: Calculate NPM dist tag
+        id: calculate_npm_dist_tag
+        shell: bash
+        run: |          
+          echo "github.ref: ${{ github.ref }}"
+          NPM_DIST_TAG=$(echo ${{ github.ref }} | sed 's@^refs/tags/.*@latest@;s@^refs/heads/@@;s@^refs/pull/@pull/@;s@^develop$@dev@;s@^release$@next@;s@^main$@@;s@/@-@g;')
+          echo "NPM_DIST_TAG: $NPM_DIST_TAG"
+          echo "npm_dist_tag=$NPM_DIST_TAG" >> $GITHUB_OUTPUT
+
+      - name: Calculate prerelease suffix
+        id: calculate_prerelease_suffix        
+        shell: bash
+        run: |          
+          NPM_DIST_TAG="${{ steps.calculate_npm_dist_tag.outputs.npm_dist_tag }}"
+          if [ -n "$NPM_DIST_TAG" ] && [ "$NPM_DIST_TAG" != "latest" ]; then
+            PRERELEASE_SUFFIX="$NPM_DIST_TAG"
+          else
+            PRERELEASE_SUFFIX=''
+          fi
+          echo "PRERELEASE_SUFFIX: $PRERELEASE_SUFFIX"
+          echo "prerelease_suffix=$PRERELEASE_SUFFIX" >> $GITHUB_OUTPUT        
+
+      - name: Bump version (dev branches only)        
+        if: steps.calculate_prerelease_suffix.outputs.prerelease_suffix != ''
+        shell: bash
+        run: |          
+          # Get the current version and extract release part
+          CURRENT_VERSION=$(jq -r '.version' package.json)          
+          
+          # Extract release part (remove any prerelease suffix if exists)
+          RELEASE_VERSION=$(echo "$CURRENT_VERSION" | sed -E 's/(-[^+]+)?(\+[^+]+)?$//')
+          
+          # Generate timestamp in YYYYMMDDHHmmss format
+          TIMESTAMP=$(date -u '+%Y%m%d%H%M%S')
+          
+          # Construct new version
+          NEW_VERSION="${RELEASE_VERSION}-${{ steps.calculate_prerelease_suffix.outputs.prerelease_suffix }}.${TIMESTAMP}"
+          
+          echo "NEW_VERSION: $NEW_VERSION"
+          
+          # Set the new version
+          npm version "${NEW_VERSION}" --no-git-tag-version          
+
+      - name: Get package version
+        id: get_version
+        shell: bash
+        run: |
+          VERSION=$(jq -r '.version' package.json)          
+          echo "package_version=$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Build the package
+        shell: bash
+        run: |
+          CURRENT_BRANCH=$(echo ${{ github.event.ref }} | sed 's/refs\/heads\///')
+          echo "CURRENT_BRANCH: $CURRENT_BRANCH"
+          if [[ "$CURRENT_BRANCH" == refs/tags/* ]]; then
+            CURRENT_BRANCH="main"          
+          fi
+          npx vsce package --githubBranch $CURRENT_BRANCH
+        
+      # This step is necessary to receive access to the test resources 
+      # Based on https://github.com/redhat-developer/vscode-extension-tester-example/blob/ac13a9d622127d04c667a138984cd9814b04d502/.github/workflows/main.yml#L39
+      - name: Allow unprivileged user namespace (ubuntu)
+        if: ${{ startsWith(matrix.os, 'ubuntu') }}
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      - name: Run tests Linux
+        run: xvfb-run -a npm test
+        if: runner.os == 'Linux'
+
+      - name: Run tests non-Linux
+        run: npm test
+        if: runner.os != 'Linux'
+
+      - name: Get VSIX filename
+        id: get_vsix
+        shell: bash 
+        run: |
+          VSIX_PATH=$(ls *.vsix)
+          echo "vsix_path=$VSIX_PATH" >> $GITHUB_OUTPUT
+          echo "Found VSIX: $VSIX_PATH"
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        if: runner.os == 'Linux'
+        with:
+          name: extension
+          path: "*.vsix"
+          retention-days: 30
