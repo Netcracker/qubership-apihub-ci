@@ -46,7 +46,7 @@ on:
         playwright-repository-branch:
             description: "Branch to clone"
             type: string
-            default: "develop"
+            default: "bugfix/republish-preselection"
         playwright-test-args:
             description: "Playwright test command CLI arguments"
             type: string
