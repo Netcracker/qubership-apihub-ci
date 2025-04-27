@@ -242,7 +242,10 @@ jobs:
             retention-days: 7
 
       - name: Stop compose
-        run: podman compose -f ${{ inputs.compose-repository-compose-file }} down
+        run: |
+          cd compose-repo
+          cd ${{ inputs.compose-repository-compose-folder }}
+          podman compose -f ${{ inputs.compose-repository-compose-file }} down
 
       - name: Upload containers logs as artifacts
         uses: actions/upload-artifact@v4
