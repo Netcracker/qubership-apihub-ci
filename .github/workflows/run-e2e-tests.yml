@@ -123,6 +123,13 @@ jobs:
           cd ${{ inputs.compose-repository-compose-folder }}
           podman-compose -f ${{ inputs.compose-repository-compose-file }} up -d
 
+      - name: Start contaiers logs collecting
+        run: |
+          podman logs -f qubership-apihub-backend > ./qubership-apihub-backend.log 2>&1 &
+          podman logs -f postgres > ./postgres.log 2>&1 &
+          podman logs -f qubership-apihub-ui > ./qubership-apihub-ui.log 2>&1 &
+          podman logs -f qubership-apihub-build-task-consumer > ./qubership-apihub-build-task-consumer.log 2>&1 &
+
       - name: Wait for APIHUB startup
         run: |
           echo "Waiting for http://localhost:8081/login to return 200..."
@@ -232,6 +239,17 @@ jobs:
           name: playwright-reports
           path: |
             ${{ github.workspace }}/playwright-repo/reports
+            retention-days: 7
+
+      - name: Stop compose
+        run: podman compose down
+
+      - name: Upload containers logs as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: containers-logs
+          path: |
+            ${{ github.workspace }}/*.log
             retention-days: 7
 
       - name: Fail job if there are failed tests
