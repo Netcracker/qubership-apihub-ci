@@ -204,7 +204,7 @@ jobs:
             exit 1          
           fi
 
-      - name: Calculate playwright branch
+      - name: Calculate Playwright tests branch
         id: calculate-playwright-branch
         if: ${{ inputs.playwright-tests-run }}
         run: |
@@ -228,7 +228,7 @@ jobs:
           echo "Using playwright tests repository branch: $BRANCH"
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
 
-      - name: Clone playwright tests repository
+      - name: Clone Playwright tests repository
         if: ${{ inputs.playwright-tests-run }}
         run: |
           git clone --branch ${{ steps.calculate-playwright-branch.outputs.branch }} --single-branch ${{ inputs.playwright-repository-url }} playwright-repo
