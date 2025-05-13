@@ -55,6 +55,13 @@ jobs:
           TAG=$(echo ${REF_NAME} | sed 's@refs/tags/@@;s@refs/heads/@@;s@refs/pull/@pull/@;s@^develop$@dev@;s@^release$@next@;s@/@-@g;')
           echo "TAG=$TAG"
           echo "TAG=$TAG" >> $GITHUB_OUTPUT
+      - name: Extract branch name
+        id: extract_branch
+        shell: bash
+        run: |
+          shortSha=$(git rev-parse --short ${{ github.sha }})
+          echo "GIT_HASH=$shortSha" >> $GITHUB_OUTPUT
+          echo "GIT_BRANCH=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
@@ -68,6 +75,8 @@ jobs:
           build-args: |
             GH_ACCESS_TOKEN=${{ secrets.GH_ACCESS_TOKEN }}
             TAG=${{ steps.prepare_tag.outputs.TAG }}
+            GIT_HASH=${{ steps.extract_branch.outputs.GIT_HASH }}
+            GIT_BRANCH=${{ steps.extract_branch.outputs.GIT_BRANCH }}
           labels: ${{ inputs.labels }}
           secrets: |
             "npmrc=${{ secrets.NPMRC }}"
