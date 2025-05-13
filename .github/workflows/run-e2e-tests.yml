@@ -204,30 +204,25 @@ jobs:
             exit 1          
           fi
 
-      - name: Calculate playwright branch from UI image tag
+      - name: Calculate playwright branch
         id: calculate-playwright-branch
         if: ${{ inputs.playwright-tests-run }}
         run: |
           # First check if a branch was provided as input
           BRANCH="${{ inputs.playwright-repository-branch }}"
           
-          # If no branch was provided, calculate it from the UI tag
-          if [ -z "$BRANCH" ]; then
-            UI_TAG="${{ inputs.apihub-ui-image-tag }}"
-            BRANCH="develop"
-            
-            # Only convert tags that start with feature or bugfix
-            if [[ "$UI_TAG" =~ ^feature- || "$UI_TAG" =~ ^bugfix- ]]; then
-              CALCULATED_BRANCH=$(echo "$UI_TAG" | sed 's@-@/@g')
-              
-              # Check if the branch exists in the repository
-              if git ls-remote --heads ${{ inputs.playwright-repository-url }} refs/heads/$CALCULATED_BRANCH | grep -q $CALCULATED_BRANCH; then
-                echo "Branch $CALCULATED_BRANCH exists in playwright tests repository"
-                BRANCH=$CALCULATED_BRANCH
-              else
-                echo "Branch $CALCULATED_BRANCH does not exist in playwright tests repository, using develop instead"
-              fi
+          # If a branch was provided, check if it exists
+          if [ -n "$BRANCH" ]; then
+            if git ls-remote --heads ${{ inputs.playwright-repository-url }} refs/heads/$BRANCH | grep -q $BRANCH; then
+              echo "Branch $BRANCH exists in playwright tests repository"
+            else
+              echo "Branch $BRANCH does not exist in playwright tests repository, using develop instead"
+              BRANCH="develop"
             fi
+          else
+            # If no branch was provided, default to develop
+            BRANCH="develop"
+            echo "No branch specified, using develop as default"
           fi
           
           echo "Using playwright tests repository branch: $BRANCH"
