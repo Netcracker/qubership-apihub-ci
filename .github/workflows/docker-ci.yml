@@ -68,6 +68,8 @@ jobs:
           build-args: |
             GH_ACCESS_TOKEN=${{ secrets.GH_ACCESS_TOKEN }}
             TAG=${{ steps.prepare_tag.outputs.TAG }}
+            GIT_HASH=$(git rev-parse --short "$GITHUB_SHA")
+            GIT_BRANCH=${{GITHUB_REF#refs/heads/}}
           labels: ${{ inputs.labels }}
           secrets: |
             "npmrc=${{ secrets.NPMRC }}"
