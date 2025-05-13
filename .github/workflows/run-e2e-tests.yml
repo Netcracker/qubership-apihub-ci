@@ -231,7 +231,7 @@ jobs:
       - name: Clone playwright tests repository
         if: ${{ inputs.playwright-tests-run }}
         run: |
-          git clone --branch "${{ steps.calculate-playwright-branch.outputs.branch }}" --single-branch ${{ inputs.playwright-repository-url }} playwright-repo
+          git clone --branch ${{ steps.calculate-playwright-branch.outputs.branch }} --single-branch ${{ inputs.playwright-repository-url }} playwright-repo
 
       - name: Install Playwright
         if: ${{ inputs.playwright-tests-run }}
