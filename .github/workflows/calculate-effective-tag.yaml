@@ -1,0 +1,77 @@
+# This workflow calculates the corresponding tag for a branch in the target repository
+# It checks if the branch exists in the target repository and if there is a PR for it
+# If there is a PR, it uses the PR number to determine the ref name
+# Otherwise, it uses the branch name
+# It then calculates the tag based on the ref name
+# Fallback tag is 'dev'
+
+name: calculate effective tag
+
+on:
+  workflow_call:
+    inputs:
+      branch-name:
+        description: 'Branch name to check'
+        required: true
+        type: string
+      repo-name:
+        description: 'Repository name to check branch existence'
+        required: true
+        type: string
+    outputs:
+      tag:
+        description: 'Calculated tag'
+        value: ${{ jobs.determine-effective-tag.outputs.tag }}
+        
+jobs:
+  determine-effective-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.calculate-tag.outputs.tag }}
+    steps:
+      - name: Check branch and determine ref name
+        id: check-branch
+        run: |
+          SOURCE_BRANCH="${{ inputs.branch-name }}"
+          REPO_NAME="${{ inputs.repo-name }}"
+          echo "Checking for branch $SOURCE_BRANCH in $REPO_NAME repository"
+          
+          # Check if branch exists in the repository
+          BRANCH_EXISTS=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/Netcracker/$REPO_NAME/branches/$SOURCE_BRANCH")
+          
+          # Set default ref name
+          REF_NAME="refs/heads/develop"
+          
+          if [ "$BRANCH_EXISTS" = "200" ]; then
+            echo "Branch $SOURCE_BRANCH exists in $REPO_NAME repository"
+            
+            # Check if there's a PR for this branch
+            PR_INFO=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/Netcracker/$REPO_NAME/pulls?head=Netcracker:$SOURCE_BRANCH&state=open")
+            
+            if [ "$(echo $PR_INFO | jq length)" -gt "0" ]; then
+              PR_NUMBER=$(echo $PR_INFO | jq -r '.[0].number')
+              echo "Found PR #$PR_NUMBER for branch $SOURCE_BRANCH"
+              REF_NAME="refs/pull/$PR_NUMBER/merge"
+            else
+              echo "No PR found for branch $SOURCE_BRANCH"
+              REF_NAME="refs/heads/$SOURCE_BRANCH"
+            fi
+          else
+            echo "Branch $SOURCE_BRANCH does not exist in $REPO_NAME repository"
+            # Keep default REF_NAME as "refs/heads/develop"
+          fi
+          
+          echo "Determined ref name: $REF_NAME"
+          echo "ref_name=$REF_NAME" >> $GITHUB_OUTPUT
+      
+      - name: Calculate tag
+        id: calculate-tag
+        run: |
+          REF_NAME="${{ steps.check-branch.outputs.ref_name }}"
+          
+          # Apply standardized tag calculation logic for all branch names
+          TAG=$(echo ${REF_NAME} | sed 's@refs/tags/@@;s@refs/heads/@@;s@refs/pull/@pull/@;s@^develop$@dev@;s@^release$@next@;s@/@-@g;')
+          echo "Calculated tag: $TAG from ref: $REF_NAME"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT 
