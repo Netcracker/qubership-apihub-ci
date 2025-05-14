@@ -24,7 +24,7 @@ on:
         value: ${{ jobs.determine-effective-tag.outputs.tag }}
         
 jobs:
-  determine-tag:
+  determine-effective-tag:
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.calculate-tag.outputs.tag }}
