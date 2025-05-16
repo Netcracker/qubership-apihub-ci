@@ -1,0 +1,34 @@
+name: Generate Sprint Report
+
+on:
+  schedule:
+    - cron: '0 14 * * 1'  # 17:00 MSK = 14:00 UTC
+  workflow_dispatch:      
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run report generator
+        run: python .github/workflows/scripts/github-issues-sprint-report.py
+
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: sprint-report
+          path: .github/workflows/scripts/report_*.html
