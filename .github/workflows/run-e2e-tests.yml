@@ -30,7 +30,6 @@ on:
         postman-repository-branch:
             description: "Branch to clone"
             type: string
-            default: "develop"
         postman-collections-list:
             description: "Collections to execute"
             type: string
@@ -46,7 +45,6 @@ on:
         playwright-repository-branch:
             description: "Branch to clone"
             type: string
-            default: "develop"
         playwright-test-args:
             description: "Playwright test command CLI arguments"
             type: string
@@ -154,10 +152,34 @@ jobs:
         run: |
           npm install -g newman newman-reporter-htmlextra
 
+      - name: Calculate Newman tests branch
+        id: calculate-postman-branch
+        if: ${{ inputs.postman-collections-run }}
+        run: |
+          # First check if a branch was provided as input
+          BRANCH="${{ inputs.postman-repository-branch }}"
+          
+          # If a branch was provided, check if it exists
+          if [ -n "$BRANCH" ]; then
+            if git ls-remote --heads ${{ inputs.postman-repository-url }} refs/heads/$BRANCH | grep -q $BRANCH; then
+              echo "Branch $BRANCH exists in postman tests repository"
+            else
+              echo "Branch $BRANCH does not exist in postman tests repository, using develop instead"
+              BRANCH="develop"
+            fi
+          else
+            # If no branch was provided, default to develop
+            BRANCH="develop"
+            echo "No branch specified, using develop as default"
+          fi
+          
+          echo "Using postman tests repository branch: $BRANCH"
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
       - name: Clone apihub-postman-collections repository
         if: ${{ inputs.postman-collections-run }}
         run: |
-          git clone --branch ${{ inputs.postman-repository-branch }} --single-branch ${{ inputs.postman-repository-url }} postman-repo
+          git clone --branch ${{ steps.calculate-postman-branch.outputs.branch }} --single-branch ${{ inputs.postman-repository-url }} postman-repo
 
       - name: Prepare env file for Newman
         if: ${{ inputs.postman-collections-run }}
@@ -203,12 +225,36 @@ jobs:
     
           if [ "$TOTAL_FAILED" -ne 0 ]; then            
             exit 1          
-          fi                
+          fi
 
-      - name: Clone playwright tests repository
+      - name: Calculate Playwright tests branch
+        id: calculate-playwright-branch
         if: ${{ inputs.playwright-tests-run }}
         run: |
-          git clone --branch ${{ inputs.playwright-repository-branch }} --single-branch ${{ inputs.playwright-repository-url }} playwright-repo
+          # First check if a branch was provided as input
+          BRANCH="${{ inputs.playwright-repository-branch }}"
+          
+          # If a branch was provided, check if it exists
+          if [ -n "$BRANCH" ]; then
+            if git ls-remote --heads ${{ inputs.playwright-repository-url }} refs/heads/$BRANCH | grep -q $BRANCH; then
+              echo "Branch $BRANCH exists in playwright tests repository"
+            else
+              echo "Branch $BRANCH does not exist in playwright tests repository, using develop instead"
+              BRANCH="develop"
+            fi
+          else
+            # If no branch was provided, default to develop
+            BRANCH="develop"
+            echo "No branch specified, using develop as default"
+          fi
+          
+          echo "Using playwright tests repository branch: $BRANCH"
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
+      - name: Clone Playwright tests repository
+        if: ${{ inputs.playwright-tests-run }}
+        run: |
+          git clone --branch ${{ steps.calculate-playwright-branch.outputs.branch }} --single-branch ${{ inputs.playwright-repository-url }} playwright-repo
 
       - name: Install Playwright
         if: ${{ inputs.playwright-tests-run }}
