@@ -40,8 +40,16 @@ jobs:
         continue-on-error: true
         run: npm run screenshot-test:ci
 
+      - name: Debug test outcome
+        if: always()
+        run: |
+          echo "Test outcome: ${{ steps.tests.outcome }}"
+          echo "Test result: ${{ steps.tests.result }}"
+          echo "List diff output directory:"
+          find . -name "__diff_output__" -type d | xargs -I{} ls -la {}
+
       - name: Upload differences
-        if: steps.tests.outcome == 'failure'
+        if: always() && steps.tests.outcome != 'success'
         uses: actions/upload-artifact@v4
         with:
           name: screenshot-test-differences
