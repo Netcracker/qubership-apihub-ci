@@ -8,6 +8,7 @@ from collections import defaultdict
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 PROJECT_URL = "https://github.com/orgs/Netcracker/projects/9"
 SPRINT_FIELD_NAME = "Sprint"
+STATUSES_TO_SHOW_BY_DEFAULT = ["In Progress", "In Review", "In Test"]
 
 HEADERS = {
     "Authorization": f"Bearer {GITHUB_TOKEN}",
@@ -201,91 +202,113 @@ def get_issues_by_assignee(project_id, sprint_field_id, sprint_id, field_options
 
     return sorted(issues, key=lambda x: (x["assignee"] == "Unassigned", x["assignee"]))
 
+assignee_map = {
+    "alagishev": "Aleksandr Agishev",
+    "b41ex": "Alexey Bochencev",
+    "iurii-golovinskii": "Iurii Golovinskii",
+    "makeev-pavel": "Pavel Makeev",
+    "JayLim2": "Sergei Komarov",
+    "viacheslav-lunev": "Viacheslav Lunev",
+    "karpov-aleksandr": "Aleksandr V. Karpov",
+    "CountRedClaw": "Ilia Borsuk",
+    "AndreiChek": "Andrei Chekalin",
+    "Roman-cod": "Roman Babenko",
+    "raa1618033": "Alexey Rodionov",
+    "tiutiunnyk-ivan": "Ivan Tiutiunnyk",
+    "Maryna-Ko": "Maryna Kovalenko",
+    "iugaidiana": "Diana Iugai",
+    "vOrigins": "Vladyslav Novikov",
+    "tanabebr": "Felipe Tanabe",
+    "zloiadil": "Adil Bektursunov",
+    "nilesh25890": "Nilesh Ashokrao Shinde",
+    "oommenmathewpanicker": "Oommen Mathew Panicker",
+    "TODO": "TODO",
+    "divy-netcracker": "Divy Tripathy"
+}
+
 def generate_html_report(data, sprint_name):
-    assignee_map = {
-        "alagishev": "Aleksandr Agishev",
-        "b41ex": "Alexey Bochencev",
-        "iurii-golovinskii": "Iurii Golovinskii",
-        "makeev-pavel": "Pavel Makeev",
-        "JayLim2": "Sergei Komarov",
-        "viacheslav-lunev": "Viacheslav Lunev",
-        "karpov-aleksandr": "Aleksandr V. Karpov",
-        "CountRedClaw": "Ilia Borsuk",
-        "AndreiChek": "Andrei Chekalin",
-        "Roman-cod": "Roman Babenko",
-        "raa1618033": "Alexey Rodionov",
-        "tiutiunnyk-ivan": "Ivan Tiutiunnyk",
-        "Maryna-Ko": "Maryna Kovalenko",
-        "iugaidiana": "Diana Iugai",
-        "vOrigins": "Vladyslav Novikov",
-        "tanabebr": "Felipe Tanabe",
-        "zloiadil": "Adil Bektursunov",
-        "nilesh25890": "Nilesh Ashokrao Shinde",
-        "oommenmathewpanicker": "Oommen Mathew Panicker",
-        "TODO": "TODO",
-        "divy-netcracker": "Divy Tripathy"
-    }
     timestamp_display = datetime.datetime.now().strftime("%Y.%m.%d %H:%M:%S")
-    timestamp_filename = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    timestamp_filename = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"report_{timestamp_filename}.html"
-    assignee_colors = {}
-    color_palette = ["#f0f8ff", "#f5f5dc", "#f0fff0", "#fffaf0", "#fdf5e6", "#f5fffa", "#fffff0", "#f0ffff"]
+    statuses_js = ', '.join([f'\"{s.lower()}\"' for s in STATUSES_TO_SHOW_BY_DEFAULT])
 
     with open(filename, "w", encoding="utf-8") as f:
-        f.write(f"<html><head><meta charset='utf-8'><title>GitHub Sprint Report - {sprint_name} - {timestamp_display}</title>")
-        f.write("<style>\n")
-        f.write("body { font-family: sans-serif; }\n")
-        f.write("table { border-collapse: collapse; width: 100%; }\n")
-        f.write("th, td { border: 1px solid #ccc; padding: 4px; text-align: left; }\n")
-        f.write("th { background-color: #f2f2f2; cursor: pointer; }\n")
-        f.write("tr:hover { background-color: #f1f1f1; }\n")
-        f.write("</style>\n")
-        f.write("<script src='https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js'></script>\n")
-        f.write("<script src='https://code.jquery.com/jquery-3.6.0.min.js'></script>\n")
-        f.write("<script>\n")
-        f.write("$(document).ready(function(){\n")
-        f.write("  $('table').each(function() { new Tablesort(this); });\n")
-        f.write("  $('#filterInput').on('keyup', function() {\n")
-        f.write("    var value = $(this).val().toLowerCase();\n")
-        f.write("    $('table tbody tr').filter(function() {\n")
-        f.write("      $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)\n")
-        f.write("    });\n")
-        f.write("  });\n")
-        f.write("});\n")
-        f.write("</script>\n")
-        f.write("</head><body>\n")
-        f.write(f"<h1>Sprint Report - {sprint_name} - {timestamp_display}</h1>\n")
-        f.write("<input type='text' id='filterInput' placeholder='Filter table...' style='margin-bottom:10px;width:300px;padding:5px;'>\n")
-        f.write("""
-<table id='reportTable'>
-<thead>
-<tr>
-<th>Assignee &#x25B2;&#x25BC;</th>
-<th>Name &#x25B2;&#x25BC;</th>
-<th>Type &#x25B2;&#x25BC;</th>
-<th>Priority &#x25B2;&#x25BC;</th>
-<th>Status &#x25B2;&#x25BC;</th>
-<th>URL</th>
-</tr>
-</thead>
-<tbody>
+        f.write(f"""
+<html>
+<head>
+  <meta charset='utf-8'>
+  <title>GitHub Sprint Report - {sprint_name} - {timestamp_display}</title>
+  <style>
+    body {{ font-family: sans-serif; }}
+    table {{ border-collapse: collapse; width: 100%; }}
+    th, td {{ border: 1px solid #ccc; padding: 4px; text-align: left; }}
+    th {{ background-color: #f2f2f2; cursor: pointer; }}
+    tr:hover {{ background-color: #f1f1f1; }}
+  </style>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js'></script>
+  <script src='https://code.jquery.com/jquery-3.6.0.min.js'></script>
+</head>
+<body>
+  <h1>Sprint Report - {sprint_name} - {timestamp_display}</h1>
+  <input type='text' id='filterInput' placeholder='Filter table...' style='margin-bottom:10px;width:300px;padding:5px;'>
+  <button id='showAllButton' style='margin-left:10px;padding:5px;'>Show all</button>
+  <table id='reportTable'>
+    <thead>
+      <tr>
+        <th>Assignee &#x25B2;&#x25BC;</th>
+        <th>Name &#x25B2;&#x25BC;</th>
+        <th>Type &#x25B2;&#x25BC;</th>
+        <th>Priority &#x25B2;&#x25BC;</th>
+        <th>Status &#x25B2;&#x25BC;</th>
+        <th>URL</th>
+      </tr>
+    </thead>
+    <tbody>
 """)
+
+        assignee_colors = {}
+        color_palette = ["#f0f8ff", "#f5f5dc", "#f0fff0", "#fffaf0", "#fdf5e6", "#f5fffa", "#fffff0", "#f0ffff"]
+
         for issue in data:
             assignee = issue['assignee']
             display_name = f"{assignee_map[assignee]} ({assignee})" if assignee in assignee_map else assignee
             if assignee not in assignee_colors:
                 assignee_colors[assignee] = color_palette[len(assignee_colors) % len(color_palette)]
             color = assignee_colors[assignee]
-            f.write(f"<tr style='background-color:{color};'>")
-            f.write(f"<td>{display_name}</td><td>{issue['name']}</td><td>{issue['type']}</td><td>{issue['priority']}</td><td>{issue['status']}</td><td><a href='{issue['url']}' target='_blank'>Link</a></td>")
-            f.write("</tr>\n")
+            f.write(f"      <tr style='background-color:{color};'>")
+            f.write(f"        <td>{display_name}</td><td>{issue['name']}</td><td>{issue['type']}</td><td>{issue['priority']}</td><td>{issue['status']}</td><td><a href='{issue['url']}' target='_blank'>Link</a></td>")
+            f.write("      </tr>")
 
-        f.write("</tbody></table>\n")
-        f.write("</body></html>\n")
-
+        f.write(f"""
+    </tbody>
+  </table>
+  <script>
+    const statusesToShow = new Set([{statuses_js}]);
+    $(document).ready(function() {{
+      $('table').each(function() {{ new Tablesort(this); }});
+      function filterTable() {{
+        var value = $('#filterInput').val().toLowerCase();
+        var showAll = $('#showAllButton').data('showAll') === true;
+        $('table tbody tr').each(function() {{
+          var row = $(this);
+          var statusText = row.find('td:nth-child(5)').text().toLowerCase();
+          var matchesStatus = showAll || statusesToShow.has(statusText);
+          var matchesSearch = row.text().toLowerCase().indexOf(value) > -1;
+          row.toggle(matchesStatus && matchesSearch);
+        }});
+      }}
+      $('#filterInput').on('keyup', filterTable);
+      $('#showAllButton').on('click', function() {{
+        $(this).data('showAll', true);
+        filterTable();
+      }});
+      filterTable();
+    }});
+  </script>
+</body>
+</html>
+""")
     print(f"Report written to {filename}")
-
-
 
 def main():
     org, number = extract_org_and_number(PROJECT_URL)
