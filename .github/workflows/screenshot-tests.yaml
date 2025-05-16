@@ -49,8 +49,18 @@ jobs:
           echo "List diff output directory:"
           find . -name "__diff_output__" -type d | xargs -I{} ls -la {}
 
+      - name: Check for diff files
+        id: check_diffs
+        if: always()
+        run: |
+          if [ -n "$(find . -name "__diff_output__" -type d -exec ls -A {} \; 2>/dev/null)" ]; then
+            echo "has_diffs=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_diffs=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Upload differences
-        if: steps.tests.conclusion == 'failure'
+        if: steps.check_diffs.outputs.has_diffs == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: screenshot-test-differences
