@@ -70,5 +70,5 @@ jobs:
           retention-days: 14
 
       - name: Check test results
-        if: steps.tests.outcome == 'failure'
+        if: steps.check_diffs.outputs.has_diffs == 'true'
         run: exit 1
