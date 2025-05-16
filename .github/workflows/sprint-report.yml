@@ -28,7 +28,7 @@ jobs:
         run: python .github/workflows/scripts/github-issues-sprint-report.py
 
       - name: Upload report artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: sprint-report
           path: .github/workflows/scripts/report_*.html
