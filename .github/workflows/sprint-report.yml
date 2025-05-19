@@ -2,7 +2,7 @@ name: Generate Sprint Report
 
 on:
   schedule:
-    - cron: '0 14 * * 1'  # 17:00 MSK = 14:00 UTC
+    - cron: '0 15 * * *'
   workflow_dispatch:      
 
 jobs:
