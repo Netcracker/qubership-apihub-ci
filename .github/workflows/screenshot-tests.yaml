@@ -40,6 +40,10 @@ jobs:
         continue-on-error: true
         run: npm run screenshot-test:ci
 
+      - name: Debug logging        
+        run: |
+          echo ${{ steps.tests.outcome }}
+
       - name: Upload differences
         if: steps.tests.outcome == 'failure'
         uses: actions/upload-artifact@v4
