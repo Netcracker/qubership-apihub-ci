@@ -152,6 +152,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Dump GitHub event data
+        run: |
+          echo "Full GitHub event data:"
+          echo "${{ toJSON(github.event) }}" | jq '.'
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
