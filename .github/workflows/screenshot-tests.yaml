@@ -49,7 +49,7 @@ jobs:
           echo "List diff output directory:"
           find . -name "__diff_output__" -type d | xargs -I{} ls -la {}
 
-      # Workaround: Manual diff check since steps.tests.conclusion incorrectly reports 'success'
+      # Workaround: Manual diff check since 'npm run screenshot-test:ci' does not return error for some reason in apispec-view
       - name: Check for diff files
         id: check_diffs
         if: always()
