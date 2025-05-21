@@ -48,8 +48,9 @@ jobs:
       - name: Calculate NPM dist tag
         id: calculate_npm_dist_tag
         run: |          
-          echo "github.ref: ${{ github.ref }}"
-          NPM_DIST_TAG=$(echo ${{ github.ref }} | sed 's@^refs/tags/.*@latest@;s@^refs/heads/@@;s@^refs/pull/@pull/@;s@^develop$@dev@;s@^release$@next@;s@^main$@@;s@/@-@g;')
+          REF=${{ github.ref }}
+          echo "REF: $REF"
+          NPM_DIST_TAG=$(echo $REF | sed 's@^refs/tags/.*@latest@;s@^refs/heads/@@;s@^refs/pull/@pull/@;s@^develop$@dev@;s@^release$@next@;s@^main$@@;s@/@-@g;')
           echo "NPM_DIST_TAG: $NPM_DIST_TAG"
           echo "npm_dist_tag=$NPM_DIST_TAG" >> $GITHUB_OUTPUT
 
@@ -151,7 +152,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -161,13 +162,17 @@ jobs:
       - name: Calculate NPM dist tag
         id: calculate_npm_dist_tag
         run: |          
-          echo "github.ref: ${{ github.ref }}"
-          NPM_DIST_TAG=$(echo ${{ github.ref }} | sed 's@^refs/tags/.*@latest@;s@^refs/heads/@@;s@^refs/pull/@pull/@;s@^develop$@dev@;s@^release$@next@;s@^main$@@;s@/@-@g;')
+          REF=${{ github.event.ref }}
+          echo "REF: $REF"
+          NPM_DIST_TAG=$(echo $REF | sed 's@^refs/tags/.*@latest@;s@^refs/heads/@@;s@^refs/pull/@pull/@;s@^develop$@dev@;s@^release$@next@;s@^main$@@;s@/@-@g;')
           echo "NPM_DIST_TAG: $NPM_DIST_TAG"
           echo "npm_dist_tag=$NPM_DIST_TAG" >> $GITHUB_OUTPUT
       
       - name: Delete associated NPM dist tags
-        if: steps.calculate_npm_dist_tag.outputs.npm_dist_tag != ''
+        if: |
+          steps.calculate_npm_dist_tag.outputs.npm_dist_tag != '' && 
+          steps.calculate_npm_dist_tag.outputs.npm_dist_tag != 'latest' &&           
+          steps.calculate_npm_dist_tag.outputs.npm_dist_tag != 'dev'
         run: |
           # Get package names to process
           TAG_NAME=${{ steps.calculate_npm_dist_tag.outputs.npm_dist_tag }}

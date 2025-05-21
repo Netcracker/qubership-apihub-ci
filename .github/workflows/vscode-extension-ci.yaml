@@ -52,8 +52,9 @@ jobs:
         id: calculate_npm_dist_tag
         shell: bash
         run: |          
-          echo "github.ref: ${{ github.ref }}"
-          NPM_DIST_TAG=$(echo ${{ github.ref }} | sed 's@^refs/tags/.*@latest@;s@^refs/heads/@@;s@^refs/pull/@pull/@;s@^develop$@dev@;s@^release$@next@;s@^main$@@;s@/@-@g;')
+          REF=${{ github.ref }}
+          echo "REF: $REF"
+          NPM_DIST_TAG=$(echo $REF | sed 's@^refs/tags/.*@latest@;s@^refs/heads/@@;s@^refs/pull/@pull/@;s@^develop$@dev@;s@^release$@next@;s@^main$@@;s@/@-@g;')
           echo "NPM_DIST_TAG: $NPM_DIST_TAG"
           echo "npm_dist_tag=$NPM_DIST_TAG" >> $GITHUB_OUTPUT
 
