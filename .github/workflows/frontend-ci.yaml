@@ -27,11 +27,6 @@ jobs:
           node-version: '20'
           registry-url: 'https://npm.pkg.github.com/'
 
-      - name: Install dependencies
-        run: npm ci
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
       # remove once all components have update-lock-file npm script
       - name: Update dependencies (deprecated)
         run: npm ls --json |  jq -r '.dependencies | keys[]' | grep "@netcracker" | xargs --no-run-if-empty npm update
@@ -41,6 +36,11 @@ jobs:
       # This step is to update internal dependencies specified via dist tag version to their latest available versions
       - name: Update dependencies
         run: npm run update-lock-file --if-present
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
