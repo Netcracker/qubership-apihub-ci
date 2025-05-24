@@ -1,0 +1,37 @@
+name: Generate Release Report
+
+on:
+  workflow_dispatch:
+    inputs:
+      release-name:
+        description: "Release name (example: 25.2)"
+        type: string
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+
+    env:
+      GITHUB_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+      RELEASE_NAME: ${{ github.event.inputs.release-name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run report generator
+        run: python .github/workflows/scripts/github-issues-release-report.py
+
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-report
+          path: report_*.html
