@@ -39,7 +39,7 @@ jobs:
           registry-url: 'https://npm.pkg.github.com/'
 
       - name: Install dependencies
-        run: npm ci --loglevel "${{ inputs.npm_log_level }}"
+        run: npm ci --loglevel ${{ inputs.npm_log_level }}
         timeout-minutes: ${{ inputs.install_dependencies_timeout }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
