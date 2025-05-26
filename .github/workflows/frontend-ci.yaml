@@ -2,6 +2,12 @@ name: frontend-ci
 
 on:
   workflow_call:
+    inputs:
+      install_dependencies_timeout:
+        description: "Timeout for the 'Install dependencies' step in minutes"
+        required: false
+        default: 10
+        type: number
     outputs:
       npm_dist_tag:
         description: "NPM dist-tag of the published package."
@@ -24,14 +30,15 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '20'
           registry-url: 'https://npm.pkg.github.com/'
 
       - name: Install dependencies
         run: npm ci
+        timeout-minutes: ${{ inputs.install_dependencies_timeout }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+      
       # remove once all components have update-lock-file npm script
       - name: Update dependencies (deprecated)
         run: npm ls --json |  jq -r '.dependencies | keys[]' | grep "@netcracker" | xargs --no-run-if-empty npm update
