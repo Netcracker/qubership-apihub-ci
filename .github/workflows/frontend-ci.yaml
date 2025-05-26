@@ -13,6 +13,16 @@ on:
         required: false
         default: "notice"
         type: string
+      runs_on:
+        description: "The type of runner to use for the job"
+        required: false
+        default: "ubuntu-latest"
+        type: string
+      node_version:
+        description: "Node.js version to use"
+        required: false
+        default: "20"
+        type: string
     outputs:
       npm_dist_tag:
         description: "NPM dist-tag of the published package."
@@ -24,7 +34,7 @@ on:
 jobs:
   on-push:
     if: (github.event_name == 'push') || (github.event_name == 'pull_request')
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs_on }}
     outputs:
       npm_dist_tag: ${{ steps.publish.outputs.npm_dist_tag }}
       package_version: ${{ steps.get_version.outputs.package_version }}
@@ -35,7 +45,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ inputs.node_version }}
           registry-url: 'https://npm.pkg.github.com/'
 
       - name: Install dependencies
