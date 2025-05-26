@@ -1,7 +1,13 @@
 name: Run screenshot tests
 
 on:
-  workflow_call
+  workflow_call:
+    inputs:
+      install_dependencies_timeout:
+        description: "Timeout for the 'Install dependencies' step in minutes"
+        required: false
+        default: 10
+        type: number
 
 jobs:
   screenshot-tests:
@@ -20,6 +26,7 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        timeout-minutes: ${{ inputs.install_dependencies_timeout }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
