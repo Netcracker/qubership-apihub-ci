@@ -1,0 +1,46 @@
+name: Generate Pull Requests Report
+
+on:
+  schedule:
+    - cron: '0 9 * * *'
+  workflow_dispatch:      
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+
+    env:
+      GITHUB_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests jinja2
+
+      - name: Run report generator
+        run: |
+          mkdir public
+          python .github/workflows/scripts/github-pull-request-report.py
+          cp report_prs_*.html public/
+          cp public/report_prs_*.html public/report_prs_latest.html
+
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: prs-report
+          path: report_prs_*.html
+
+      - name: Upload to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GH_ACCESS_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: public
+          keep_files: true

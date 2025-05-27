@@ -8,12 +8,38 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 PROJECT_URL = "https://github.com/orgs/Netcracker/projects/9"
 RELEASE_NAME = os.environ.get("RELEASE_NAME")
 
+# Include the sub_issues feature flag so that the `parent` field is available
 HEADERS = {
     "Authorization": f"Bearer {GITHUB_TOKEN}",
-    "Accept": "application/vnd.github+json"
+    "Accept": "application/vnd.github+json",
+    "GraphQL-Features": "sub_issues"
 }
 
 API_URL = "https://api.github.com/graphql"
+
+assignee_map = {
+    "alagishev": "Aleksandr Agishev",
+    "b41ex": "Alexey Bochencev",
+    "iurii-golovinskii": "Iurii Golovinskii",
+    "makeev-pavel": "Pavel Makeev",
+    "JayLim2": "Sergei Komarov",
+    "viacheslav-lunev": "Viacheslav Lunev",
+    "karpov-aleksandr": "Aleksandr V. Karpov",
+    "CountRedClaw": "Ilia Borsuk",
+    "AndreiChek": "Andrei Chekalin",
+    "Roman-cod": "Roman Babenko",
+    "raa1618033": "Alexey Rodionov",
+    "tiutiunnyk-ivan": "Ivan Tiutiunnyk",
+    "Maryna-Ko": "Maryna Kovalenko",
+    "iugaidiana": "Diana Iugai",
+    "vOrigins": "Vladyslav Novikov",
+    "tanabebr": "Felipe Tanabe",
+    "zloiadil": "Adil Bektursunov",
+    "nilesh25890": "Nilesh Ashokrao Shinde",
+    "oommenmathewpanicker": "Oommen Mathew Panicker",
+    "TODO": "TODO",
+    "divy-netcracker": "Divy Tripathy"
+}
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-v", "--verbose", action="store_true", help="Enable debug logging")
@@ -117,6 +143,10 @@ def get_issues_for_sprints(project_id, sprint_field_id, sprint_id_to_title, fiel
                 ... on Issue {
                   title
                   url
+                  parent {
+                    title
+                    url
+                  }
                   issueType {
                     name
                   }
@@ -147,26 +177,42 @@ def get_issues_for_sprints(project_id, sprint_field_id, sprint_id_to_title, fiel
       }
     }
     """
+
     issues = []
     after = None
     while True:
         result = run_query(query, {"projectId": project_id, "after": after})
         items = result["data"]["node"]["items"]["nodes"]
+
         for item in items:
             content = item.get("content")
             if not content or content.get("title") is None:
                 continue
-            assignees = [u["login"] for u in content.get("assignees", {}).get("nodes", [])] or ["Unassigned"]
+
+            raw_assignees = [u["login"] for u in content.get("assignees", {}).get("nodes", [])] or ["Unassigned"]
+            assignee = raw_assignees[0]
+            if assignee != "Unassigned":
+                realname = assignee_map.get(assignee)
+                assignee = f"{realname} ({assignee})" if realname else assignee
+
+            # Native `parent` field
+            parent_node = content.get("parent") or {}
+            if parent_node.get("title") and parent_node.get("url"):
+                parent_issue = f"<a href='{parent_node['url']}' target='_blank'>{parent_node['title']}</a>"
+            else:
+                parent_issue = ""
+
+            issue_type = content.get("issueType") or {}
+            type_ = issue_type.get("name", "Empty")
 
             status = "Empty"
             priority = "Empty"
-            type_ = content.get("issueType").get("name") if content.get("issueType") else "Empty"
             matched_sprint_id = None
 
             for fv in item["fieldValues"]["nodes"]:
                 if fv["__typename"] == "ProjectV2ItemFieldIterationValue":
                     if fv.get("iterationId") in sprint_id_to_title:
-                        matched_sprint_id = fv.get("iterationId")
+                        matched_sprint_id = fv["iterationId"]
                 if fv["__typename"] == "ProjectV2ItemFieldSingleSelectValue":
                     field_name = fv.get("field", {}).get("name")
                     option_id = fv.get("optionId")
@@ -179,25 +225,26 @@ def get_issues_for_sprints(project_id, sprint_field_id, sprint_id_to_title, fiel
 
             if matched_sprint_id:
                 issues.append({
-                    "assignee": assignees[0],
-                    "name": content["title"],
-                    "type": type_,
+                    "assignee": assignee,
+                    "name":     f"<a href='{content['url']}' target='_blank'>{content['title']}</a>",
+                    "type":     type_,
                     "priority": priority,
-                    "status": status,
-                    "url": content["url"],
-                    "sprint": sprint_id_to_title[matched_sprint_id]
+                    "status":   status,
+                    "sprint":   sprint_id_to_title[matched_sprint_id],
+                    "parent":   parent_issue
                 })
 
-        if not result["data"]["node"]["items"]["pageInfo"]["hasNextPage"]:
+        page_info = result["data"]["node"]["items"]["pageInfo"]
+        if not page_info["hasNextPage"]:
             break
-        after = result["data"]["node"]["items"]["pageInfo"]["endCursor"]
+        after = page_info["endCursor"]
 
     return issues
 
 def generate_html_report(data, release_name):
     timestamp_display = datetime.datetime.now().strftime("%Y.%m.%d %H:%M:%S")
     timestamp_filename = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"report_{timestamp_filename}.html"
+    filename = f"report_release_{RELEASE_NAME}_{timestamp_filename}.html"
 
     with open(filename, "w", encoding="utf-8") as f:
         f.write(f"""
@@ -225,15 +272,23 @@ def generate_html_report(data, release_name):
         <th>Priority</th>
         <th>Status</th>
         <th>Sprint Name</th>
-        <th>URL</th>
+        <th>Parent Issue</th>
       </tr>
     </thead>
     <tbody>
 """)
-
         for issue in data:
-            f.write(f"      <tr><td>{issue['assignee']}</td><td>{issue['name']}</td><td>{issue['type']}</td><td>{issue['priority']}</td><td>{issue['status']}</td><td>{issue['sprint']}</td><td><a href='{issue['url']}' target='_blank'>Link</a></td></tr>\n")
-
+            f.write(
+                f"<tr>"
+                f"<td>{issue['assignee']}</td>"
+                f"<td>{issue['name']}</td>"
+                f"<td>{issue['type']}</td>"
+                f"<td>{issue['priority']}</td>"
+                f"<td>{issue['status']}</td>"
+                f"<td>{issue['sprint']}</td>"
+                f"<td>{issue['parent']}</td>"
+                f"</tr>\n"
+            )
         f.write("""
     </tbody>
   </table>

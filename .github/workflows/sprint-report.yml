@@ -1,4 +1,4 @@
-name: Generate Sprint Report
+name: Generate Current Sprint Report
 
 on:
   schedule:

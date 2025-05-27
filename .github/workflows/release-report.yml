@@ -1,4 +1,4 @@
-name: Generate Release Report
+name: Generate Release ${{ github.event.inputs.release-name }} Report
 
 on:
   workflow_dispatch:

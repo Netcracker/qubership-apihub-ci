@@ -229,7 +229,7 @@ assignee_map = {
 def generate_html_report(data, sprint_name):
     timestamp_display = datetime.datetime.now().strftime("%Y.%m.%d %H:%M:%S")
     timestamp_filename = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"report_{timestamp_filename}.html"
+    filename = f"report_sprint_{sprint_name}_{timestamp_filename}.html"
     statuses_js = ', '.join([f'\"{s.lower()}\"' for s in STATUSES_TO_SHOW_BY_DEFAULT])
 
     with open(filename, "w", encoding="utf-8") as f:
