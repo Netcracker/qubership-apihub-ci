@@ -8,12 +8,16 @@ on:
         required: false
         default: 10
         type: number
-
+      container:
+        description: "Container image to use for the job (optional)"
+        required: false
+        type: string
+        default: ghcr.io/netcracker/qubership-apihub-nodejs-dev-image:1.7.3
 jobs:
   screenshot-tests:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    container: ghcr.io/netcracker/qubership-apihub-nodejs-dev-image:1.7.3
+    container: ${{ inputs.container }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

@@ -8,11 +8,16 @@ on:
         required: false
         default: 10
         type: number
+      container:
+        description: "Container image to use for the job (optional)"
+        required: false
+        type: string
 
 jobs:
   deploy-storybook:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    container: ${{ inputs.container }}
     permissions:
       contents: write      
       packages: read
