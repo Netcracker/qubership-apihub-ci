@@ -8,6 +8,10 @@ on:
         required: false
         default: 10
         type: number
+      container:
+        description: "Container image to use for the job (optional)"
+        required: false
+        type: string
     outputs:
       npm_dist_tag:
         description: "NPM dist-tag of the published package."
@@ -20,6 +24,7 @@ jobs:
   on-push:
     if: (github.event_name == 'push') || (github.event_name == 'pull_request')
     runs-on: ubuntu-latest
+    container: ${{ inputs.container }}
     outputs:
       npm_dist_tag: ${{ steps.publish.outputs.npm_dist_tag }}
       package_version: ${{ steps.get_version.outputs.package_version }}
