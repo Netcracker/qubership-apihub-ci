@@ -8,6 +8,7 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 PROJECT_URL = "https://github.com/orgs/Netcracker/projects/9"
 RELEASE_NAME = os.environ.get("RELEASE_NAME")
 
+
 # Include the sub_issues feature flag so that the `parent` field is available
 HEADERS = {
     "Authorization": f"Bearer {GITHUB_TOKEN}",
@@ -115,8 +116,8 @@ def get_project_fields(org, number):
     for f in fields:
         if f["__typename"] == "ProjectV2IterationField" and f["name"] == "Sprint":
             sprint_field_id = f["id"]
-            all_iterations = f["configuration"].get("iterations", []) + f["configuration"].get("completedIterations", [])
-            for it in all_iterations:
+            all_iters = f["configuration"].get("iterations", []) + f["configuration"].get("completedIterations", [])
+            for it in all_iters:
                 if RELEASE_NAME in it["title"]:
                     matched_sprints[it["id"]] = it["title"]
         if f["__typename"] == "ProjectV2SingleSelectField" and f["name"] in field_options:
@@ -177,18 +178,19 @@ def get_issues_for_sprints(project_id, sprint_field_id, sprint_id_to_title, fiel
       }
     }
     """
-
     issues = []
     after = None
+
     while True:
         result = run_query(query, {"projectId": project_id, "after": after})
         items = result["data"]["node"]["items"]["nodes"]
 
         for item in items:
             content = item.get("content")
-            if not content or content.get("title") is None:
+            if not content or not content.get("title"):
                 continue
 
+            # Assignee
             raw_assignees = [u["login"] for u in content.get("assignees", {}).get("nodes", [])] or ["Unassigned"]
             assignee = raw_assignees[0]
             if assignee != "Unassigned":
@@ -197,13 +199,14 @@ def get_issues_for_sprints(project_id, sprint_field_id, sprint_id_to_title, fiel
 
             # Native `parent` field
             parent_node = content.get("parent") or {}
-            if parent_node.get("title") and parent_node.get("url"):
-                parent_issue = f"<a href='{parent_node['url']}' target='_blank'>{parent_node['title']}</a>"
-            else:
-                parent_issue = ""
+            parent_name = parent_node.get("title", "")
+            parent_url = parent_node.get("url", "")
 
-            issue_type = content.get("issueType") or {}
-            type_ = issue_type.get("name", "Empty")
+            # Issue fields
+            issue_name = content["title"]
+            issue_url = content["url"]
+
+            issue_type = (content.get("issueType") or {}).get("name", "Empty")
 
             status = "Empty"
             priority = "Empty"
@@ -217,21 +220,23 @@ def get_issues_for_sprints(project_id, sprint_field_id, sprint_id_to_title, fiel
                     field_name = fv.get("field", {}).get("name")
                     option_id = fv.get("optionId")
                     if field_name in field_options:
-                        value = field_options[field_name].get(option_id, option_id)
+                        val = field_options[field_name].get(option_id, option_id)
                         if field_name == "Status":
-                            status = value
+                            status = val
                         elif field_name == "Priority":
-                            priority = value
+                            priority = val
 
             if matched_sprint_id:
                 issues.append({
-                    "assignee": assignee,
-                    "name":     f"<a href='{content['url']}' target='_blank'>{content['title']}</a>",
-                    "type":     type_,
-                    "priority": priority,
-                    "status":   status,
-                    "sprint":   sprint_id_to_title[matched_sprint_id],
-                    "parent":   parent_issue
+                    "assignee":    assignee,
+                    "issue_name":  issue_name,
+                    "issue_url":   issue_url,
+                    "type":        issue_type,
+                    "priority":    priority,
+                    "status":      status,
+                    "sprint":      sprint_id_to_title[matched_sprint_id],
+                    "parent_name": parent_name,
+                    "parent_url":  parent_url
                 })
 
         page_info = result["data"]["node"]["items"]["pageInfo"]
@@ -268,25 +273,32 @@ def generate_html_report(data, release_name):
       <tr>
         <th>Assignee</th>
         <th>Name</th>
+        <th>Issue URL</th>
         <th>Type</th>
         <th>Priority</th>
         <th>Status</th>
         <th>Sprint Name</th>
-        <th>Parent Issue</th>
+        <th>Parent Name</th>
+        <th>Parent URL</th>
       </tr>
     </thead>
     <tbody>
 """)
         for issue in data:
+            # clickable URL cells
+            issue_link = f"<a href='{issue['issue_url']}' target='_blank'>{issue['issue_url']}</a>"
+            parent_link = f"<a href='{issue['parent_url']}' target='_blank'>{issue['parent_url']}</a>" if issue['parent_url'] else ""
             f.write(
                 f"<tr>"
                 f"<td>{issue['assignee']}</td>"
-                f"<td>{issue['name']}</td>"
+                f"<td>{issue['issue_name']}</td>"
+                f"<td>{issue_link}</td>"
                 f"<td>{issue['type']}</td>"
                 f"<td>{issue['priority']}</td>"
                 f"<td>{issue['status']}</td>"
                 f"<td>{issue['sprint']}</td>"
-                f"<td>{issue['parent']}</td>"
+                f"<td>{issue['parent_name']}</td>"
+                f"<td>{parent_link}</td>"
                 f"</tr>\n"
             )
         f.write("""
