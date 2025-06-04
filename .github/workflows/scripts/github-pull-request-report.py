@@ -247,7 +247,7 @@ def generate_html_report():
 
     template = Template(HTML_TEMPLATE)
     rendered = template.render(grouped_prs=grouped_prs)
-    filename = f"report_{now.strftime('%Y%m%d_%H%M%S')}.html"
+    filename = f"report_prs_{now.strftime('%Y%m%d_%H%M%S')}.html"
     with open(filename, "w", encoding="utf-8") as f:
         f.write(rendered)
     print(f"✅ Report saved to file: {filename}")
