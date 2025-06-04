@@ -21,7 +21,7 @@ args = parser.parse_args()
 VERBOSE = args.verbose
 
 # --- Rule definitions for "Attention Required" ---
-def rule_older_than_10_days(pr):
+def rule_open_more_than_10_days(pr):
     """
     Rule: PR has been open for more than 10 days.
     """
@@ -29,30 +29,33 @@ def rule_older_than_10_days(pr):
     age_days = (datetime.datetime.utcnow() - created).days
     return age_days > 10
 
-def rule_no_issues_and_not_chore_not_docs(pr):
+def rule_no_issues_and_not_exempt(pr):
     """
-    Rule: PR has no linked issues and its title does not start with 'chore'/'docs'.
+    Rule: PR has no linked issues and its title does not start with 'chore', 'doc', or 'tech'.
     """
     no_issues = len(pr.get("issues", [])) == 0
-    title_not_chore = not pr["title"].lower().startswith("chore")
-    title_not_docs = not pr["title"].lower().startswith("docs")
-    return no_issues and (title_not_chore and title_not_docs)
+    title_lower = pr.get("title", "").lower()
+    exempt_prefix = (
+        title_lower.startswith("chore") or
+        title_lower.startswith("doc") or
+        title_lower.startswith("tech")
+    )
+    return no_issues and not exempt_prefix
+
+def rule_not_in_any_project(pr):
+    """
+    Rule: PR has no linked issues and is not assigned to any GitHub Project.
+    """
+    no_projects = len(pr.get("projects", [])) == 0
+    no_issues = len(pr.get("issues", [])) == 0
+    return no_projects and no_issues
 
 # List of rules: each rule has a function and a human-readable description
 ATTENTION_RULES = [
-    {
-        "func": rule_older_than_10_days,
-        "description": "PR open for more than 10 days"
-    },
-    {
-        "func": rule_no_issues_and_not_chore_not_docs,
-        "description": "No linked issues and title does not start with 'chore'/'docs'"
-    },
-    # Add new rules here if needed:
-    # {
-    #     "func": another_rule_function,
-    #     "description": "Description of the new rule"
-    # },
+    {"func": rule_open_more_than_10_days, "description": "PR open for more than 10 days"},
+    {"func": rule_no_issues_and_not_exempt, "description": "No linked issues and title does not start with 'chore', 'doc', or 'tech'"},
+    {"func": rule_not_in_any_project, "description": "No linked issues and not assigned to any GitHub Project"},
+    # Add new rules here if needed
 ]
 
 def get_attention_reasons(pr):
@@ -66,9 +69,77 @@ def get_attention_reasons(pr):
             if rule["func"](pr):
                 reasons.append(rule["description"])
         except Exception:
-            # Skip the rule if it raises an exception
             continue
     return reasons
+
+# --- GraphQL helper to get linked issues via the Development section ---
+def get_linked_issues_via_graphql(owner, repo, pr_number):
+    """
+    Fetch closing issues for a given pull request via GraphQL.
+    Returns a list of (url, title) tuples.
+    """
+    query = '''
+    query($owner: String!, $repo: String!, $prNumber: Int!) {
+      repository(owner: $owner, name: $repo) {
+        pullRequest(number: $prNumber) {
+          closingIssuesReferences(first: 10) {
+            nodes {
+              title
+              url
+            }
+          }
+        }
+      }
+    }
+    '''
+    variables = {"owner": owner, "repo": repo, "prNumber": pr_number}
+    response = requests.post(GRAPHQL_URL, json={"query": query, "variables": variables}, headers=HEADERS)
+    data = response.json()
+
+    repository = data.get("data", {}).get("repository") or {}
+    pr_node = repository.get("pullRequest") or {}
+    issues = []
+    for node in pr_node.get("closingIssuesReferences", {}).get("nodes", []):
+        url = node.get("url")
+        title = node.get("title")
+        if url and title:
+            issues.append((url, title))
+    return issues
+
+# --- GraphQL helper to get project cards for a PR ---
+def get_pr_projects_via_graphql(owner, repo, pr_number):
+    """
+    Fetch project cards (project names) for a given pull request via GraphQL.
+    Returns a list of project names.
+    """
+    query = '''
+    query($owner: String!, $repo: String!, $prNumber: Int!) {
+      repository(owner: $owner, name: $repo) {
+        pullRequest(number: $prNumber) {
+          projectCards(first: 10) {
+            nodes {
+              project {
+                name
+              }
+            }
+          }
+        }
+      }
+    }
+    '''
+    variables = {"owner": owner, "repo": repo, "prNumber": pr_number}
+    response = requests.post(GRAPHQL_URL, json={"query": query, "variables": variables}, headers=HEADERS)
+    data = response.json()
+
+    repository = data.get("data", {}).get("repository") or {}
+    pr_node = repository.get("pullRequest") or {}
+    projects = []
+    for node in pr_node.get("projectCards", {}).get("nodes", []):
+        project_info = node.get("project") or {}
+        name = project_info.get("name")
+        if name:
+            projects.append(name)
+    return projects
 
 # --- Search for repositories with the specified topic using GitHub search API ---
 def get_repositories_with_topic(org, topic):
@@ -90,32 +161,7 @@ def get_repositories_with_topic(org, topic):
         page += 1
     return repos
 
-# --- GraphQL helper to get linked issues from the PR development section ---
-def get_linked_issues_via_graphql(owner, repo, pr_number):
-    query = '''
-    query($owner: String!, $repo: String!, $prNumber: Int!) {
-      repository(owner: $owner, name: $repo) {
-        pullRequest(number: $prNumber) {
-          closingIssuesReferences(first: 10) {
-            nodes {
-              title
-              url
-            }
-          }
-        }
-      }
-    }
-    '''
-    variables = {"owner": owner, "repo": repo, "prNumber": pr_number}
-    response = requests.post(GRAPHQL_URL, json={"query": query, "variables": variables}, headers=HEADERS)
-    data = response.json()
-    issues = []
-    nodes = data.get("data", {}).get("repository", {}).get("pullRequest", {}).get("closingIssuesReferences", {}).get("nodes", [])
-    for node in nodes:
-        issues.append((node["url"], node["title"]))
-    return issues
-
-# --- Fetch open pull requests and linked issues from the development section ---
+# --- Fetch open pull requests along with issues and projects ---
 def get_pull_requests(repo_full_name):
     prs = []
     url = f"https://api.github.com/repos/{repo_full_name}/pulls?state=open"
@@ -125,15 +171,22 @@ def get_pull_requests(repo_full_name):
     for pr in resp:
         owner, repo = repo_full_name.split("/")
         pr_number = pr["number"]
+
+        # Fetch issues via GraphQL
+        issues = get_linked_issues_via_graphql(owner, repo, pr_number)
+        # Fetch projects via GraphQL
+        projects = get_pr_projects_via_graphql(owner, repo, pr_number)
+
         pr_details = {
-            "html_url": pr["html_url"],
-            "title": pr["title"],
-            "user": pr["user"]["login"],
-            "created_at": pr["created_at"],
-            "assignee": pr["assignee"]["login"] if pr["assignee"] else "Empty",
+            "html_url": pr.get("html_url", ""),
+            "title": pr.get("title", ""),
+            "user": pr.get("user", {}).get("login", ""),
+            "created_at": pr.get("created_at", ""),
+            "assignee": pr.get("assignee", {}).get("login", "Empty") if pr.get("assignee") else "Empty",
             "repo": repo_full_name,
             "repo_name": repo,
-            "issues": get_linked_issues_via_graphql(owner, repo, pr_number)
+            "issues": issues,
+            "projects": projects
         }
         # Collect reasons why this PR requires attention
         pr_details["attention_reasons"] = get_attention_reasons(pr_details)
@@ -150,8 +203,18 @@ HTML_TEMPLATE = """
     <script src='https://unpkg.com/list.js@1.5.0/dist/list.min.js'></script>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
+        .rules-panel {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 20px;
+            background-color: #f2f2f2;
+        }
+        .rules-panel strong {
+            display: block;
+            margin-bottom: 8px;
+        }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; vertical-align: top; }
         th { cursor: pointer; }
         .color-0 { background-color: #f9f9f9; }
         .color-1 { background-color: #e7f4ff; }
@@ -159,12 +222,21 @@ HTML_TEMPLATE = """
         .color-3 { background-color: #eaf7ea; }
         .color-4 { background-color: #fceeee; }
         .hidden { display: none; }
-        .attention-icon { color: red; font-weight: bold; }
+        .attention-icon { color: red; font-weight: bold; display: block; }
         .attention-text { margin-left: 4px; font-style: italic; }
     </style>
 </head>
 <body>
-    <h1>Qubership APIHUB Pull Requests Report</h1>
+    <h1>GitHub Pull Requests Report</h1>
+
+    <div class="rules-panel">
+        <strong>Rules:</strong>
+        <div>⚠️ PR is not merged in 10 days</div>
+        <div>❌ PR must be linked with Issue (set 'Development' field in PR).<br>
+             If no related issue (chore, docs, small tech improvements cases) – PR must be added to GitHub Project
+             to current Sprint directly (set 'Project' field in PR)</div>
+    </div>
+
     <button id="toggleButton" onclick='toggleCLPLCI()'>Show PRs from NetcrackerCLPLCI</button>
     <input class='search' placeholder='Filter PRs...'>
     <table id='pr-table'>
@@ -200,7 +272,7 @@ HTML_TEMPLATE = """
                     <td class='attention'>
                         {% if pr.attention_reasons %}
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">({{ pr.attention_reasons | join(', ') }})</span>
+                            <div class="attention-text">{{ pr.attention_reasons | join('<br/>') | safe }}</div>
                         {% endif %}
                     </td>
                 </tr>
