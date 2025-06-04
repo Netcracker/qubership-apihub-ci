@@ -7,8 +7,18 @@
     <script src='https://unpkg.com/list.js@1.5.0/dist/list.min.js'></script>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
+        .rules-panel {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 20px;
+            background-color: #f2f2f2;
+        }
+        .rules-panel strong {
+            display: block;
+            margin-bottom: 8px;
+        }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; vertical-align: top; }
         th { cursor: pointer; }
         .color-0 { background-color: #f9f9f9; }
         .color-1 { background-color: #e7f4ff; }
@@ -16,12 +26,21 @@
         .color-3 { background-color: #eaf7ea; }
         .color-4 { background-color: #fceeee; }
         .hidden { display: none; }
-        .attention-icon { color: red; font-weight: bold; }
+        .attention-icon { color: red; font-weight: bold; display: block; }
         .attention-text { margin-left: 4px; font-style: italic; }
     </style>
 </head>
 <body>
-    <h1>Qubership APIHUB Pull Requests Report</h1>
+    <h1>GitHub Pull Requests Report</h1>
+
+    <div class="rules-panel">
+        <strong>Rules:</strong>
+        <div>⚠️ PR is not merged in 10 days</div>
+        <div>❌ PR must be linked with Issue (set 'Development' field in PR).<br>
+             If no related issue (chore, docs, small tech improvements cases) – PR must be added to GitHub Project
+             to current Sprint directly (set 'Project' field in PR)</div>
+    </div>
+
     <button id="toggleButton" onclick='toggleCLPLCI()'>Show PRs from NetcrackerCLPLCI</button>
     <input class='search' placeholder='Filter PRs...'>
     <table id='pr-table'>
@@ -55,7 +74,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -72,7 +91,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -89,7 +108,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -106,7 +125,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days, No linked issues and title does not start with 'chore'/'docs')</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and title does not start with 'chore', 'doc', or 'tech'<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -115,7 +134,7 @@
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/187' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -123,7 +142,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -142,7 +161,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days</div>
                         
                     </td>
                 </tr>
@@ -151,7 +170,7 @@
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/177' target='_blank'>Apihub history doc</a></td>
                     <td class='author'>viacheslav-lunev</td>
-                    <td class='age'>42 days</td>
+                    <td class='age'>43 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -159,7 +178,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days, No linked issues and title does not start with 'chore'/'docs')</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and title does not start with 'chore', 'doc', or 'tech'<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -173,7 +192,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-backend</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-backend/pull/112' target='_blank'>[API][IMPL] Export redesign</a></td>
                     <td class='author'>viacheslav-lunev</td>
-                    <td class='age'>1 days</td>
+                    <td class='age'>2 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -181,7 +200,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(No linked issues and title does not start with 'chore'/'docs')</span>
+                            <div class="attention-text">No linked issues and title does not start with 'chore', 'doc', or 'tech'<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -198,7 +217,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(No linked issues and title does not start with 'chore'/'docs')</span>
+                            <div class="attention-text">No linked issues and title does not start with 'chore', 'doc', or 'tech'<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -207,7 +226,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-backend</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-backend/pull/109' target='_blank'>Return info about api-processor versions</a></td>
                     <td class='author'>karpov-aleksandr</td>
-                    <td class='age'>5 days</td>
+                    <td class='age'>6 days</td>
                     <td class='assignee'>viacheslav-lunev</td>
                     <td>
                         
@@ -223,7 +242,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-backend</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-backend/pull/108' target='_blank'>POC impl of full text search for operations</a></td>
                     <td class='author'>viacheslav-lunev</td>
-                    <td class='age'>6 days</td>
+                    <td class='age'>7 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -231,7 +250,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(No linked issues and title does not start with 'chore'/'docs')</span>
+                            <div class="attention-text">No linked issues and title does not start with 'chore', 'doc', or 'tech'<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -248,7 +267,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days, No linked issues and title does not start with 'chore'/'docs')</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and title does not start with 'chore', 'doc', or 'tech'<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -257,7 +276,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-backend</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-backend/pull/100' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>14 days</td>
+                    <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -265,7 +284,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -286,7 +305,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days</div>
                         
                     </td>
                 </tr>
@@ -295,40 +314,6 @@
                     <td class='repo'>Netcracker/qubership-apihub-backend</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-backend/pull/81' target='_blank'>Add migration analysis procedure</a></td>
                     <td class='author'>viacheslav-lunev</td>
-                    <td class='age'>56 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days, No linked issues and title does not start with 'chore'/'docs')</span>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-1'>
-                    <td class='repo'>Netcracker/qubership-apihub-backend</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-backend/pull/80' target='_blank'>added "linterEnabled" property </a></td>
-                    <td class='author'>zloiadil</td>
-                    <td class='age'>56 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days, No linked issues and title does not start with 'chore'/'docs')</span>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-1'>
-                    <td class='repo'>Netcracker/qubership-apihub-backend</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-backend/pull/78' target='_blank'>updated security schema</a></td>
-                    <td class='author'>nilesh25890</td>
                     <td class='age'>57 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
@@ -337,7 +322,41 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days, No linked issues and title does not start with 'chore'/'docs')</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and title does not start with 'chore', 'doc', or 'tech'<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-1'>
+                    <td class='repo'>Netcracker/qubership-apihub-backend</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-backend/pull/80' target='_blank'>added "linterEnabled" property </a></td>
+                    <td class='author'>zloiadil</td>
+                    <td class='age'>57 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and title does not start with 'chore', 'doc', or 'tech'<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-1'>
+                    <td class='repo'>Netcracker/qubership-apihub-backend</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-backend/pull/78' target='_blank'>updated security schema</a></td>
+                    <td class='author'>nilesh25890</td>
+                    <td class='age'>58 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and title does not start with 'chore', 'doc', or 'tech'<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -346,7 +365,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-backend</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-backend/pull/60' target='_blank'>remove deprecated apis</a></td>
                     <td class='author'>nilesh25890</td>
-                    <td class='age'>75 days</td>
+                    <td class='age'>76 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -356,7 +375,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days</div>
                         
                     </td>
                 </tr>
@@ -373,7 +392,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days, No linked issues and title does not start with 'chore'/'docs')</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and title does not start with 'chore', 'doc', or 'tech'<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -382,7 +401,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-backend</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-backend/pull/23' target='_blank'>Remove exts when export</a></td>
                     <td class='author'>iugaidiana</td>
-                    <td class='age'>99 days</td>
+                    <td class='age'>100 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -390,7 +409,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days, No linked issues and title does not start with 'chore'/'docs')</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and title does not start with 'chore', 'doc', or 'tech'<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -404,7 +423,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-ui</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-ui/pull/101' target='_blank'>feat: support option to remove OAS extension during export</a></td>
                     <td class='author'>b41ex</td>
-                    <td class='age'>7 days</td>
+                    <td class='age'>8 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -420,12 +439,15 @@
                     <td class='repo'>Netcracker/qubership-apihub-ui</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-ui/pull/100' target='_blank'>chore(code-style): example eslint</a></td>
                     <td class='author'>vOrigins</td>
-                    <td class='age'>7 days</td>
+                    <td class='age'>8 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
                     </td>
                     <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -434,12 +456,15 @@
                     <td class='repo'>Netcracker/qubership-apihub-ui</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-ui/pull/99' target='_blank'>chore(code-style): example dprint</a></td>
                     <td class='author'>vOrigins</td>
-                    <td class='age'>7 days</td>
+                    <td class='age'>8 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
                     </td>
                     <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -448,7 +473,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-ui</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-ui/pull/87' target='_blank'>feat: Manage custom servers in Playground view</a></td>
                     <td class='author'>divy-netcracker</td>
-                    <td class='age'>13 days</td>
+                    <td class='age'>14 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -458,7 +483,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days</div>
                         
                     </td>
                 </tr>
@@ -467,7 +492,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-ui</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-ui/pull/86' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>14 days</td>
+                    <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -475,7 +500,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -492,7 +517,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -509,7 +534,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -526,7 +551,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -545,7 +570,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days</div>
                         
                     </td>
                 </tr>
@@ -554,7 +579,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-ui</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-ui/pull/70' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -562,7 +587,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -571,7 +596,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-ui</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-ui/pull/47' target='_blank'>docs: user guide for dashboard version and operation group creation from CSV file</a></td>
                     <td class='author'>nilesh25890</td>
-                    <td class='age'>71 days</td>
+                    <td class='age'>72 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -579,7 +604,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -601,7 +626,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -618,7 +643,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -635,7 +660,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -644,7 +669,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-postman-collections</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-postman-collections/pull/11' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -652,7 +677,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -666,7 +691,7 @@
                     <td class='repo'>Netcracker/qubership-api-linter-service</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-api-linter-service/pull/7' target='_blank'>chore: consolidate ruleset management and validation result into unified API branch</a></td>
                     <td class='author'>zloiadil</td>
-                    <td class='age'>12 days</td>
+                    <td class='age'>13 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -674,7 +699,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -683,7 +708,7 @@
                     <td class='repo'>Netcracker/qubership-api-linter-service</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-api-linter-service/pull/4' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -691,7 +716,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -700,7 +725,7 @@
                     <td class='repo'>Netcracker/qubership-api-linter-service</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-api-linter-service/pull/2' target='_blank'>chore: cleanup of obsoleted workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>41 days</td>
+                    <td class='age'>42 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -708,7 +733,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -730,7 +755,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -747,7 +772,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -756,7 +781,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-agent</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-agent/pull/14' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -764,7 +789,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -773,7 +798,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-agent</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-agent/pull/13' target='_blank'>chore: cleanup of obsoleted workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>41 days</td>
+                    <td class='age'>42 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -781,7 +806,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -795,9 +820,11 @@
                     <td class='repo'>Netcracker/qubership-apihub-compatibility-suites</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-compatibility-suites/pull/13' target='_blank'>chore: Added suite for oas 3.1 type null</a></td>
                     <td class='author'>makeev-pavel</td>
-                    <td class='age'>0 days</td>
+                    <td class='age'>1 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
+                        
+                            <a href='https://github.com/Netcracker/qubership-apihub/issues/199' target='_blank'>[Diff] compatibility suite for type and nullable</a>
                         
                     </td>
                     <td class='attention'>
@@ -816,6 +843,9 @@
                     </td>
                     <td class='attention'>
                         
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">No linked issues and not assigned to any GitHub Project</div>
+                        
                     </td>
                 </tr>
                 
@@ -823,7 +853,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-compatibility-suites</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-compatibility-suites/pull/11' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>14 days</td>
+                    <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -831,7 +861,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -848,7 +878,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -865,7 +895,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -882,7 +912,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -891,7 +921,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-compatibility-suites</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-compatibility-suites/pull/7' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -899,7 +929,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -910,8 +940,24 @@
                 
                 
                 <tr class='color-2'>
-                    <td class='repo'>Netcracker/qubership-apihub-api-data-model</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-data-model/pull/14' target='_blank'>chore: Fixed linking & unlinking scripts</a></td>
+                    <td class='repo'>Netcracker/qubership-apihub-apispec-view</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-apispec-view/pull/24' target='_blank'>chore: Added suite for oas 3.1 type null</a></td>
+                    <td class='author'>makeev-pavel</td>
+                    <td class='age'>0 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td>
+                        
+                            <a href='https://github.com/Netcracker/qubership-apihub/issues/199' target='_blank'>[Diff] compatibility suite for type and nullable</a>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-2'>
+                    <td class='repo'>Netcracker/qubership-apihub-apispec-view</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-apispec-view/pull/22' target='_blank'>chore: Fixed linking & unlinking scripts</a></td>
                     <td class='author'>JayLim2</td>
                     <td class='age'>8 days</td>
                     <td class='assignee'>Empty</td>
@@ -920,29 +966,15 @@
                     </td>
                     <td class='attention'>
                         
-                    </td>
-                </tr>
-                
-                <tr class='color-2 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-api-data-model</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-data-model/pull/13' target='_blank'>chore: update of common workflows</a></td>
-                    <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>14 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
                 <tr class='color-2 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-api-data-model</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-data-model/pull/12' target='_blank'>chore: [skip ci] update of superlinter config files</a></td>
+                    <td class='repo'>Netcracker/qubership-apihub-apispec-view</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-apispec-view/pull/20' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
                     <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
@@ -952,14 +984,14 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
                 <tr class='color-2 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-api-data-model</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-data-model/pull/11' target='_blank'>chore: update of common config files</a></td>
+                    <td class='repo'>Netcracker/qubership-apihub-apispec-view</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-apispec-view/pull/19' target='_blank'>chore: [skip ci] update of superlinter config files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
                     <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
@@ -969,14 +1001,14 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
                 <tr class='color-2 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-api-data-model</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-data-model/pull/10' target='_blank'>chore: update of common files</a></td>
+                    <td class='repo'>Netcracker/qubership-apihub-apispec-view</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-apispec-view/pull/18' target='_blank'>chore: update of common config files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
                     <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
@@ -986,16 +1018,16 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
                 <tr class='color-2 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-api-data-model</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-data-model/pull/8' target='_blank'>chore: update of common workflows</a></td>
+                    <td class='repo'>Netcracker/qubership-apihub-apispec-view</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-apispec-view/pull/17' target='_blank'>chore: update of common files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -1003,7 +1035,24 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-2 netcrackerclplci hidden'>
+                    <td class='repo'>Netcracker/qubership-apihub-apispec-view</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-apispec-view/pull/13' target='_blank'>chore: update of common workflows</a></td>
+                    <td class='author'>NetcrackerCLPLCI</td>
+                    <td class='age'>40 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -1013,56 +1062,9 @@
                     
                 
                 
-                <tr class='color-3'>
-                    <td class='repo'>Netcracker/qubership-apihub-api-doc-viewer</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-doc-viewer/pull/23' target='_blank'>refactor!: Transform ADV into monorepository managed by Lerna. Migrate "qubership-api-data-model" into ADV</a></td>
-                    <td class='author'>JayLim2</td>
-                    <td class='age'>7 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                            <a href='https://github.com/Netcracker/qubership-apihub/issues/190' target='_blank'>[FE] Move api-data-model into api-doc-viewer repository</a>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-3'>
-                    <td class='repo'>Netcracker/qubership-apihub-api-doc-viewer</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-doc-viewer/pull/21' target='_blank'>chore: Fixing linking & unlinking scripts</a></td>
-                    <td class='author'>JayLim2</td>
-                    <td class='age'>8 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                    </td>
-                </tr>
-                
                 <tr class='color-3 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-api-doc-viewer</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-doc-viewer/pull/20' target='_blank'>chore: update of common workflows</a></td>
-                    <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>14 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-3 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-api-doc-viewer</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-doc-viewer/pull/19' target='_blank'>chore: [skip ci] update of superlinter config files</a></td>
+                    <td class='repo'>Netcracker/qubership-apihub-npm-gitflow</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-npm-gitflow/pull/22' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
                     <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
@@ -1072,14 +1074,14 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
                 <tr class='color-3 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-api-doc-viewer</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-doc-viewer/pull/18' target='_blank'>chore: update of common config files</a></td>
+                    <td class='repo'>Netcracker/qubership-apihub-npm-gitflow</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-npm-gitflow/pull/21' target='_blank'>chore: [skip ci] update of superlinter config files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
                     <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
@@ -1089,14 +1091,14 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
                 <tr class='color-3 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-api-doc-viewer</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-doc-viewer/pull/17' target='_blank'>chore: update of common files</a></td>
+                    <td class='repo'>Netcracker/qubership-apihub-npm-gitflow</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-npm-gitflow/pull/20' target='_blank'>chore: update of common config files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
                     <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
@@ -1106,16 +1108,16 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
                 <tr class='color-3 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-api-doc-viewer</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-doc-viewer/pull/14' target='_blank'>chore: update of common workflows</a></td>
+                    <td class='repo'>Netcracker/qubership-apihub-npm-gitflow</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-npm-gitflow/pull/19' target='_blank'>chore: update of common files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -1123,7 +1125,24 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-3 netcrackerclplci hidden'>
+                    <td class='repo'>Netcracker/qubership-apihub-npm-gitflow</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-npm-gitflow/pull/15' target='_blank'>chore: update of common workflows</a></td>
+                    <td class='author'>NetcrackerCLPLCI</td>
+                    <td class='age'>40 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -1145,7 +1164,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -1162,7 +1181,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -1179,7 +1198,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -1188,7 +1207,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-protobufjs-research</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-protobufjs-research/pull/7' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -1196,7 +1215,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -1210,7 +1229,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-class-view</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-class-view/pull/12' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>14 days</td>
+                    <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -1218,7 +1237,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -1235,7 +1254,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -1252,7 +1271,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -1269,7 +1288,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -1278,7 +1297,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-class-view</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-class-view/pull/7' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -1286,7 +1305,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -1296,113 +1315,9 @@
                     
                 
                 
-                <tr class='color-1 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-npm-gitflow</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-npm-gitflow/pull/22' target='_blank'>chore: update of common workflows</a></td>
-                    <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>14 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-1 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-npm-gitflow</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-npm-gitflow/pull/21' target='_blank'>chore: [skip ci] update of superlinter config files</a></td>
-                    <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>15 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-1 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-npm-gitflow</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-npm-gitflow/pull/20' target='_blank'>chore: update of common config files</a></td>
-                    <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>15 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-1 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-npm-gitflow</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-npm-gitflow/pull/19' target='_blank'>chore: update of common files</a></td>
-                    <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>15 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-1 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-npm-gitflow</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-npm-gitflow/pull/15' target='_blank'>chore: update of common workflows</a></td>
-                    <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
-                        
-                    </td>
-                </tr>
-                
-            
-                
-                    
-                
-                
-                <tr class='color-2'>
-                    <td class='repo'>Netcracker/qubership-apihub-apispec-view</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-apispec-view/pull/24' target='_blank'>chore: Added suite for oas 3.1 type null</a></td>
-                    <td class='author'>makeev-pavel</td>
-                    <td class='age'>0 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-2'>
-                    <td class='repo'>Netcracker/qubership-apihub-apispec-view</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-apispec-view/pull/22' target='_blank'>chore: Fixed linking & unlinking scripts</a></td>
+                <tr class='color-1'>
+                    <td class='repo'>Netcracker/qubership-apihub-api-doc-viewer</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-doc-viewer/pull/21' target='_blank'>chore: Fixing linking & unlinking scripts</a></td>
                     <td class='author'>JayLim2</td>
                     <td class='age'>8 days</td>
                     <td class='assignee'>Empty</td>
@@ -1411,29 +1326,15 @@
                     </td>
                     <td class='attention'>
                         
-                    </td>
-                </tr>
-                
-                <tr class='color-2 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-apispec-view</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-apispec-view/pull/20' target='_blank'>chore: update of common workflows</a></td>
-                    <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>14 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-2 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-apispec-view</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-apispec-view/pull/19' target='_blank'>chore: [skip ci] update of superlinter config files</a></td>
+                <tr class='color-1 netcrackerclplci hidden'>
+                    <td class='repo'>Netcracker/qubership-apihub-api-doc-viewer</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-doc-viewer/pull/20' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
                     <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
@@ -1443,14 +1344,14 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-2 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-apispec-view</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-apispec-view/pull/18' target='_blank'>chore: update of common config files</a></td>
+                <tr class='color-1 netcrackerclplci hidden'>
+                    <td class='repo'>Netcracker/qubership-apihub-api-doc-viewer</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-doc-viewer/pull/19' target='_blank'>chore: [skip ci] update of superlinter config files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
                     <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
@@ -1460,14 +1361,14 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-2 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-apispec-view</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-apispec-view/pull/17' target='_blank'>chore: update of common files</a></td>
+                <tr class='color-1 netcrackerclplci hidden'>
+                    <td class='repo'>Netcracker/qubership-apihub-api-doc-viewer</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-doc-viewer/pull/18' target='_blank'>chore: update of common config files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
                     <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
@@ -1477,16 +1378,16 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-2 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-apispec-view</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-apispec-view/pull/13' target='_blank'>chore: update of common workflows</a></td>
+                <tr class='color-1 netcrackerclplci hidden'>
+                    <td class='repo'>Netcracker/qubership-apihub-api-doc-viewer</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-doc-viewer/pull/17' target='_blank'>chore: update of common files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -1494,7 +1395,24 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-1 netcrackerclplci hidden'>
+                    <td class='repo'>Netcracker/qubership-apihub-api-doc-viewer</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-doc-viewer/pull/14' target='_blank'>chore: update of common workflows</a></td>
+                    <td class='author'>NetcrackerCLPLCI</td>
+                    <td class='age'>40 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -1504,11 +1422,11 @@
                     
                 
                 
-                <tr class='color-3 netcrackerclplci hidden'>
+                <tr class='color-2 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-ui-tests</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-ui-tests/pull/33' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>14 days</td>
+                    <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -1516,12 +1434,12 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-3 netcrackerclplci hidden'>
+                <tr class='color-2 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-ui-tests</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-ui-tests/pull/32' target='_blank'>chore: [skip ci] update of superlinter config files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
@@ -1533,12 +1451,12 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-3 netcrackerclplci hidden'>
+                <tr class='color-2 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-ui-tests</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-ui-tests/pull/31' target='_blank'>chore: update of common config files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
@@ -1550,12 +1468,12 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-3 netcrackerclplci hidden'>
+                <tr class='color-2 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-ui-tests</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-ui-tests/pull/30' target='_blank'>chore: update of common files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
@@ -1567,16 +1485,16 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-3 netcrackerclplci hidden'>
+                <tr class='color-2 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-ui-tests</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-ui-tests/pull/26' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -1584,7 +1502,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -1594,7 +1512,7 @@
                     
                 
                 
-                <tr class='color-4'>
+                <tr class='color-3'>
                     <td class='repo'>Netcracker/qubership-apihub-graphapi</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-graphapi/pull/11' target='_blank'>chore: Removed unlinking script</a></td>
                     <td class='author'>JayLim2</td>
@@ -1605,14 +1523,17 @@
                     </td>
                     <td class='attention'>
                         
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">No linked issues and not assigned to any GitHub Project</div>
+                        
                     </td>
                 </tr>
                 
-                <tr class='color-4 netcrackerclplci hidden'>
+                <tr class='color-3 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-graphapi</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-graphapi/pull/10' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>14 days</td>
+                    <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -1620,12 +1541,12 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-4 netcrackerclplci hidden'>
+                <tr class='color-3 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-graphapi</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-graphapi/pull/9' target='_blank'>chore: [skip ci] update of superlinter config files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
@@ -1637,12 +1558,12 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-4 netcrackerclplci hidden'>
+                <tr class='color-3 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-graphapi</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-graphapi/pull/8' target='_blank'>chore: update of common config files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
@@ -1654,12 +1575,12 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-4 netcrackerclplci hidden'>
+                <tr class='color-3 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-graphapi</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-graphapi/pull/7' target='_blank'>chore: update of common files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
@@ -1671,16 +1592,16 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-4 netcrackerclplci hidden'>
+                <tr class='color-3 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-graphapi</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-graphapi/pull/6' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -1688,7 +1609,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -1698,7 +1619,7 @@
                     
                 
                 
-                <tr class='color-0 netcrackerclplci hidden'>
+                <tr class='color-4 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-test-service</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-test-service/pull/10' target='_blank'>chore: [skip ci] update of superlinter config files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
@@ -1710,12 +1631,12 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-0 netcrackerclplci hidden'>
+                <tr class='color-4 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-test-service</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-test-service/pull/9' target='_blank'>chore: update of common config files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
@@ -1727,12 +1648,12 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-0 netcrackerclplci hidden'>
+                <tr class='color-4 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-test-service</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-test-service/pull/8' target='_blank'>chore: update of common files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
@@ -1744,16 +1665,16 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-0 netcrackerclplci hidden'>
+                <tr class='color-4 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-test-service</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-test-service/pull/7' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -1761,7 +1682,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -1771,13 +1692,15 @@
                     
                 
                 
-                <tr class='color-1'>
+                <tr class='color-0'>
                     <td class='repo'>Netcracker/qubership-apihub-api-diff</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-diff/pull/22' target='_blank'>chore: Improving work with oas 3.1</a></td>
                     <td class='author'>makeev-pavel</td>
-                    <td class='age'>0 days</td>
+                    <td class='age'>1 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
+                        
+                            <a href='https://github.com/Netcracker/qubership-apihub/issues/199' target='_blank'>[Diff] compatibility suite for type and nullable</a>
                         
                     </td>
                     <td class='attention'>
@@ -1785,7 +1708,7 @@
                     </td>
                 </tr>
                 
-                <tr class='color-1'>
+                <tr class='color-0'>
                     <td class='repo'>Netcracker/qubership-apihub-api-diff</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-diff/pull/21' target='_blank'>feat: support classification for OAS extension changes</a></td>
                     <td class='author'>b41ex</td>
@@ -1797,12 +1720,12 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(No linked issues and title does not start with 'chore'/'docs')</span>
+                            <div class="attention-text">No linked issues and title does not start with 'chore', 'doc', or 'tech'<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-1'>
+                <tr class='color-0'>
                     <td class='repo'>Netcracker/qubership-apihub-api-diff</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-diff/pull/20' target='_blank'>chore: Fixed linking & unlinking scripts</a></td>
                     <td class='author'>JayLim2</td>
@@ -1813,14 +1736,17 @@
                     </td>
                     <td class='attention'>
                         
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">No linked issues and not assigned to any GitHub Project</div>
+                        
                     </td>
                 </tr>
                 
-                <tr class='color-1 netcrackerclplci hidden'>
+                <tr class='color-0 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-api-diff</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-diff/pull/17' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>14 days</td>
+                    <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -1828,12 +1754,12 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-1 netcrackerclplci hidden'>
+                <tr class='color-0 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-api-diff</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-diff/pull/16' target='_blank'>chore: [skip ci] update of superlinter config files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
@@ -1845,12 +1771,12 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-1 netcrackerclplci hidden'>
+                <tr class='color-0 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-api-diff</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-diff/pull/15' target='_blank'>chore: update of common config files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
@@ -1862,12 +1788,12 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-1 netcrackerclplci hidden'>
+                <tr class='color-0 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-api-diff</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-diff/pull/14' target='_blank'>chore: update of common files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
@@ -1879,16 +1805,16 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-1 netcrackerclplci hidden'>
+                <tr class='color-0 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-api-diff</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-diff/pull/12' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -1896,7 +1822,114 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+            
+                
+                    
+                
+                
+                <tr class='color-1'>
+                    <td class='repo'>Netcracker/qubership-apihub-api-data-model</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-data-model/pull/14' target='_blank'>chore: Fixed linking & unlinking scripts</a></td>
+                    <td class='author'>JayLim2</td>
+                    <td class='age'>8 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-1 netcrackerclplci hidden'>
+                    <td class='repo'>Netcracker/qubership-apihub-api-data-model</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-data-model/pull/13' target='_blank'>chore: update of common workflows</a></td>
+                    <td class='author'>NetcrackerCLPLCI</td>
+                    <td class='age'>15 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-1 netcrackerclplci hidden'>
+                    <td class='repo'>Netcracker/qubership-apihub-api-data-model</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-data-model/pull/12' target='_blank'>chore: [skip ci] update of superlinter config files</a></td>
+                    <td class='author'>NetcrackerCLPLCI</td>
+                    <td class='age'>15 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-1 netcrackerclplci hidden'>
+                    <td class='repo'>Netcracker/qubership-apihub-api-data-model</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-data-model/pull/11' target='_blank'>chore: update of common config files</a></td>
+                    <td class='author'>NetcrackerCLPLCI</td>
+                    <td class='age'>15 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-1 netcrackerclplci hidden'>
+                    <td class='repo'>Netcracker/qubership-apihub-api-data-model</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-data-model/pull/10' target='_blank'>chore: update of common files</a></td>
+                    <td class='author'>NetcrackerCLPLCI</td>
+                    <td class='age'>15 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-1 netcrackerclplci hidden'>
+                    <td class='repo'>Netcracker/qubership-apihub-api-data-model</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-data-model/pull/8' target='_blank'>chore: update of common workflows</a></td>
+                    <td class='author'>NetcrackerCLPLCI</td>
+                    <td class='age'>40 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -1910,7 +1943,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-vscode</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-vscode/pull/37' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>14 days</td>
+                    <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -1918,7 +1951,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -1935,7 +1968,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -1952,7 +1985,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -1969,7 +2002,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -1978,7 +2011,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-vscode</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-vscode/pull/31' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -1986,7 +2019,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2007,6 +2040,9 @@
                     </td>
                     <td class='attention'>
                         
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">No linked issues and not assigned to any GitHub Project</div>
+                        
                     </td>
                 </tr>
                 
@@ -2014,7 +2050,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-api-processor</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-processor/pull/24' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>14 days</td>
+                    <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -2022,7 +2058,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2039,7 +2075,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2056,7 +2092,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2073,7 +2109,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2086,13 +2122,15 @@
                     <td class='assignee'>Empty</td>
                     <td>
                         
-                            <a href='https://github.com/Netcracker/qubership-apihub-api-unifier/issues/6' target='_blank'>[API-Processor] Support removeOasExtensions build task</a>
+                            <a href='https://github.com/Netcracker/qubership-apihub-api-unifier/issues/6' target='_blank'>[API-Processor] Support removeOasExtensions build task</a>, 
+                        
+                            <a href='https://github.com/Netcracker/qubership-apihub-api-processor/issues/10' target='_blank'>[API-Processor] Support export build tasks</a>
                         
                     </td>
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days</div>
                         
                     </td>
                 </tr>
@@ -2101,7 +2139,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-api-processor</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-processor/pull/17' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -2109,7 +2147,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2131,7 +2169,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2148,7 +2186,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2165,7 +2203,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2174,7 +2212,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-traffic-analyzer</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-traffic-analyzer/pull/7' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -2182,7 +2220,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2203,6 +2241,9 @@
                     </td>
                     <td class='attention'>
                         
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">No linked issues and not assigned to any GitHub Project</div>
+                        
                     </td>
                 </tr>
                 
@@ -2210,7 +2251,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-http-spec</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-http-spec/pull/13' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>14 days</td>
+                    <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -2218,7 +2259,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2235,7 +2276,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2252,7 +2293,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2269,7 +2310,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2278,7 +2319,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-http-spec</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-http-spec/pull/7' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -2286,7 +2327,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2307,6 +2348,9 @@
                     </td>
                     <td class='attention'>
                         
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">No linked issues and not assigned to any GitHub Project</div>
+                        
                     </td>
                 </tr>
                 
@@ -2314,7 +2358,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-api-visitor</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-visitor/pull/13' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>14 days</td>
+                    <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -2322,7 +2366,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2339,7 +2383,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2356,7 +2400,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2373,7 +2417,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2382,7 +2426,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-api-visitor</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-visitor/pull/7' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -2390,7 +2434,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2411,6 +2455,9 @@
                     </td>
                     <td class='attention'>
                         
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">No linked issues and not assigned to any GitHub Project</div>
+                        
                     </td>
                 </tr>
                 
@@ -2418,7 +2465,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-build-task-consumer</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-build-task-consumer/pull/24' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>14 days</td>
+                    <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -2426,7 +2473,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2443,7 +2490,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2460,7 +2507,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2477,7 +2524,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2486,7 +2533,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-build-task-consumer</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-build-task-consumer/pull/16' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -2494,7 +2541,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2503,7 +2550,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-build-task-consumer</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-build-task-consumer/pull/15' target='_blank'>feat: export build tasks support</a></td>
                     <td class='author'>CountRedClaw</td>
-                    <td class='age'>43 days</td>
+                    <td class='age'>44 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -2511,7 +2558,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days, No linked issues and title does not start with 'chore'/'docs')</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and title does not start with 'chore', 'doc', or 'tech'<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2520,7 +2567,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-build-task-consumer</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-build-task-consumer/pull/14' target='_blank'>[FE] Revision the use of crypto.randomUUID</a></td>
                     <td class='author'>iurii-golovinskii</td>
-                    <td class='age'>48 days</td>
+                    <td class='age'>49 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -2528,7 +2575,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days, No linked issues and title does not start with 'chore'/'docs')</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and title does not start with 'chore', 'doc', or 'tech'<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2550,7 +2597,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2567,7 +2614,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2584,7 +2631,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2593,7 +2640,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-ci</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-ci/pull/28' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -2601,7 +2648,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -2611,176 +2658,15 @@
                     
                 
                 
-                <tr class='color-4 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-sniffer-agent</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-sniffer-agent/pull/10' target='_blank'>chore: [skip ci] update of superlinter config files</a></td>
-                    <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>15 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-4 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-sniffer-agent</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-sniffer-agent/pull/9' target='_blank'>chore: update of common config files</a></td>
-                    <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>15 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-4 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-sniffer-agent</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-sniffer-agent/pull/8' target='_blank'>chore: update of common files</a></td>
-                    <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>15 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-4 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-sniffer-agent</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-sniffer-agent/pull/7' target='_blank'>chore: update of common workflows</a></td>
-                    <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
-                        
-                    </td>
-                </tr>
-                
-            
-                
-                    
-                
-                
-                <tr class='color-0 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-jest-chrome-in-docker-environment</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-jest-chrome-in-docker-environment/pull/12' target='_blank'>chore: update of common workflows</a></td>
-                    <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>14 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-0 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-jest-chrome-in-docker-environment</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-jest-chrome-in-docker-environment/pull/11' target='_blank'>chore: [skip ci] update of superlinter config files</a></td>
-                    <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>15 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-0 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-jest-chrome-in-docker-environment</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-jest-chrome-in-docker-environment/pull/10' target='_blank'>chore: update of common config files</a></td>
-                    <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>15 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-0 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-jest-chrome-in-docker-environment</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-jest-chrome-in-docker-environment/pull/9' target='_blank'>chore: update of common files</a></td>
-                    <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>15 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-0 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-jest-chrome-in-docker-environment</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-jest-chrome-in-docker-environment/pull/8' target='_blank'>chore: update of common workflows</a></td>
-                    <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
-                        
-                    </td>
-                </tr>
-                
-            
-                
-                    
-                
-                
-                <tr class='color-1'>
+                <tr class='color-4'>
                     <td class='repo'>Netcracker/qubership-apihub-api-unifier</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-unifier/pull/17' target='_blank'>chore: Improving work with oas 3.1</a></td>
                     <td class='author'>makeev-pavel</td>
-                    <td class='age'>0 days</td>
+                    <td class='age'>1 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
+                        
+                            <a href='https://github.com/Netcracker/qubership-apihub/issues/194' target='_blank'>[ASV] Support for type and nullable</a>
                         
                     </td>
                     <td class='attention'>
@@ -2788,7 +2674,7 @@
                     </td>
                 </tr>
                 
-                <tr class='color-1'>
+                <tr class='color-4'>
                     <td class='repo'>Netcracker/qubership-apihub-api-unifier</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-unifier/pull/16' target='_blank'>chore: Fixed linking & unlinking scripts</a></td>
                     <td class='author'>JayLim2</td>
@@ -2799,14 +2685,17 @@
                     </td>
                     <td class='attention'>
                         
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">No linked issues and not assigned to any GitHub Project</div>
+                        
                     </td>
                 </tr>
                 
-                <tr class='color-1 netcrackerclplci hidden'>
+                <tr class='color-4 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-api-unifier</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-unifier/pull/15' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>14 days</td>
+                    <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -2814,12 +2703,12 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-1 netcrackerclplci hidden'>
+                <tr class='color-4 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-api-unifier</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-unifier/pull/14' target='_blank'>chore: [skip ci] update of superlinter config files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
@@ -2831,12 +2720,12 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-1 netcrackerclplci hidden'>
+                <tr class='color-4 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-api-unifier</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-unifier/pull/13' target='_blank'>chore: update of common config files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
@@ -2848,12 +2737,12 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-1 netcrackerclplci hidden'>
+                <tr class='color-4 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-api-unifier</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-unifier/pull/12' target='_blank'>chore: update of common files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
@@ -2865,16 +2754,16 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-1 netcrackerclplci hidden'>
+                <tr class='color-4 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-api-unifier</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-unifier/pull/10' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -2882,16 +2771,16 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-1'>
+                <tr class='color-4'>
                     <td class='repo'>Netcracker/qubership-apihub-api-unifier</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-unifier/pull/1' target='_blank'>feat: remove oas extensions</a></td>
                     <td class='author'>CountRedClaw</td>
-                    <td class='age'>82 days</td>
+                    <td class='age'>83 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -2901,7 +2790,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days</div>
                         
                     </td>
                 </tr>
@@ -2911,7 +2800,7 @@
                     
                 
                 
-                <tr class='color-2'>
+                <tr class='color-0'>
                     <td class='repo'>Netcracker/qubership-apihub-json-crawl</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-json-crawl/pull/13' target='_blank'>chore: Removed unlinking script</a></td>
                     <td class='author'>JayLim2</td>
@@ -2922,14 +2811,17 @@
                     </td>
                     <td class='attention'>
                         
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">No linked issues and not assigned to any GitHub Project</div>
+                        
                     </td>
                 </tr>
                 
-                <tr class='color-2 netcrackerclplci hidden'>
+                <tr class='color-0 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-json-crawl</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-json-crawl/pull/12' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>14 days</td>
+                    <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -2937,12 +2829,12 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-2 netcrackerclplci hidden'>
+                <tr class='color-0 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-json-crawl</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-json-crawl/pull/11' target='_blank'>chore: [skip ci] update of superlinter config files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
@@ -2954,12 +2846,12 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-2 netcrackerclplci hidden'>
+                <tr class='color-0 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-json-crawl</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-json-crawl/pull/10' target='_blank'>chore: update of common config files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
@@ -2971,12 +2863,12 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-2 netcrackerclplci hidden'>
+                <tr class='color-0 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-json-crawl</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-json-crawl/pull/9' target='_blank'>chore: update of common files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
@@ -2988,16 +2880,16 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-2 netcrackerclplci hidden'>
+                <tr class='color-0 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-json-crawl</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-json-crawl/pull/8' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -3005,7 +2897,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -3015,11 +2907,11 @@
                     
                 
                 
-                <tr class='color-3'>
+                <tr class='color-1'>
                     <td class='repo'>Netcracker/qubership-apihub-rest-playground</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-rest-playground/pull/18' target='_blank'>feat: refined tooltip behavior and delete logic</a></td>
                     <td class='author'>divy-netcracker</td>
-                    <td class='age'>12 days</td>
+                    <td class='age'>13 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -3029,16 +2921,16 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-3 netcrackerclplci hidden'>
+                <tr class='color-1 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-rest-playground</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-rest-playground/pull/17' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>14 days</td>
+                    <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -3046,12 +2938,12 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-3 netcrackerclplci hidden'>
+                <tr class='color-1 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-rest-playground</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-rest-playground/pull/16' target='_blank'>chore: [skip ci] update of superlinter config files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
@@ -3063,12 +2955,12 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-3 netcrackerclplci hidden'>
+                <tr class='color-1 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-rest-playground</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-rest-playground/pull/15' target='_blank'>chore: update of common config files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
@@ -3080,12 +2972,12 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-3 netcrackerclplci hidden'>
+                <tr class='color-1 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-rest-playground</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-rest-playground/pull/14' target='_blank'>chore: update of common files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
@@ -3097,16 +2989,16 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
                 
-                <tr class='color-3 netcrackerclplci hidden'>
+                <tr class='color-1 netcrackerclplci hidden'>
                     <td class='repo'>Netcracker/qubership-apihub-rest-playground</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-rest-playground/pull/9' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -3114,7 +3006,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -3124,27 +3016,11 @@
                     
                 
                 
-                <tr class='color-4'>
-                    <td class='repo'>Netcracker/qubership-apihub-nodejs-dev-image</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-nodejs-dev-image/pull/16' target='_blank'>chore: Added Lerna into dev image</a></td>
-                    <td class='author'>JayLim2</td>
-                    <td class='age'>7 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                            <a href='https://github.com/Netcracker/qubership-apihub/issues/190' target='_blank'>[FE] Move api-data-model into api-doc-viewer repository</a>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-4 netcrackerclplci hidden'>
-                    <td class='repo'>Netcracker/qubership-apihub-nodejs-dev-image</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-nodejs-dev-image/pull/15' target='_blank'>chore: update of common workflows</a></td>
+                <tr class='color-2 netcrackerclplci hidden'>
+                    <td class='repo'>Netcracker/qubership-apihub-sniffer-agent</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-sniffer-agent/pull/10' target='_blank'>chore: [skip ci] update of superlinter config files</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>14 days</td>
+                    <td class='age'>15 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -3152,7 +3028,170 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-2 netcrackerclplci hidden'>
+                    <td class='repo'>Netcracker/qubership-apihub-sniffer-agent</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-sniffer-agent/pull/9' target='_blank'>chore: update of common config files</a></td>
+                    <td class='author'>NetcrackerCLPLCI</td>
+                    <td class='age'>15 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-2 netcrackerclplci hidden'>
+                    <td class='repo'>Netcracker/qubership-apihub-sniffer-agent</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-sniffer-agent/pull/8' target='_blank'>chore: update of common files</a></td>
+                    <td class='author'>NetcrackerCLPLCI</td>
+                    <td class='age'>15 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-2 netcrackerclplci hidden'>
+                    <td class='repo'>Netcracker/qubership-apihub-sniffer-agent</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-sniffer-agent/pull/7' target='_blank'>chore: update of common workflows</a></td>
+                    <td class='author'>NetcrackerCLPLCI</td>
+                    <td class='age'>40 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+            
+                
+                    
+                
+                
+                <tr class='color-3 netcrackerclplci hidden'>
+                    <td class='repo'>Netcracker/qubership-apihub-jest-chrome-in-docker-environment</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-jest-chrome-in-docker-environment/pull/12' target='_blank'>chore: update of common workflows</a></td>
+                    <td class='author'>NetcrackerCLPLCI</td>
+                    <td class='age'>15 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-3 netcrackerclplci hidden'>
+                    <td class='repo'>Netcracker/qubership-apihub-jest-chrome-in-docker-environment</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-jest-chrome-in-docker-environment/pull/11' target='_blank'>chore: [skip ci] update of superlinter config files</a></td>
+                    <td class='author'>NetcrackerCLPLCI</td>
+                    <td class='age'>15 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-3 netcrackerclplci hidden'>
+                    <td class='repo'>Netcracker/qubership-apihub-jest-chrome-in-docker-environment</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-jest-chrome-in-docker-environment/pull/10' target='_blank'>chore: update of common config files</a></td>
+                    <td class='author'>NetcrackerCLPLCI</td>
+                    <td class='age'>15 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-3 netcrackerclplci hidden'>
+                    <td class='repo'>Netcracker/qubership-apihub-jest-chrome-in-docker-environment</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-jest-chrome-in-docker-environment/pull/9' target='_blank'>chore: update of common files</a></td>
+                    <td class='author'>NetcrackerCLPLCI</td>
+                    <td class='age'>15 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-3 netcrackerclplci hidden'>
+                    <td class='repo'>Netcracker/qubership-apihub-jest-chrome-in-docker-environment</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-jest-chrome-in-docker-environment/pull/8' target='_blank'>chore: update of common workflows</a></td>
+                    <td class='author'>NetcrackerCLPLCI</td>
+                    <td class='age'>40 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+            
+                
+                    
+                
+                
+                <tr class='color-4 netcrackerclplci hidden'>
+                    <td class='repo'>Netcracker/qubership-apihub-nodejs-dev-image</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-nodejs-dev-image/pull/15' target='_blank'>chore: update of common workflows</a></td>
+                    <td class='author'>NetcrackerCLPLCI</td>
+                    <td class='age'>15 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -3169,7 +3208,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -3186,7 +3225,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -3203,7 +3242,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -3212,7 +3251,7 @@
                     <td class='repo'>Netcracker/qubership-apihub-nodejs-dev-image</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-nodejs-dev-image/pull/10' target='_blank'>chore: update of common workflows</a></td>
                     <td class='author'>NetcrackerCLPLCI</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
                     <td>
                         
@@ -3220,7 +3259,7 @@
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
-                            <span class="attention-text">(PR open for more than 10 days)</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
