@@ -27,7 +27,10 @@ def rule_open_more_than_10_days(pr):
     """
     created = datetime.datetime.strptime(pr["created_at"], "%Y-%m-%dT%H:%M:%SZ")
     age_days = (datetime.datetime.utcnow() - created).days
-    return age_days > 10
+    result = age_days > 10
+    if VERBOSE:
+        print(f"[Rule] 'open > 10 days' on PR #{pr['number']}: age_days={age_days} -> {result}")
+    return result
 
 def rule_no_issues_and_not_exempt(pr):
     """
@@ -40,7 +43,10 @@ def rule_no_issues_and_not_exempt(pr):
         title_lower.startswith("doc") or
         title_lower.startswith("tech")
     )
-    return no_issues and not exempt_prefix
+    result = no_issues and not exempt_prefix
+    if VERBOSE:
+        print(f"[Rule] 'no issues & not exempt' on PR #{pr['number']}: no_issues={no_issues}, exempt_prefix={exempt_prefix} -> {result}")
+    return result
 
 def rule_not_in_any_project(pr):
     """
@@ -48,14 +54,16 @@ def rule_not_in_any_project(pr):
     """
     no_projects = len(pr.get("projects", [])) == 0
     no_issues = len(pr.get("issues", [])) == 0
-    return no_projects and no_issues
+    result = no_projects and no_issues
+    if VERBOSE:
+        print(f"[Rule] 'no issues & no projects' on PR #{pr['number']}: no_issues={no_issues}, no_projects={no_projects} -> {result}")
+    return result
 
 # List of rules: each rule has a function and a human-readable description
 ATTENTION_RULES = [
     {"func": rule_open_more_than_10_days, "description": "PR open for more than 10 days"},
     {"func": rule_no_issues_and_not_exempt, "description": "No linked issues and title does not start with 'chore', 'doc', or 'tech'"},
     {"func": rule_not_in_any_project, "description": "No linked issues and not assigned to any GitHub Project"},
-    # Add new rules here if needed
 ]
 
 def get_attention_reasons(pr):
@@ -68,7 +76,9 @@ def get_attention_reasons(pr):
         try:
             if rule["func"](pr):
                 reasons.append(rule["description"])
-        except Exception:
+        except Exception as e:
+            if VERBOSE:
+                print(f"[Error] evaluating rule '{rule['description']}' on PR #{pr['number']}: {e}")
             continue
     return reasons
 
@@ -93,8 +103,12 @@ def get_linked_issues_via_graphql(owner, repo, pr_number):
     }
     '''
     variables = {"owner": owner, "repo": repo, "prNumber": pr_number}
+    if VERBOSE:
+        print(f"[GraphQL] Requesting issues for {owner}/{repo} PR #{pr_number} with variables: {variables}")
     response = requests.post(GRAPHQL_URL, json={"query": query, "variables": variables}, headers=HEADERS)
     data = response.json()
+    if VERBOSE:
+        print(f"[GraphQL] Response for issues (PR #{pr_number}): {json.dumps(data, indent=2)}")
 
     repository = data.get("data", {}).get("repository") or {}
     pr_node = repository.get("pullRequest") or {}
@@ -104,23 +118,23 @@ def get_linked_issues_via_graphql(owner, repo, pr_number):
         title = node.get("title")
         if url and title:
             issues.append((url, title))
+    if VERBOSE:
+        print(f"[GraphQL] Parsed issues for PR #{pr_number}: {issues}")
     return issues
 
-# --- GraphQL helper to get project cards for a PR ---
+# --- GraphQL helper to get project assignments from ProjectsV2 ---
 def get_pr_projects_via_graphql(owner, repo, pr_number):
     """
-    Fetch project cards (project names) for a given pull request via GraphQL.
-    Returns a list of project names.
+    Fetch ProjectsV2 entries (project titles) for a given pull request via GraphQL.
+    Returns a list of project titles.
     """
     query = '''
     query($owner: String!, $repo: String!, $prNumber: Int!) {
       repository(owner: $owner, name: $repo) {
         pullRequest(number: $prNumber) {
-          projectCards(first: 10) {
+          projectsV2(first: 10) {
             nodes {
-              project {
-                name
-              }
+              title
             }
           }
         }
@@ -128,17 +142,22 @@ def get_pr_projects_via_graphql(owner, repo, pr_number):
     }
     '''
     variables = {"owner": owner, "repo": repo, "prNumber": pr_number}
+    if VERBOSE:
+        print(f"[GraphQL] Requesting projectsV2 for {owner}/{repo} PR #{pr_number} with variables: {variables}")
     response = requests.post(GRAPHQL_URL, json={"query": query, "variables": variables}, headers=HEADERS)
     data = response.json()
+    if VERBOSE:
+        print(f"[GraphQL] Response for projectsV2 (PR #{pr_number}): {json.dumps(data, indent=2)}")
 
     repository = data.get("data", {}).get("repository") or {}
     pr_node = repository.get("pullRequest") or {}
     projects = []
-    for node in pr_node.get("projectCards", {}).get("nodes", []):
-        project_info = node.get("project") or {}
-        name = project_info.get("name")
-        if name:
-            projects.append(name)
+    for node in pr_node.get("projectsV2", {}).get("nodes", []):
+        title = node.get("title")
+        if title:
+            projects.append(title)
+    if VERBOSE:
+        print(f"[GraphQL] Parsed projects for PR #{pr_number}: {projects}")
     return projects
 
 # --- Search for repositories with the specified topic using GitHub search API ---
@@ -148,10 +167,10 @@ def get_repositories_with_topic(org, topic):
     while True:
         url = f"https://api.github.com/search/repositories?q=topic:{topic}+org:{org}&per_page=100&page={page}"
         if VERBOSE:
-            print(f"Searching repositories from: {url}")
+            print(f"[REST] Searching repositories from: {url}")
         resp = requests.get(url, headers=HEADERS).json()
         if VERBOSE:
-            print(f"Found {len(resp.get('items', []))} repositories on page {page}")
+            print(f"[REST] Response repos page {page}: {json.dumps(resp, indent=2)[:500]}...")
         if not resp.get("items"):
             break
         for repo in resp["items"]:
@@ -159,6 +178,8 @@ def get_repositories_with_topic(org, topic):
         if len(resp["items"]) < 100:
             break
         page += 1
+    if VERBOSE:
+        print(f"[REST] Total repositories found: {len(repos)}")
     return repos
 
 # --- Fetch open pull requests along with issues and projects ---
@@ -166,8 +187,10 @@ def get_pull_requests(repo_full_name):
     prs = []
     url = f"https://api.github.com/repos/{repo_full_name}/pulls?state=open"
     if VERBOSE:
-        print(f"Fetching PRs from: {url}")
+        print(f"[REST] Fetching PRs from: {url}")
     resp = requests.get(url, headers=HEADERS).json()
+    if VERBOSE:
+        print(f"[REST] Response PRs for {repo_full_name}: {json.dumps(resp, indent=2)[:500]}...")
     for pr in resp:
         owner, repo = repo_full_name.split("/")
         pr_number = pr["number"]
@@ -178,6 +201,7 @@ def get_pull_requests(repo_full_name):
         projects = get_pr_projects_via_graphql(owner, repo, pr_number)
 
         pr_details = {
+            "number": pr_number,
             "html_url": pr.get("html_url", ""),
             "title": pr.get("title", ""),
             "user": pr.get("user", {}).get("login", ""),
@@ -188,8 +212,12 @@ def get_pull_requests(repo_full_name):
             "issues": issues,
             "projects": projects
         }
+        if VERBOSE:
+            print(f"[PR] Collected details for PR #{pr_number}: issues={issues}, projects={projects}")
         # Collect reasons why this PR requires attention
         pr_details["attention_reasons"] = get_attention_reasons(pr_details)
+        if VERBOSE and pr_details["attention_reasons"]:
+            print(f"[Attention] PR #{pr_number} reasons: {pr_details['attention_reasons']}")
         prs.append(pr_details)
     return prs
 
