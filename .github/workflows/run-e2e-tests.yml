@@ -295,6 +295,19 @@ jobs:
             ${{ github.workspace }}/*.log
             retention-days: 7
 
+      - name: Show test run config
+        run: |
+          echo '# Test run configuration' >> $GITHUB_STEP_SUMMARY
+          echo '| Parameter | Value |' >> $GITHUB_STEP_SUMMARY
+          echo '|-----------|-------|' >> $GITHUB_STEP_SUMMARY
+          echo '|Execute BE tests|`${{ inputs.postman-collections-run }}`|' >> $GITHUB_STEP_SUMMARY
+          echo '|Execute UI tests|`${{ inputs.playwright-tests-run }}`|' >> $GITHUB_STEP_SUMMARY
+          echo '|Playwright branch to clone|`${{ steps.calculate-playwright-branch.outputs.branch }}`|' >> $GITHUB_STEP_SUMMARY
+          echo '|Playwright test command CLI arguments|`${{ inputs.playwright-test-args }}`|' >> $GITHUB_STEP_SUMMARY
+          echo '|Backend docker image tag|`${{ inputs.apihub-backend-image-tag }}`|' >> $GITHUB_STEP_SUMMARY
+          echo '|Build Task Consumer docker image tag|`${{ inputs.apihub-build-task-consumer-image-tag }}`|' >> $GITHUB_STEP_SUMMARY
+          echo '|UI docker image tag|`${{ inputs.apihub-ui-image-tag }}`|' >> $GITHUB_STEP_SUMMARY
+
       - name: Fail job if there are failed tests
         run: |
           if [ "${{ steps.check_newman_tests.outcome }}" == "failure" ]; then
