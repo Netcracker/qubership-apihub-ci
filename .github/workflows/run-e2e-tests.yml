@@ -295,6 +295,37 @@ jobs:
             ${{ github.workspace }}/*.log
             retention-days: 7
 
+      - name: Show test run config
+        run: |
+          # Create the summary table
+          {
+            echo "## Test run configuration"
+            echo "| Parameter                                | Value                                                                                    |"
+            echo "|------------------------------------------|------------------------------------------------------------------------------------------|"
+            echo "| **Execute BE tests**                     | **\`${{ inputs.postman-collections-run }}\`**                                            |"
+            echo "| Postman collections branch to clone      | \`${{ steps.calculate-postman-branch.outputs.branch || 'branch was not calculated' }}\`  |"
+            
+            # Build collections list - split comma-separated string into separate lines
+            # to avoid breaking table formatting with very long single line
+          
+            echo -n "| Postman collections to execute | "
+            IFS=',' read -ra COLLECTIONS <<< "${{ inputs.postman-collections-list }}"
+            for i in "${!COLLECTIONS[@]}"; do
+              if [ $i -gt 0 ]; then
+                echo -n "<br>"
+              fi
+              echo -n "\`${COLLECTIONS[$i]}\`"
+            done
+            echo " |"
+            
+            echo "| **Execute UI tests**                  | **\`${{ inputs.playwright-tests-run }}\`**                                                 |"
+            echo "| Playwright branch to clone            | \`${{ steps.calculate-playwright-branch.outputs.branch || 'branch was not calculated' }}\` |"
+            echo "| Playwright test command CLI arguments | \`${{ inputs.playwright-test-args }}\`                                                     |"
+            echo "| Backend docker image tag              | \`${{ inputs.apihub-backend-image-tag }}\`                                                 |"
+            echo "| Build Task Consumer docker image tag  | \`${{ inputs.apihub-build-task-consumer-image-tag }}\`                                     |"
+            echo "| UI docker image tag                   | \`${{ inputs.apihub-ui-image-tag }}\`                                                      |"
+          } >> $GITHUB_STEP_SUMMARY
+
       - name: Fail job if there are failed tests
         run: |
           if [ "${{ steps.check_newman_tests.outcome }}" == "failure" ]; then
