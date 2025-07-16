@@ -90,7 +90,7 @@ jobs:
           node-version: '20'
           registry-url: 'https://npm.pkg.github.com/'
 
-      - name: Template .env files with environment variables
+      - name: Template .env and config.yaml files with environment variables
         env:
           JWT_PRIVATE_KEY: ${{ secrets.JWT_PRIVATE_KEY }}
           APIHUB_ADMIN_EMAIL: ${{ secrets.APIHUB_ADMIN_EMAIL }}
@@ -103,6 +103,10 @@ jobs:
             envsubst < "$env_file" > "${env_file}.tmp"
             mv "${env_file}.tmp" "$env_file"
           done
+
+          cd ${{ inputs.compose-repository-compose-folder }}    
+          envsubst < qubership-apihub-backend-config.yaml > qubership-apihub-backend-config.yaml.tmp
+          mv qubership-apihub-backend-config.yaml.tmp qubership-apihub-backend-config.yaml
 
       - name: Substitute docker tags in compose file
         run: |
