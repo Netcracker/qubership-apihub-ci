@@ -38,6 +38,8 @@ assignee_map = {
     "zloiadil": "Adil Bektursunov",
     "nilesh25890": "Nilesh Ashokrao Shinde",
     "oommenmathewpanicker": "Oommen Mathew Panicker",
+    "nagarajrarchak": "Nagaraj Raghavendra Archak",
+    "sujithn-nc": "Sujith N",
     "TODO": "TODO",
     "divy-netcracker": "Divy Tripathy"
 }
