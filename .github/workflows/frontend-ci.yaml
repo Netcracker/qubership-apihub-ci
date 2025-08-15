@@ -114,6 +114,10 @@ jobs:
           else
             npm version "${NEW_VERSION}" --no-git-tag-version
           fi
+          
+          # Output version to step summary
+          echo "### Version Bump" >> $GITHUB_STEP_SUMMARY
+          echo "New version: **${NEW_VERSION}**" >> $GITHUB_STEP_SUMMARY
 
       - name: Get package version
         id: get_version
