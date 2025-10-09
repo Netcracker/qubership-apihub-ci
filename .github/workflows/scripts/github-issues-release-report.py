@@ -7,9 +7,9 @@ import datetime
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 PROJECT_URL = "https://github.com/orgs/Netcracker/projects/9"
 RELEASE_NAME = os.environ.get("RELEASE_NAME")
+ESTIMATE_FIELD_NAME = "Estimate, md"
+TIME_SPENT_FIELD_NAME = "Time spent, md"
 
-
-# Include the sub_issues feature flag so that the `parent` field is available
 HEADERS = {
     "Authorization": f"Bearer {GITHUB_TOKEN}",
     "Accept": "application/vnd.github+json",
@@ -32,6 +32,7 @@ assignee_map = {
     "raa1618033": "Alexey Rodionov",
     "tiutiunnyk-ivan": "Ivan Tiutiunnyk",
     "Maryna-Ko": "Maryna Kovalenko",
+    "ArtemNalesnikovskyi": "Artem Nalesnikovskyi",
     "iugaidiana": "Diana Iugai",
     "vOrigins": "Vladyslav Novikov",
     "tanabebr": "Felipe Tanabe",
@@ -100,6 +101,11 @@ def get_project_fields(org, number):
                   name
                 }
               }
+              ... on ProjectV2Field {
+                id
+                name
+                dataType
+              }
             }
           }
         }
@@ -114,6 +120,7 @@ def get_project_fields(org, number):
     sprint_field_id = None
     matched_sprints = {}
     field_options = {"Status": {}, "Priority": {}}
+    numeric_fields = {}
 
     for f in fields:
         if f["__typename"] == "ProjectV2IterationField" and f["name"] == "Sprint":
@@ -125,13 +132,18 @@ def get_project_fields(org, number):
         if f["__typename"] == "ProjectV2SingleSelectField" and f["name"] in field_options:
             for opt in f.get("options", []):
                 field_options[f["name"]][opt["id"]] = opt["name"]
+        if f["__typename"] == "ProjectV2Field" and f.get("dataType") == "NUMBER":
+            if f["name"] == ESTIMATE_FIELD_NAME:
+                numeric_fields["estimate"] = f["id"]
+            elif f["name"] == TIME_SPENT_FIELD_NAME:
+                numeric_fields["time_spent"] = f["id"]
 
     if not sprint_field_id or not matched_sprints:
         raise Exception("Matching sprints not found or sprint field missing")
 
-    return project_id, sprint_field_id, matched_sprints, field_options
+    return project_id, sprint_field_id, matched_sprints, field_options, numeric_fields
 
-def get_issues_for_sprints(project_id, sprint_field_id, sprint_id_to_title, field_options):
+def get_issues_for_sprints(project_id, sprint_field_id, sprint_id_to_title, field_options, numeric_fields):
     query = """
     query($projectId: ID!, $after: String) {
       node(id: $projectId) {
@@ -172,6 +184,15 @@ def get_issues_for_sprints(project_id, sprint_field_id, sprint_id_to_title, fiel
                       }
                     }
                   }
+                  ... on ProjectV2ItemFieldNumberValue {
+                    number
+                    field {
+                      ... on ProjectV2Field {
+                        id
+                        name
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -192,19 +213,16 @@ def get_issues_for_sprints(project_id, sprint_field_id, sprint_id_to_title, fiel
             if not content or not content.get("title"):
                 continue
 
-            # Assignee
             raw_assignees = [u["login"] for u in content.get("assignees", {}).get("nodes", [])] or ["Unassigned"]
             assignee = raw_assignees[0]
             if assignee != "Unassigned":
                 realname = assignee_map.get(assignee)
                 assignee = f"{realname} ({assignee})" if realname else assignee
 
-            # Native `parent` field
             parent_node = content.get("parent") or {}
             parent_name = parent_node.get("title", "")
             parent_url = parent_node.get("url", "")
 
-            # Issue fields
             issue_name = content["title"]
             issue_url = content["url"]
 
@@ -213,6 +231,8 @@ def get_issues_for_sprints(project_id, sprint_field_id, sprint_id_to_title, fiel
             status = "Empty"
             priority = "Empty"
             matched_sprint_id = None
+            estimate = ""
+            time_spent = ""
 
             for fv in item["fieldValues"]["nodes"]:
                 if fv["__typename"] == "ProjectV2ItemFieldIterationValue":
@@ -227,6 +247,13 @@ def get_issues_for_sprints(project_id, sprint_field_id, sprint_id_to_title, fiel
                             status = val
                         elif field_name == "Priority":
                             priority = val
+                if fv["__typename"] == "ProjectV2ItemFieldNumberValue":
+                    field_id = fv.get("field", {}).get("id")
+                    number_value = fv.get("number")
+                    if field_id == numeric_fields.get("estimate"):
+                        estimate = number_value
+                    elif field_id == numeric_fields.get("time_spent"):
+                        time_spent = number_value
 
             if matched_sprint_id:
                 issues.append({
@@ -238,7 +265,9 @@ def get_issues_for_sprints(project_id, sprint_field_id, sprint_id_to_title, fiel
                     "status":      status,
                     "sprint":      sprint_id_to_title[matched_sprint_id],
                     "parent_name": parent_name,
-                    "parent_url":  parent_url
+                    "parent_url":  parent_url,
+                    "estimate":    estimate,
+                    "time_spent":  time_spent
                 })
 
         page_info = result["data"]["node"]["items"]["pageInfo"]
@@ -265,6 +294,7 @@ def generate_html_report(data, release_name):
     th, td {{ border: 1px solid #ccc; padding: 4px; text-align: left; }}
     th {{ background-color: #f2f2f2; cursor: pointer; }}
     tr:hover {{ background-color: #f1f1f1; }}
+    .numeric {{ text-align: right; }}
   </style>
   <script src='https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js'></script>
 </head>
@@ -279,6 +309,8 @@ def generate_html_report(data, release_name):
         <th>Type</th>
         <th>Priority</th>
         <th>Status</th>
+        <th>Estimate, md</th>
+        <th>Time Spent, md</th>
         <th>Sprint Name</th>
         <th>Parent Name</th>
         <th>Parent URL</th>
@@ -287,7 +319,6 @@ def generate_html_report(data, release_name):
     <tbody>
 """)
         for issue in data:
-            # clickable URL cells
             issue_link = f"<a href='{issue['issue_url']}' target='_blank'>{issue['issue_url']}</a>"
             parent_link = f"<a href='{issue['parent_url']}' target='_blank'>{issue['parent_url']}</a>" if issue['parent_url'] else ""
             f.write(
@@ -298,6 +329,8 @@ def generate_html_report(data, release_name):
                 f"<td>{issue['type']}</td>"
                 f"<td>{issue['priority']}</td>"
                 f"<td>{issue['status']}</td>"
+                f"<td class='numeric'>{issue['estimate']}</td>"
+                f"<td class='numeric'>{issue['time_spent']}</td>"
                 f"<td>{issue['sprint']}</td>"
                 f"<td>{issue['parent_name']}</td>"
                 f"<td>{parent_link}</td>"
@@ -314,8 +347,8 @@ def generate_html_report(data, release_name):
 
 def main():
     org, number = extract_org_and_number(PROJECT_URL)
-    project_id, sprint_field_id, matched_sprints, field_options = get_project_fields(org, number)
-    data = get_issues_for_sprints(project_id, sprint_field_id, matched_sprints, field_options)
+    project_id, sprint_field_id, matched_sprints, field_options, numeric_fields = get_project_fields(org, number)
+    data = get_issues_for_sprints(project_id, sprint_field_id, matched_sprints, field_options, numeric_fields)
     generate_html_report(data, RELEASE_NAME)
 
 if __name__ == "__main__":

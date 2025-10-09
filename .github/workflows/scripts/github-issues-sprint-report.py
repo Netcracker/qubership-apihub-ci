@@ -9,6 +9,8 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 PROJECT_URL = "https://github.com/orgs/Netcracker/projects/9"
 SPRINT_FIELD_NAME = "Sprint"
 STATUSES_TO_SHOW_BY_DEFAULT = ["In Progress", "In Review", "In Test"]
+ESTIMATE_FIELD_NAME = "Estimate, md"
+TIME_SPENT_FIELD_NAME = "Time spent, md"
 
 HEADERS = {
     "Authorization": f"Bearer {GITHUB_TOKEN}",
@@ -73,6 +75,11 @@ def get_project_fields(org, number):
                   name
                 }
               }
+              ... on ProjectV2Field {
+                id
+                name
+                dataType
+              }
             }
           }
         }
@@ -88,6 +95,7 @@ def get_project_fields(org, number):
     sprint_iterations = {}
     current_sprint_id = None
     field_options = {"Status": {}, "Priority": {}}
+    numeric_fields = {}
 
     now = datetime.datetime.utcnow().date()
 
@@ -105,13 +113,18 @@ def get_project_fields(org, number):
         if f["__typename"] == "ProjectV2SingleSelectField" and f["name"] in field_options:
             for opt in f.get("options", []):
                 field_options[f["name"]][opt["id"]] = opt["name"]
+        if f["__typename"] == "ProjectV2Field" and f.get("dataType") == "NUMBER":
+            if f["name"] == ESTIMATE_FIELD_NAME:
+                numeric_fields["estimate"] = f["id"]
+            elif f["name"] == TIME_SPENT_FIELD_NAME:
+                numeric_fields["time_spent"] = f["id"]
 
     if not sprint_field_id or not current_sprint_id:
         raise Exception("Current sprint not found or sprint field missing")
 
-    return project_id, sprint_field_id, current_sprint_id, sprint_iterations, field_options
+    return project_id, sprint_field_id, current_sprint_id, sprint_iterations, field_options, numeric_fields
 
-def get_issues_by_assignee(project_id, sprint_field_id, sprint_id, field_options):
+def get_issues_by_assignee(project_id, sprint_field_id, sprint_id, field_options, numeric_fields):
     query = """
     query($projectId: ID!, $after: String) {
       node(id: $projectId) {
@@ -148,6 +161,15 @@ def get_issues_by_assignee(project_id, sprint_field_id, sprint_id, field_options
                       }
                     }
                   }
+                  ... on ProjectV2ItemFieldNumberValue {
+                    number
+                    field {
+                      ... on ProjectV2Field {
+                        id
+                        name
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -171,6 +193,8 @@ def get_issues_by_assignee(project_id, sprint_field_id, sprint_id, field_options
             priority = "Empty"
             type_ = content.get("issueType").get("name") if content.get("issueType") else "Empty"
             belongs_to_sprint = False
+            estimate = ""
+            time_spent = ""
 
             for fv in item["fieldValues"]["nodes"]:
                 if fv["__typename"] == "ProjectV2ItemFieldIterationValue" and fv.get("iterationId") == sprint_id:
@@ -184,6 +208,13 @@ def get_issues_by_assignee(project_id, sprint_field_id, sprint_id, field_options
                             status = value
                         elif field_name == "Priority":
                             priority = value
+                if fv["__typename"] == "ProjectV2ItemFieldNumberValue":
+                    field_id = fv.get("field", {}).get("id")
+                    number_value = fv.get("number")
+                    if field_id == numeric_fields.get("estimate"):
+                        estimate = number_value
+                    elif field_id == numeric_fields.get("time_spent"):
+                        time_spent = number_value
 
             if belongs_to_sprint:
                 for a in assignees:
@@ -193,7 +224,9 @@ def get_issues_by_assignee(project_id, sprint_field_id, sprint_id, field_options
                         "type": type_,
                         "priority": priority,
                         "status": status,
-                        "url": content["url"]
+                        "url": content["url"],
+                        "estimate": estimate,
+                        "time_spent": time_spent
                     })
 
         if not result["data"]["node"]["items"]["pageInfo"]["hasNextPage"]:
@@ -216,6 +249,7 @@ assignee_map = {
     "raa1618033": "Alexey Rodionov",
     "tiutiunnyk-ivan": "Ivan Tiutiunnyk",
     "Maryna-Ko": "Maryna Kovalenko",
+    "ArtemNalesnikovskyi": "Artem Nalesnikovskyi",
     "iugaidiana": "Diana Iugai",
     "vOrigins": "Vladyslav Novikov",
     "tanabebr": "Felipe Tanabe",
@@ -246,6 +280,7 @@ def generate_html_report(data, sprint_name):
     th, td {{ border: 1px solid #ccc; padding: 4px; text-align: left; }}
     th {{ background-color: #f2f2f2; cursor: pointer; }}
     tr:hover {{ background-color: #f1f1f1; }}
+    .numeric {{ text-align: right; }}
   </style>
   <script src='https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js'></script>
   <script src='https://code.jquery.com/jquery-3.6.0.min.js'></script>
@@ -262,6 +297,8 @@ def generate_html_report(data, sprint_name):
         <th>Type &#x25B2;&#x25BC;</th>
         <th>Priority &#x25B2;&#x25BC;</th>
         <th>Status &#x25B2;&#x25BC;</th>
+        <th>Estimate, md &#x25B2;&#x25BC;</th>
+        <th>Time Spent, md &#x25B2;&#x25BC;</th>
         <th>URL</th>
       </tr>
     </thead>
@@ -277,8 +314,19 @@ def generate_html_report(data, sprint_name):
             if assignee not in assignee_colors:
                 assignee_colors[assignee] = color_palette[len(assignee_colors) % len(color_palette)]
             color = assignee_colors[assignee]
+            
+            estimate_display = issue['estimate'] if issue['estimate'] is not None else ""
+            time_spent_display = issue['time_spent'] if issue['time_spent'] is not None else ""
+            
             f.write(f"      <tr style='background-color:{color};'>")
-            f.write(f"        <td>{display_name}</td><td>{issue['name']}</td><td>{issue['type']}</td><td>{issue['priority']}</td><td>{issue['status']}</td><td><a href='{issue['url']}' target='_blank'>Link</a></td>")
+            f.write(f"        <td>{display_name}</td>")
+            f.write(f"        <td>{issue['name']}</td>")
+            f.write(f"        <td>{issue['type']}</td>")
+            f.write(f"        <td>{issue['priority']}</td>")
+            f.write(f"        <td>{issue['status']}</td>")
+            f.write(f"        <td class='numeric'>{estimate_display}</td>")
+            f.write(f"        <td class='numeric'>{time_spent_display}</td>")
+            f.write(f"        <td><a href='{issue['url']}' target='_blank'>Link</a></td>")
             f.write("      </tr>")
 
         f.write(f"""
@@ -314,9 +362,9 @@ def generate_html_report(data, sprint_name):
 
 def main():
     org, number = extract_org_and_number(PROJECT_URL)
-    project_id, sprint_field_id, current_sprint_id, sprint_iterations, field_options = get_project_fields(org, number)
+    project_id, sprint_field_id, current_sprint_id, sprint_iterations, field_options, numeric_fields = get_project_fields(org, number)
     sprint_name = next(name for name, sid in sprint_iterations.items() if sid == current_sprint_id)
-    data = get_issues_by_assignee(project_id, sprint_field_id, current_sprint_id, field_options)
+    data = get_issues_by_assignee(project_id, sprint_field_id, current_sprint_id, field_options, numeric_fields)
     generate_html_report(data, sprint_name)
 
 if __name__ == "__main__":
