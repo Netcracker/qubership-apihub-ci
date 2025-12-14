@@ -61,6 +61,10 @@ on:
             description: "UI image tag to be executed"
             type: string
             default: "dev"
+        apihub-api-linter-service-image-tag:
+            description: "API Linter Service image tag to be executed"
+            type: string
+            default: "dev"
     secrets:
         JWT_PRIVATE_KEY:
             required: true
@@ -116,6 +120,7 @@ jobs:
             -e "s|\(ghcr.io/netcracker/qubership-apihub-backend:\)[^ ]*|\1${{ inputs.apihub-backend-image-tag }}|g" \
             -e "s|\(ghcr.io/netcracker/qubership-apihub-build-task-consumer:\)[^ ]*|\1${{ inputs.apihub-build-task-consumer-image-tag }}|g" \
             -e "s|\(ghcr.io/netcracker/qubership-apihub-ui:\)[^ ]*|\1${{ inputs.apihub-ui-image-tag }}|g" \
+            -e "s|\(ghcr.io/netcracker/qubership-api-linter-service:\)[^ ]*|\1${{ inputs.apihub-api-linter-service-image-tag }}|g" \
             ./${{ inputs.compose-repository-compose-file }}
           echo "$(<./${{ inputs.compose-repository-compose-file }})"
 
@@ -131,6 +136,7 @@ jobs:
           podman logs -f postgres > ./postgres.log 2>&1 &
           podman logs -f qubership-apihub-ui > ./qubership-apihub-ui.log 2>&1 &
           podman logs -f qubership-apihub-build-task-consumer > ./qubership-apihub-build-task-consumer.log 2>&1 &
+          podman logs -f qubership-api-linter-service > ./qubership-api-linter-service.log 2>&1 &
 
       - name: Wait for APIHUB startup
         run: |
@@ -328,6 +334,7 @@ jobs:
             echo "| Backend docker image tag              | \`${{ inputs.apihub-backend-image-tag }}\`                                                 |"
             echo "| Build Task Consumer docker image tag  | \`${{ inputs.apihub-build-task-consumer-image-tag }}\`                                     |"
             echo "| UI docker image tag                   | \`${{ inputs.apihub-ui-image-tag }}\`                                                      |"
+            echo "| API Linter Service docker image tag   | \`${{ inputs.apihub-api-linter-service-image-tag }}\`                                      |"
           } >> $GITHUB_STEP_SUMMARY
 
       - name: Fail job if there are failed tests
