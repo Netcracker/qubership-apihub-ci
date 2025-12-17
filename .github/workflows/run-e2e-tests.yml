@@ -341,6 +341,7 @@ jobs:
             echo "| Build Task Consumer docker image tag  | \`${{ inputs.apihub-build-task-consumer-image-tag }}\`                                     |"
             echo "| UI docker image tag                   | \`${{ inputs.apihub-ui-image-tag }}\`                                                      |"
             echo "| API Linter Service docker image tag   | \`${{ inputs.apihub-api-linter-service-image-tag }}\`                                      |"
+            echo "| Agents Backend docker image tag       | \`${{ inputs.apihub-agents-backend-image-tag }}\`                                          |"
           } >> $GITHUB_STEP_SUMMARY
 
       - name: Fail job if there are failed tests
