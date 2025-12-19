@@ -75,28 +75,59 @@ jobs:
         id: check_diffs
         if: inputs.update_snapshots == false
         run: |
-          if [ -n "$(find . -name "__diff_output__" -type d -exec ls -A {} \; 2>/dev/null)" ]; then
-            echo "has_diffs=true" >> $GITHUB_OUTPUT
+          echo "Searching for __diff_output__ directories..."
+          diff_dirs=$(find . -name "__diff_output__" -type d -not -path '*/node_modules/*' 2>/dev/null)
+          if [ -n "$diff_dirs" ]; then
+            echo "Found __diff_output__ directories:"
+            echo "$diff_dirs"
+            echo "Checking if directories contain files..."
+            if [ -n "$(find . -name "__diff_output__" -type d -exec ls -A {} \; 2>/dev/null)" ]; then
+              echo "has_diffs=true" >> $GITHUB_OUTPUT
+              echo "Result: has_diffs=true"
+            else
+              echo "has_diffs=false" >> $GITHUB_OUTPUT
+              echo "Result: has_diffs=false (directories exist but are empty)"
+            fi
           else
+            echo "No __diff_output__ directories found"
             echo "has_diffs=false" >> $GITHUB_OUTPUT
+            echo "Result: has_diffs=false"
           fi
 
       - name: Prepare artifacts
         run: |
           mkdir -p artifact-staging
           if [ "${{ inputs.update_snapshots }}" == "true" ]; then
+            echo "Preparing updated snapshots..."
             # 1. git status --porcelain: get list of changed files in concise format
             # 2. grep: filter only png files from snapshot folders
             # 3. sed 's/^...//': remove first 3 status characters (e.g. " M "), leaving clean filepath
+            echo "Changed PNG files in __image_snapshots__:"
             git status --porcelain | grep "__image_snapshots__.*\.png" | sed 's/^...//' | while read -r file; do
               # 4. Check if file exists (was not deleted)
               if [ -f "$file" ]; then
                 # 5. copy file to staging (flattening structure)
+                echo "Copying: $file"
                 cp "$file" artifact-staging/
               fi
             done
+            file_count=$(ls -1 artifact-staging/*.png 2>/dev/null | wc -l)
+            echo "Total files copied: $file_count"
+            echo "Files in artifact-staging:"
+            ls -la artifact-staging/ || echo "artifact-staging is empty"
           else
-            find . -name "__diff_output__" -type d -not -path '*/node_modules/*' -exec cp -r {} artifact-staging/ \;
+            echo "Preparing diff output artifacts..."
+            diff_dirs=$(find . -name "__diff_output__" -type d -not -path '*/node_modules/*' 2>/dev/null)
+            if [ -n "$diff_dirs" ]; then
+              echo "Found __diff_output__ directories:"
+              echo "$diff_dirs"
+              echo "Copying to artifact-staging..."
+              find . -name "__diff_output__" -type d -not -path '*/node_modules/*' -exec cp -r {} artifact-staging/ \;
+              echo "Contents of artifact-staging:"
+              ls -la artifact-staging/ || echo "artifact-staging is empty"
+            else
+              echo "No __diff_output__ directories found, artifact-staging remains empty"
+            fi
           fi
 
       - name: Upload artifacts
