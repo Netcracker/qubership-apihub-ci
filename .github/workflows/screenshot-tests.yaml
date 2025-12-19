@@ -91,23 +91,23 @@ jobs:
       - name: Prepare artifacts
         run: |
           mkdir -p artifact-staging
-          
+
           # Helper function to get file size (works on both Linux and macOS)
           get_file_size() {
             stat -c%s "$1" 2>/dev/null || stat -f%z "$1" 2>/dev/null || echo "?"
           }
-          
+
           # Helper function to list files with sizes
           list_files() {
             local dir=$1
             local prefix=$2
             find "$dir" -type f 2>/dev/null | while read -r file; do
               size=$(get_file_size "$file")
-              rel_path=${file#$prefix}
+              rel_path=${file#"$prefix"}
               echo "  $size bytes  $rel_path"
             done
           }
-          
+
           if [ "${{ inputs.update_snapshots }}" == "true" ]; then
             echo "Preparing updated snapshots..."
             echo "Changed PNG files in __image_snapshots__:"
