@@ -60,7 +60,7 @@ jobs:
       - name: Run tests
         id: tests
         continue-on-error: true
-        run: npm run ${{ inputs.update_snapshots == true && 'screenshot-test:regenerate-snapshots' || 'screenshot-test:ci' }}
+        run: npm run ${{ inputs.update_snapshots == true && 'screenshot-test:regenerate-snapshots:ci' || 'screenshot-test:ci' }}
 
       - name: Debug test outcome
         if: always()
