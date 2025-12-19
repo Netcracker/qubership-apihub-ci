@@ -114,7 +114,11 @@ jobs:
             file_count=$(find artifact-staging -maxdepth 1 -name "*.png" -type f 2>/dev/null | wc -l)
             echo "Total files copied: $file_count"
             echo "Files in artifact-staging:"
-            find artifact-staging -maxdepth 1 -type f -exec ls -ld {} \; 2>/dev/null || echo "artifact-staging is empty"
+            find artifact-staging -maxdepth 1 -type f 2>/dev/null | while read -r file; do
+              size=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file" 2>/dev/null || echo "?")
+              basename=$(basename "$file")
+              echo "  $size bytes  $basename"
+            done || echo "artifact-staging is empty"
           else
             echo "Preparing diff output artifacts..."
             diff_dirs=$(find . -name "__diff_output__" -type d -not -path '*/node_modules/*' 2>/dev/null)
@@ -123,8 +127,14 @@ jobs:
               echo "$diff_dirs"
               echo "Copying to artifact-staging..."
               find . -name "__diff_output__" -type d -not -path '*/node_modules/*' -exec cp -r {} artifact-staging/ \;
-              echo "Contents of artifact-staging:"
-              find artifact-staging -maxdepth 1 -exec ls -ld {} \; 2>/dev/null || echo "artifact-staging is empty"
+              echo "Diff files in artifact-staging:"
+              find artifact-staging -type f 2>/dev/null | while read -r file; do
+                size=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file" 2>/dev/null || echo "?")
+                rel_path=${file#artifact-staging/}
+                echo "  $size bytes  $rel_path"
+              done || echo "No diff files found"
+              file_count=$(find artifact-staging -type f 2>/dev/null | wc -l)
+              echo "Total diff files: $file_count"
             else
               echo "No __diff_output__ directories found, artifact-staging remains empty"
             fi
