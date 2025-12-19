@@ -12,7 +12,12 @@ on:
         description: "Container image to use for the job (optional)"
         required: false
         type: string
-        default: ghcr.io/netcracker/qubership-apihub-nodejs-dev-image:1.7.3
+        default: ghcr.io/netcracker/qubership-apihub-nodejs-dev-image:1.8.0
+      update_snapshots:
+        description: "Regenerate snapshots and upload artifacts"
+        required: false
+        default: false
+        type: boolean
 jobs:
   screenshot-tests:
     if: github.event_name == 'push'
@@ -45,11 +50,22 @@ jobs:
         run: npm run update-lock-file --if-present
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
+
+      # Ensure properly build of internal dependencies (e.g. generate-stories, generate-tests) after update-lock-file
+      - name: Run postinstall
+        run: npm run postinstall --if-present
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run tests
         id: tests
         continue-on-error: true
-        run: npm run screenshot-test:ci
+        run: |
+          if [ "${{ inputs.update_snapshots }}" == "true" ]; then
+            npm run screenshot-test:regenerate-snapshots
+          else
+            npm run screenshot-test:ci
+          fi
 
       - name: Debug test outcome
         if: always()
@@ -79,6 +95,15 @@ jobs:
           path: |
             **/__diff_output__
           if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload updated snapshots
+        if: inputs.update_snapshots == true
+        uses: actions/upload-artifact@v4
+        with:
+          name: updated-snapshots
+          path: |
+            **/__image_snapshots__
           retention-days: 14
 
       - name: Check test results
