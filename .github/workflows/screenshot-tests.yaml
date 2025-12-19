@@ -85,7 +85,16 @@ jobs:
         run: |
           mkdir -p artifact-staging
           if [ "${{ inputs.update_snapshots }}" == "true" ]; then
-            find . -name "__image_snapshots__" -type d -not -path '*/node_modules/*' -exec cp -r {} artifact-staging/ \;
+            # 1. git status --porcelain: get list of changed files in concise format
+            # 2. grep: filter only png files from snapshot folders
+            # 3. sed 's/^...//': remove first 3 status characters (e.g. " M "), leaving clean filepath
+            git status --porcelain | grep "__image_snapshots__.*\.png" | sed 's/^...//' | while read file; do
+              # 4. Check if file exists (was not deleted)
+              if [ -f "$file" ]; then
+                # 5. copy file to staging (flattening structure)
+                cp "$file" artifact-staging/
+              fi
+            done
           else
             find . -name "__diff_output__" -type d -not -path '*/node_modules/*' -exec cp -r {} artifact-staging/ \;
           fi
