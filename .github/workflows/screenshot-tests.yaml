@@ -31,7 +31,7 @@ jobs:
       - name: Setup npm registry
         uses: actions/setup-node@v4
         with:
-          registry-url: 'https://npm.pkg.github.com/'
+          registry-url: "https://npm.pkg.github.com/"
 
       - name: Install dependencies
         run: npm ci
@@ -111,10 +111,10 @@ jobs:
                 cp "$file" artifact-staging/
               fi
             done
-            file_count=$(ls -1 artifact-staging/*.png 2>/dev/null | wc -l)
+            file_count=$(find artifact-staging -maxdepth 1 -name "*.png" -type f 2>/dev/null | wc -l)
             echo "Total files copied: $file_count"
             echo "Files in artifact-staging:"
-            ls -la artifact-staging/ || echo "artifact-staging is empty"
+            find artifact-staging -maxdepth 1 -type f -exec ls -ld {} \; 2>/dev/null || echo "artifact-staging is empty"
           else
             echo "Preparing diff output artifacts..."
             diff_dirs=$(find . -name "__diff_output__" -type d -not -path '*/node_modules/*' 2>/dev/null)
@@ -124,7 +124,7 @@ jobs:
               echo "Copying to artifact-staging..."
               find . -name "__diff_output__" -type d -not -path '*/node_modules/*' -exec cp -r {} artifact-staging/ \;
               echo "Contents of artifact-staging:"
-              ls -la artifact-staging/ || echo "artifact-staging is empty"
+              find artifact-staging -maxdepth 1 -exec ls -ld {} \; 2>/dev/null || echo "artifact-staging is empty"
             else
               echo "No __diff_output__ directories found, artifact-staging remains empty"
             fi
