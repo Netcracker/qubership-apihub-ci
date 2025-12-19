@@ -75,21 +75,15 @@ jobs:
         id: check_diffs
         if: inputs.update_snapshots == false
         run: |
-          echo "Searching for __diff_output__ directories..."
-          diff_dirs=$(find . -name "__diff_output__" -type d -not -path '*/node_modules/*' 2>/dev/null)
-          if [ -n "$diff_dirs" ]; then
-            echo "Found __diff_output__ directories:"
-            echo "$diff_dirs"
-            echo "Checking if directories contain files..."
-            if [ -n "$(find . -name "__diff_output__" -type d -exec ls -A {} \; 2>/dev/null)" ]; then
-              echo "has_diffs=true" >> $GITHUB_OUTPUT
-              echo "Result: has_diffs=true"
-            else
-              echo "has_diffs=false" >> $GITHUB_OUTPUT
-              echo "Result: has_diffs=false (directories exist but are empty)"
-            fi
+          echo "Searching for __diff_output__ directories with files..."
+          diff_files=$(find . -path "*/__diff_output__/*" -type f -not -path '*/node_modules/*' 2>/dev/null)
+          if [ -n "$diff_files" ]; then
+            echo "Found diff files:"
+            echo "$diff_files"
+            echo "has_diffs=true" >> $GITHUB_OUTPUT
+            echo "Result: has_diffs=true"
           else
-            echo "No __diff_output__ directories found"
+            echo "No diff files found"
             echo "has_diffs=false" >> $GITHUB_OUTPUT
             echo "Result: has_diffs=false"
           fi
@@ -97,16 +91,28 @@ jobs:
       - name: Prepare artifacts
         run: |
           mkdir -p artifact-staging
+          
+          # Helper function to get file size (works on both Linux and macOS)
+          get_file_size() {
+            stat -c%s "$1" 2>/dev/null || stat -f%z "$1" 2>/dev/null || echo "?"
+          }
+          
+          # Helper function to list files with sizes
+          list_files() {
+            local dir=$1
+            local prefix=$2
+            find "$dir" -type f 2>/dev/null | while read -r file; do
+              size=$(get_file_size "$file")
+              rel_path=${file#$prefix}
+              echo "  $size bytes  $rel_path"
+            done
+          }
+          
           if [ "${{ inputs.update_snapshots }}" == "true" ]; then
             echo "Preparing updated snapshots..."
-            # 1. git status --porcelain: get list of changed files in concise format
-            # 2. grep: filter only png files from snapshot folders
-            # 3. sed 's/^...//': remove first 3 status characters (e.g. " M "), leaving clean filepath
             echo "Changed PNG files in __image_snapshots__:"
             git status --porcelain | grep "__image_snapshots__.*\.png" | sed 's/^...//' | while read -r file; do
-              # 4. Check if file exists (was not deleted)
               if [ -f "$file" ]; then
-                # 5. copy file to staging (flattening structure)
                 echo "Copying: $file"
                 cp "$file" artifact-staging/
               fi
@@ -114,11 +120,7 @@ jobs:
             file_count=$(find artifact-staging -maxdepth 1 -name "*.png" -type f 2>/dev/null | wc -l)
             echo "Total files copied: $file_count"
             echo "Files in artifact-staging:"
-            find artifact-staging -maxdepth 1 -type f 2>/dev/null | while read -r file; do
-              size=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file" 2>/dev/null || echo "?")
-              basename=$(basename "$file")
-              echo "  $size bytes  $basename"
-            done || echo "artifact-staging is empty"
+            list_files "artifact-staging" "artifact-staging/"
           else
             echo "Preparing diff output artifacts..."
             diff_dirs=$(find . -name "__diff_output__" -type d -not -path '*/node_modules/*' 2>/dev/null)
@@ -128,11 +130,7 @@ jobs:
               echo "Copying to artifact-staging..."
               find . -name "__diff_output__" -type d -not -path '*/node_modules/*' -exec cp -r {} artifact-staging/ \;
               echo "Diff files in artifact-staging:"
-              find artifact-staging -type f 2>/dev/null | while read -r file; do
-                size=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file" 2>/dev/null || echo "?")
-                rel_path=${file#artifact-staging/}
-                echo "  $size bytes  $rel_path"
-              done || echo "No diff files found"
+              list_files "artifact-staging" "artifact-staging/"
               file_count=$(find artifact-staging -type f 2>/dev/null | wc -l)
               echo "Total diff files: $file_count"
             else
