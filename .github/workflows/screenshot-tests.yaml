@@ -60,12 +60,7 @@ jobs:
       - name: Run tests
         id: tests
         continue-on-error: true
-        run: |
-          if [ "${{ inputs.update_snapshots }}" == "true" ]; then
-            npm run screenshot-test:regenerate-snapshots
-          else
-            npm run screenshot-test:ci
-          fi
+        run: npm run ${{ inputs.update_snapshots == true && 'screenshot-test:regenerate-snapshots' || 'screenshot-test:ci' }}
 
       - name: Debug test outcome
         if: always()
