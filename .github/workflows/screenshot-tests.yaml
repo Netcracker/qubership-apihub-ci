@@ -88,6 +88,9 @@ jobs:
             echo "Result: has_diffs=false"
           fi
 
+      # Artifacts: when update_snapshots=true, archive changed snapshot PNGs (via git);
+      # otherwise, archive diff output files from __diff_output__ (generated on failures/diffs).
+      # Assumption: there is a single __diff_output__ directory and file names inside it are unique.
       - name: Prepare artifacts
         run: |
           mkdir -p artifact-staging
@@ -123,18 +126,20 @@ jobs:
             list_files "artifact-staging" "artifact-staging/"
           else
             echo "Preparing diff output artifacts..."
-            diff_dirs=$(find . -name "__diff_output__" -type d -not -path '*/node_modules/*' 2>/dev/null)
-            if [ -n "$diff_dirs" ]; then
-              echo "Found __diff_output__ directories:"
-              echo "$diff_dirs"
+            diff_files=$(find . -path "*/__diff_output__/*" -type f -not -path '*/node_modules/*' 2>/dev/null)
+            if [ -n "$diff_files" ]; then
+              echo "Found diff files:"
+              echo "$diff_files"
               echo "Copying to artifact-staging..."
-              find . -name "__diff_output__" -type d -not -path '*/node_modules/*' -exec cp -r {} artifact-staging/ \;
+              echo "$diff_files" | while read -r file; do
+                cp "$file" artifact-staging/
+              done
               echo "Diff files in artifact-staging:"
               list_files "artifact-staging" "artifact-staging/"
               file_count=$(find artifact-staging -type f 2>/dev/null | wc -l)
               echo "Total diff files: $file_count"
             else
-              echo "No __diff_output__ directories found, artifact-staging remains empty"
+              echo "No diff files found, artifact-staging remains empty"
             fi
           fi
 
