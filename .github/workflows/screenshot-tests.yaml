@@ -12,10 +12,15 @@ on:
         description: "Container image to use for the job (optional)"
         required: false
         type: string
-        default: ghcr.io/netcracker/qubership-apihub-nodejs-dev-image:1.7.3
+        default: ghcr.io/netcracker/qubership-apihub-nodejs-dev-image:1.8.0
+      update_snapshots:
+        description: "Regenerate snapshots and upload artifacts"
+        required: false
+        default: false
+        type: boolean
 jobs:
   screenshot-tests:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     container: ${{ inputs.container }}
     steps:
@@ -26,7 +31,7 @@ jobs:
       - name: Setup npm registry
         uses: actions/setup-node@v4
         with:
-          registry-url: 'https://npm.pkg.github.com/'
+          registry-url: "https://npm.pkg.github.com/"
 
       - name: Install dependencies
         run: npm ci
@@ -45,39 +50,105 @@ jobs:
         run: npm run update-lock-file --if-present
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
+
+      # Ensure properly build of internal dependencies (e.g. generate-stories, generate-tests) after update-lock-file
+      - name: Run postinstall
+        run: npm run postinstall --if-present
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run tests
         id: tests
         continue-on-error: true
-        run: npm run screenshot-test:ci
+        run: npm run ${{ inputs.update_snapshots == true && 'screenshot-test:regenerate-snapshots:ci' || 'screenshot-test:ci' }}
 
       - name: Debug test outcome
         if: always()
         run: |
           echo "Test outcome: ${{ steps.tests.outcome }}"
           echo "Test conclusion: ${{ steps.tests.conclusion }}"
-          echo "Test result: ${{ steps.tests.result }}"
-          echo "List diff output directory:"
-          find . -name "__diff_output__" -type d | xargs -I{} ls -la {}
+          echo "List __image_snapshots__ directory:"
+          find . -name "__image_snapshots__" -type d -exec ls -la {} +
 
       # Workaround: Manual diff check since 'npm run screenshot-test:ci' does not return error for some reason in apispec-view
       - name: Check for diff files
         id: check_diffs
-        if: always()
+        if: inputs.update_snapshots == false
         run: |
-          if [ -n "$(find . -name "__diff_output__" -type d -exec ls -A {} \; 2>/dev/null)" ]; then
+          echo "Searching for __diff_output__ directories with files..."
+          diff_files=$(find . -path "*/__diff_output__/*" -type f -not -path '*/node_modules/*' 2>/dev/null)
+          if [ -n "$diff_files" ]; then
+            echo "Found diff files:"
+            echo "$diff_files"
             echo "has_diffs=true" >> $GITHUB_OUTPUT
+            echo "Result: has_diffs=true"
           else
+            echo "No diff files found"
             echo "has_diffs=false" >> $GITHUB_OUTPUT
+            echo "Result: has_diffs=false"
           fi
 
-      - name: Upload differences
-        if: steps.check_diffs.outputs.has_diffs == 'true'
+      # Artifacts: when update_snapshots=true, archive changed snapshot PNGs (via git);
+      # otherwise, archive diff output files from __diff_output__ (generated on failures/diffs).
+      # Assumption: there is a single __diff_output__ directory and file names inside it are unique.
+      - name: Prepare artifacts
+        run: |
+          mkdir -p artifact-staging
+
+          # Helper function to get file size (works on both Linux and macOS)
+          get_file_size() {
+            stat -c%s "$1" 2>/dev/null || stat -f%z "$1" 2>/dev/null || echo "?"
+          }
+
+          # Helper function to list files with sizes
+          list_files() {
+            local dir=$1
+            local prefix=$2
+            find "$dir" -type f 2>/dev/null | while read -r file; do
+              size=$(get_file_size "$file")
+              rel_path=${file#"$prefix"}
+              echo "  $size bytes  $rel_path"
+            done
+          }
+
+          if [ "${{ inputs.update_snapshots }}" == "true" ]; then
+            echo "Preparing updated snapshots..."
+            echo "Changed PNG files in __image_snapshots__:"
+            git status --porcelain | grep "__image_snapshots__.*\.png" | sed 's/^...//' | while read -r file; do
+              if [ -f "$file" ]; then
+                echo "Copying: $file"
+                cp "$file" artifact-staging/
+              fi
+            done
+            file_count=$(find artifact-staging -maxdepth 1 -name "*.png" -type f 2>/dev/null | wc -l)
+            echo "Total files copied: $file_count"
+            echo "Files in artifact-staging:"
+            list_files "artifact-staging" "artifact-staging/"
+          else
+            echo "Preparing diff output artifacts..."
+            diff_files=$(find . -path "*/__diff_output__/*" -type f -not -path '*/node_modules/*' 2>/dev/null)
+            if [ -n "$diff_files" ]; then
+              echo "Found diff files:"
+              echo "$diff_files"
+              echo "Copying to artifact-staging..."
+              echo "$diff_files" | while read -r file; do
+                cp "$file" artifact-staging/
+              done
+              echo "Diff files in artifact-staging:"
+              list_files "artifact-staging" "artifact-staging/"
+              file_count=$(find artifact-staging -type f 2>/dev/null | wc -l)
+              echo "Total diff files: $file_count"
+            else
+              echo "No diff files found, artifact-staging remains empty"
+            fi
+          fi
+
+      - name: Upload artifacts
+        if: steps.check_diffs.outputs.has_diffs == 'true' || inputs.update_snapshots == true
         uses: actions/upload-artifact@v4
         with:
-          name: screenshot-test-differences
-          path: |
-            **/__diff_output__
+          name: ${{ inputs.update_snapshots == true && 'updated-snapshots' || 'snapshot-differences' }}
+          path: artifact-staging
           if-no-files-found: ignore
           retention-days: 14
 
