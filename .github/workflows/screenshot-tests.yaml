@@ -13,8 +13,8 @@ on:
         required: false
         type: string
         default: ghcr.io/netcracker/qubership-apihub-nodejs-dev-image:1.8.0
-      update_snapshots:
-        description: "Regenerate snapshots and upload artifacts"
+      update_screenshots:
+        description: "Regenerate screenshots"
         required: false
         default: false
         type: boolean
@@ -60,20 +60,29 @@ jobs:
       - name: Run tests
         id: tests
         continue-on-error: true
-        run: npm run ${{ inputs.update_snapshots == true && 'screenshot-test:regenerate-snapshots:ci' || 'screenshot-test:ci' }}
+        shell: bash
+        run: |
+          set +e
+          npm_script="${{ inputs.update_screenshots == true && 'regenerate-screenshots:ci' || 'screenshot-test:ci' }}"
+          echo "Running npm script: ${npm_script}"
+          npm run "${npm_script}"
+          exit_code="$?"
+          echo "exit_code=${exit_code}" >> "$GITHUB_OUTPUT"
+          exit "$exit_code"
 
       - name: Debug test outcome
         if: always()
         run: |
           echo "Test outcome: ${{ steps.tests.outcome }}"
           echo "Test conclusion: ${{ steps.tests.conclusion }}"
+          echo "Test exit code: ${{ steps.tests.outputs.exit_code }}"
           echo "List __image_snapshots__ directory:"
           find . -name "__image_snapshots__" -type d -exec ls -la {} +
 
-      # Workaround: Manual diff check since 'npm run screenshot-test:ci' does not return error for some reason in apispec-view
+      # Manual diff check (previously a workaround since 'npm run screenshot-test:ci' always exited with code 0 even on errors in apispec-view; now kept as a safety measure)
       - name: Check for diff files
         id: check_diffs
-        if: inputs.update_snapshots == false
+        if: inputs.update_screenshots == false
         run: |
           echo "Searching for __diff_output__ directories with files..."
           diff_files=$(find . -path "*/__diff_output__/*" -type f -not -path '*/node_modules/*' 2>/dev/null)
@@ -88,7 +97,7 @@ jobs:
             echo "Result: has_diffs=false"
           fi
 
-      # Artifacts: when update_snapshots=true, archive changed snapshot PNGs (via git);
+      # Artifacts: when update_screenshots=true, archive changed screenshot PNGs (via git);
       # otherwise, archive diff output files from __diff_output__ (generated on failures/diffs).
       # Assumption: there is a single __diff_output__ directory and file names inside it are unique.
       - name: Prepare artifacts
@@ -111,8 +120,8 @@ jobs:
             done
           }
 
-          if [ "${{ inputs.update_snapshots }}" == "true" ]; then
-            echo "Preparing updated snapshots..."
+          if [ "${{ inputs.update_screenshots }}" == "true" ]; then
+            echo "Preparing updated screenshots..."
             echo "Changed PNG files in __image_snapshots__:"
             git status --porcelain | grep "__image_snapshots__.*\.png" | sed 's/^...//' | while read -r file; do
               if [ -f "$file" ]; then
@@ -144,10 +153,10 @@ jobs:
           fi
 
       - name: Upload artifacts
-        if: steps.check_diffs.outputs.has_diffs == 'true' || inputs.update_snapshots == true
+        if: steps.check_diffs.outputs.has_diffs == 'true' || inputs.update_screenshots == true
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.update_snapshots == true && 'updated-snapshots' || 'snapshot-differences' }}
+          name: ${{ inputs.update_screenshots == true && 'updated-screenshots' || 'screenshot-differences' }}
           path: artifact-staging
           if-no-files-found: ignore
           retention-days: 14
