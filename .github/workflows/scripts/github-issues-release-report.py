@@ -277,6 +277,210 @@ def get_issues_for_sprints(project_id, sprint_field_id, sprint_id_to_title, fiel
 
     return issues
 
+def get_epic_subissues(project_id, field_options, numeric_fields):
+    query = """
+    query($projectId: ID!, $after: String) {
+      node(id: $projectId) {
+        ... on ProjectV2 {
+          items(first: 50, after: $after) {
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+            nodes {
+              content {
+                ... on Issue {
+                  id
+                  title
+                  url
+                  issueType {
+                    name
+                  }
+                  labels(first: 50) {
+                    nodes { name }
+                  }
+                  milestone {
+                    title
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+    epics = []
+    after = None
+
+    while True:
+        result = run_query(query, {"projectId": project_id, "after": after})
+        items = result["data"]["node"]["items"]["nodes"]
+
+        for item in items:
+            content = item.get("content")
+            if not content or not content.get("title"):
+                continue
+
+            issue_type = (content.get("issueType") or {}).get("name", "")
+            labels = [l.get("name") for l in content.get("labels", {}).get("nodes", [])]
+            milestone_title = (content.get("milestone") or {}).get("title", "")
+            milestone_matches = RELEASE_NAME in milestone_title if milestone_title else False
+
+            if issue_type == "Feature" and "Epic" in labels and milestone_matches:
+                epics.append({
+                    "id": content["id"],
+                    "title": content["title"],
+                    "url": content["url"]
+                })
+
+        page_info = result["data"]["node"]["items"]["pageInfo"]
+        if not page_info["hasNextPage"]:
+            break
+        after = page_info["endCursor"]
+
+    log(f"Found {len(epics)} epics matching criteria")
+    subissues = []
+    for epic in epics:
+        subissues.extend(get_subissues_for_epic(
+            epic["id"],
+            epic["title"],
+            epic["url"],
+            project_id,
+            field_options,
+            numeric_fields
+        ))
+
+    return subissues
+
+def get_subissues_for_epic(epic_issue_id, parent_name, parent_url, project_id, field_options, numeric_fields):
+    query = """
+    query($issueId: ID!, $after: String) {
+      node(id: $issueId) {
+        ... on Issue {
+          subIssues(first: 50, after: $after) {
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+            nodes {
+              title
+              url
+              issueType {
+                name
+              }
+              assignees(first: 10) {
+                nodes { login }
+              }
+              projectItems(first: 20) {
+                nodes {
+                  project {
+                    id
+                  }
+                  fieldValues(first: 30) {
+                    nodes {
+                      __typename
+                      ... on ProjectV2ItemFieldSingleSelectValue {
+                        optionId
+                        field {
+                          ... on ProjectV2SingleSelectField {
+                            name
+                          }
+                        }
+                      }
+                      ... on ProjectV2ItemFieldNumberValue {
+                        number
+                        field {
+                          ... on ProjectV2Field {
+                            id
+                            name
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+    subissues = []
+    after = None
+
+    while True:
+        result = run_query(query, {"issueId": epic_issue_id, "after": after})
+        node = result["data"]["node"] or {}
+        sub_issue_conn = (node.get("subIssues") or {})
+        items = sub_issue_conn.get("nodes", [])
+
+        for issue in items:
+            if not issue.get("title"):
+                continue
+
+            raw_assignees = [u["login"] for u in issue.get("assignees", {}).get("nodes", [])] or ["Unassigned"]
+            assignee = raw_assignees[0]
+            if assignee != "Unassigned":
+                realname = assignee_map.get(assignee)
+                assignee = f"{realname} ({assignee})" if realname else assignee
+
+            issue_type = (issue.get("issueType") or {}).get("name", "Empty")
+            status = "Empty"
+            priority = "Empty"
+            estimate = ""
+            time_spent = ""
+
+            project_items = issue.get("projectItems", {}).get("nodes", [])
+            project_item = next((pi for pi in project_items if (pi.get("project") or {}).get("id") == project_id), None)
+            if project_item:
+                for fv in (project_item.get("fieldValues") or {}).get("nodes", []):
+                    if fv["__typename"] == "ProjectV2ItemFieldSingleSelectValue":
+                        field_name = fv.get("field", {}).get("name")
+                        option_id = fv.get("optionId")
+                        if field_name in field_options:
+                            val = field_options[field_name].get(option_id, option_id)
+                            if field_name == "Status":
+                                status = val
+                            elif field_name == "Priority":
+                                priority = val
+                    if fv["__typename"] == "ProjectV2ItemFieldNumberValue":
+                        field_id = fv.get("field", {}).get("id")
+                        number_value = fv.get("number")
+                        if field_id == numeric_fields.get("estimate"):
+                            estimate = number_value
+                        elif field_id == numeric_fields.get("time_spent"):
+                            time_spent = number_value
+
+            subissues.append({
+                "assignee":    assignee,
+                "issue_name":  issue["title"],
+                "issue_url":   issue["url"],
+                "type":        issue_type,
+                "priority":    priority,
+                "status":      status,
+                "sprint":      "",
+                "parent_name": parent_name,
+                "parent_url":  parent_url,
+                "estimate":    estimate,
+                "time_spent":  time_spent
+            })
+
+        page_info = sub_issue_conn.get("pageInfo")
+        if not page_info or not page_info.get("hasNextPage"):
+            break
+        after = page_info.get("endCursor")
+
+    return subissues
+
+def merge_issues_by_url(base_issues, extra_issues):
+    existing_urls = {i.get("issue_url") for i in base_issues}
+    for issue in extra_issues:
+        if issue.get("issue_url") not in existing_urls:
+            base_issues.append(issue)
+    return base_issues
+
 def generate_html_report(data, release_name):
     timestamp_display = datetime.datetime.now().strftime("%Y.%m.%d %H:%M:%S")
     timestamp_filename = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -349,6 +553,8 @@ def main():
     org, number = extract_org_and_number(PROJECT_URL)
     project_id, sprint_field_id, matched_sprints, field_options, numeric_fields = get_project_fields(org, number)
     data = get_issues_for_sprints(project_id, sprint_field_id, matched_sprints, field_options, numeric_fields)
+    epic_subissues = get_epic_subissues(project_id, field_options, numeric_fields)
+    data = merge_issues_by_url(data, epic_subissues)
     generate_html_report(data, RELEASE_NAME)
 
 if __name__ == "__main__":
