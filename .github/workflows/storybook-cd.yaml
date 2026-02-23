@@ -19,15 +19,14 @@ jobs:
     runs-on: ubuntu-latest
     container: ${{ inputs.container }}
     permissions:
-      contents: write      
+      contents: write
       packages: read
-    
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
           registry-url: 'https://npm.pkg.github.com/'
@@ -37,7 +36,7 @@ jobs:
         timeout-minutes: ${{ inputs.install_dependencies_timeout }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       # remove once all components have update-lock-file npm script
       - name: Update dependencies (deprecated)
         run: npm ls --json |  jq -r '.dependencies | keys[]' | grep "@netcracker" | xargs --no-run-if-empty npm update
@@ -53,25 +52,25 @@ jobs:
       - name: Build the showcase
         run: npm run build:showcase
 
-      - name: Deploy Storybook to gh-pages        
+      - name: Deploy Storybook to gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           destination_dir: ${{ github.ref_name }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist-showcase          
+          publish_dir: ./dist-showcase
 
   delete-folder-from-gh-pages:
     if: github.event_name == 'delete' && github.event.ref_type == 'branch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout gh-pages
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           ref: gh-pages
 
       - name: Delete corresponding folder in gh-pages branch
-        run: |          
-          if [ -d ${{ github.event.ref }} ]; then            
+        run: |
+          if [ -d ${{ github.event.ref }} ]; then
             rm -rf ${{ github.event.ref }}
             git config --global user.name "github-actions"
             git config --global user.email "github-actions@github.com"
