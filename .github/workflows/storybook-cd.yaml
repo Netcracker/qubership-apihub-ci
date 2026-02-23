@@ -36,6 +36,9 @@ jobs:
         timeout-minutes: ${{ inputs.install_dependencies_timeout }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Avoid slow/hanging installs on CI: skip Puppeteer downloads and disable Husky hook setup.
+          PUPPETEER_SKIP_DOWNLOAD: 1
+          HUSKY: 0
 
       # remove once all components have update-lock-file npm script
       - name: Update dependencies (deprecated)
