@@ -200,6 +200,7 @@ def get_pull_requests(repo_full_name):
         # Fetch projects via GraphQL
         projects = get_pr_projects_via_graphql(owner, repo, pr_number)
 
+        is_draft = pr.get("draft", False)
         pr_details = {
             "number": pr_number,
             "html_url": pr.get("html_url", ""),
@@ -210,7 +211,8 @@ def get_pull_requests(repo_full_name):
             "repo": repo_full_name,
             "repo_name": repo,
             "issues": issues,
-            "projects": projects
+            "projects": projects,
+            "status": "Draft" if is_draft else "Not Draft"
         }
         if VERBOSE:
             print(f"[PR] Collected details for PR #{pr_number}: issues={issues}, projects={projects}")
@@ -249,7 +251,7 @@ HTML_TEMPLATE = """
         .color-2 { background-color: #fef9e7; }
         .color-3 { background-color: #eaf7ea; }
         .color-4 { background-color: #fceeee; }
-        .hidden { display: none; }
+        #statusFilter { margin-left: 5px; margin-right: 15px; padding: 4px; }
         .attention-icon { color: red; font-weight: bold; display: block; }
         .attention-text { margin-left: 4px; font-style: italic; }
     </style>
@@ -266,6 +268,14 @@ HTML_TEMPLATE = """
     </div>
 
     <button id="toggleButton" onclick='toggleCLPLCI()'>Show PRs from NetcrackerCLPLCI</button>
+
+    <label for="statusFilter">Status:</label>
+    <select id="statusFilter" onchange="applyFilters()">
+        <option value="Not Draft" selected>Not Draft</option>
+        <option value="Draft">Draft</option>
+        <option value="all">All</option>
+    </select>
+
     <input class='search' placeholder='Filter PRs...'>
     <table id='pr-table'>
         <thead>
@@ -273,6 +283,7 @@ HTML_TEMPLATE = """
                 <th class='sort' data-sort='repo'>📁 Repository</th>
                 <th class='sort' data-sort='title'>📌 PR name</th>
                 <th class='sort' data-sort='author'>👤 PR author</th>
+                <th class='sort' data-sort='status'>📋 Status</th>
                 <th class='sort' data-sort='age'>📅 PR age</th>
                 <th class='sort' data-sort='assignee'>👤 PR assignee</th>
                 <th>🔗 PR issues</th>
@@ -286,10 +297,11 @@ HTML_TEMPLATE = """
                     {% set _ = repo_colors.update({repo: 'color-' ~ (loop.index0 % 5)}) %}
                 {% endif %}
                 {% for pr in prs %}
-                <tr class='{{ repo_colors[repo] }}{% if pr.user == "NetcrackerCLPLCI" %} netcrackerclplci hidden{% endif %}'>
+                <tr class='{{ repo_colors[repo] }}' data-status='{{ pr.status }}'{% if pr.user == "NetcrackerCLPLCI" %} data-clplci="true"{% endif %}>
                     <td class='repo'>{{ pr.repo }}</td>
                     <td class='title'><a href='{{ pr.html_url }}' target='_blank'>{{ pr.title }}</a></td>
                     <td class='author'>{{ pr.user }}</td>
+                    <td class='status'>{{ pr.status }}</td>
                     <td class='age'>{{ pr.age }}</td>
                     <td class='assignee'>{{ pr.assignee }}</td>
                     <td>
@@ -309,24 +321,36 @@ HTML_TEMPLATE = """
         </tbody>
     </table>
     <script>
+        var showCLPLCI = false;
+
         function toggleCLPLCI() {
-            const button = document.getElementById('toggleButton');
-            const isHidden = document.querySelector('.netcrackerclplci').classList.contains('hidden');
-            
-            document.querySelectorAll('.netcrackerclplci').forEach(row => {
-                row.classList.toggle('hidden');
-            });
-            
-            button.textContent = isHidden 
-                ? 'Hide PRs from NetcrackerCLPLCI' 
+            showCLPLCI = !showCLPLCI;
+            document.getElementById('toggleButton').textContent = showCLPLCI
+                ? 'Hide PRs from NetcrackerCLPLCI'
                 : 'Show PRs from NetcrackerCLPLCI';
+            applyFilters();
         }
-        
-        // Initialize List.js for sorting and searching
+
+        function applyFilters() {
+            var statusValue = document.getElementById('statusFilter').value;
+            document.querySelectorAll('tbody.list tr').forEach(function(row) {
+                var visible = true;
+                if (!showCLPLCI && row.getAttribute('data-clplci') === 'true') {
+                    visible = false;
+                }
+                if (statusValue !== 'all' && row.getAttribute('data-status') !== statusValue) {
+                    visible = false;
+                }
+                row.style.display = visible ? '' : 'none';
+            });
+        }
+
         var options = {
-            valueNames: ['repo', 'title', 'author', 'age', 'assignee', 'attention']
+            valueNames: ['repo', 'title', 'author', 'status', 'age', 'assignee', 'attention']
         };
         var prList = new List('pr-table', options);
+
+        applyFilters();
     </script>
 </body>
 </html>
