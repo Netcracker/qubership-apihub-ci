@@ -12,7 +12,7 @@ on:
         description: "Container image to use for the job (optional)"
         required: false
         type: string
-        default: ghcr.io/netcracker/qubership-apihub-nodejs-dev-image:1.8.0
+        default: ghcr.io/netcracker/qubership-apihub-nodejs-dev-image:feature-nodejs24
       update_screenshots:
         description: "Regenerate screenshots"
         required: false
