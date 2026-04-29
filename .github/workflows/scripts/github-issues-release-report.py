@@ -58,7 +58,13 @@ def run_query(query, variables=None):
     response = requests.post(API_URL, headers=HEADERS, json={"query": query, "variables": variables})
     if response.status_code != 200:
         raise Exception(f"Query failed: {response.text}")
-    return response.json()
+    payload = response.json()
+    if payload.get("errors"):
+        msgs = "; ".join(err.get("message", str(err)) for err in payload["errors"])
+        raise Exception(f"GraphQL errors: {msgs}")
+    if "data" not in payload:
+        raise Exception(f"Unexpected GraphQL response (no data): {payload}")
+    return payload
 
 def extract_org_and_number(url):
     match = re.match(r"https://github.com/orgs/([^/]+)/projects/(\d+)", url)
@@ -79,17 +85,19 @@ def get_project_fields(org, number):
                 id
                 name
                 configuration {
-                  iterations {
-                    id
-                    title
-                    startDate
-                    duration
-                  }
-                  completedIterations {
-                    id
-                    title
-                    startDate
-                    duration
+                  ... on ProjectV2IterationFieldConfiguration {
+                    iterations {
+                      id
+                      title
+                      startDate
+                      duration
+                    }
+                    completedIterations {
+                      id
+                      title
+                      startDate
+                      duration
+                    }
                   }
                 }
               }
@@ -125,7 +133,8 @@ def get_project_fields(org, number):
     for f in fields:
         if f["__typename"] == "ProjectV2IterationField" and f["name"] == "Sprint":
             sprint_field_id = f["id"]
-            all_iters = f["configuration"].get("iterations", []) + f["configuration"].get("completedIterations", [])
+            cfg = f.get("configuration") or {}
+            all_iters = cfg.get("iterations", []) + cfg.get("completedIterations", [])
             for it in all_iters:
                 if RELEASE_NAME in it["title"]:
                     matched_sprints[it["id"]] = it["title"]
