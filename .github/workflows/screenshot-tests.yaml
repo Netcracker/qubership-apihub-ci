@@ -8,11 +8,6 @@ on:
         required: false
         default: 10
         type: number
-      container:
-        description: "Container image to use for the job (optional)"
-        required: false
-        type: string
-        default: ghcr.io/netcracker/qubership-apihub-nodejs-dev-image:feature-nodejs24
       update_screenshots:
         description: "Regenerate screenshots"
         required: false
@@ -22,15 +17,14 @@ jobs:
   screenshot-tests:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    container: ${{ inputs.container }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      # Configure npm registry URL since we're using GitHub packages. Node.js environment is pre-installed in the qubership-apihub-nodejs-dev-image:1.7.3 container.
-      - name: Setup npm registry
+      - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
+          node-version: "24"
           registry-url: "https://npm.pkg.github.com/"
 
       - name: Install dependencies
@@ -38,6 +32,9 @@ jobs:
         timeout-minutes: ${{ inputs.install_dependencies_timeout }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Avoid slow/hanging installs on CI: skip Puppeteer downloads and disable Husky hook setup.
+          PUPPETEER_SKIP_DOWNLOAD: 1
+          HUSKY: 0
 
       # remove once all components have update-lock-file npm script
       - name: Update dependencies (deprecated)
@@ -63,7 +60,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          npm_script="${{ inputs.update_screenshots == true && 'regenerate-screenshots:ci' || 'screenshot-test:ci' }}"
+          npm_script="${{ inputs.update_screenshots == true && 'regenerate-screenshots:docker' || 'screenshot-test:docker' }}"
           echo "Running npm script: ${npm_script}"
           npm run "${npm_script}"
           exit_code="$?"
@@ -79,7 +76,7 @@ jobs:
           echo "List __image_snapshots__ directory:"
           find . -name "__image_snapshots__" -type d -exec ls -la {} +
 
-      # Manual diff check (previously a workaround since 'npm run screenshot-test:ci' always exited with code 0 even on errors in apispec-view; now kept as a safety measure)
+      # Manual diff check (previously a workaround since 'npm run screenshot-test:docker' always exited with code 0 even on errors in apispec-view; now kept as a safety measure)
       - name: Check for diff files
         id: check_diffs
         if: inputs.update_screenshots == false
