@@ -41,6 +41,9 @@ jobs:
         run: npm ls --json |  jq -r '.dependencies | keys[]' | grep "@netcracker" | xargs --no-run-if-empty npm update
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # npm update triggers postinstall scripts — same flags as Install step above.
+          PUPPETEER_SKIP_DOWNLOAD: 1
+          HUSKY: 0
 
       # This step is to update internal dependencies specified via dist tag version to their latest available versions
       - name: Update dependencies
