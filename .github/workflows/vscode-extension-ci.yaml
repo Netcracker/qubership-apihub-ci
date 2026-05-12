@@ -41,7 +41,7 @@ jobs:
         timeout-minutes: ${{ inputs.install_dependencies_timeout }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       # remove once all components have update-lock-file npm script
       - name: Update dependencies (deprecated)
         shell: bash
@@ -76,34 +76,34 @@ jobs:
             PRERELEASE_SUFFIX=''
           fi
           echo "PRERELEASE_SUFFIX: $PRERELEASE_SUFFIX"
-          echo "prerelease_suffix=$PRERELEASE_SUFFIX" >> $GITHUB_OUTPUT        
+          echo "prerelease_suffix=$PRERELEASE_SUFFIX" >> $GITHUB_OUTPUT
 
       - name: Bump version (dev branches only)
         if: steps.calculate_prerelease_suffix.outputs.prerelease_suffix != ''
         shell: bash
         run: |
           # Get the current version and extract release part
-          CURRENT_VERSION=$(jq -r '.version' package.json)          
-          
+          CURRENT_VERSION=$(jq -r '.version' package.json)
+
           # Extract release part (remove any prerelease suffix if exists)
           RELEASE_VERSION=$(echo "$CURRENT_VERSION" | sed -E 's/(-[^+]+)?(\+[^+]+)?$//')
-          
+
           # Generate timestamp in YYYYMMDDHHmmss format
           TIMESTAMP=$(date -u '+%Y%m%d%H%M%S')
-          
+
           # Construct new version
           NEW_VERSION="${RELEASE_VERSION}-${{ steps.calculate_prerelease_suffix.outputs.prerelease_suffix }}.${TIMESTAMP}"
-          
+
           echo "NEW_VERSION: $NEW_VERSION"
-          
+
           # Set the new version
-          npm version "${NEW_VERSION}" --no-git-tag-version          
+          npm version "${NEW_VERSION}" --no-git-tag-version
 
       - name: Get package version
         id: get_version
         shell: bash
         run: |
-          VERSION=$(jq -r '.version' package.json)          
+          VERSION=$(jq -r '.version' package.json)
           echo "package_version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Build the package
@@ -112,11 +112,11 @@ jobs:
           CURRENT_BRANCH=$(echo ${{ github.event.ref }} | sed 's/refs\/heads\///')
           echo "CURRENT_BRANCH: $CURRENT_BRANCH"
           if [[ "$CURRENT_BRANCH" == refs/tags/* ]]; then
-            CURRENT_BRANCH="main"          
+            CURRENT_BRANCH="main"
           fi
           npx vsce package --githubBranch $CURRENT_BRANCH
 
-      # This step is necessary to receive access to the test resources 
+      # This step is necessary to receive access to the test resources
       # Based on https://github.com/redhat-developer/vscode-extension-tester-example/blob/ac13a9d622127d04c667a138984cd9814b04d502/.github/workflows/main.yml#L39
       - name: Allow unprivileged user namespace (ubuntu)
         if: ${{ startsWith(matrix.os, 'ubuntu') }}

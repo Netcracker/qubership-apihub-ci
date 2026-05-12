@@ -1,7 +1,7 @@
 name: delete-dist-tag
 
 on:
-  workflow_call:
+  workflow_call: {}
 
 jobs:
   delete-dist-tag:
@@ -28,8 +28,8 @@ jobs:
 
       - name: Delete associated NPM dist tags
         if: |
-          steps.calculate_npm_dist_tag.outputs.npm_dist_tag != '' && 
-          steps.calculate_npm_dist_tag.outputs.npm_dist_tag != 'latest' &&           
+          steps.calculate_npm_dist_tag.outputs.npm_dist_tag != '' &&
+          steps.calculate_npm_dist_tag.outputs.npm_dist_tag != 'latest' &&
           steps.calculate_npm_dist_tag.outputs.npm_dist_tag != 'dev'
         run: |
           # Get package names to process

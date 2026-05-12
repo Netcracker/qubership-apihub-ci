@@ -3,81 +3,81 @@ name: run E2E tests
 on:
   workflow_call:
     inputs:
-        compose-repository-url:
-            description: "URL of the repository to clone"
-            type: string
-            default: "https://github.com/Netcracker/qubership-apihub"
-        compose-repository-branch:
-            description: "Branch to clone"
-            type: string
-            default: "main"
-        compose-repository-compose-folder:
-            description: "Path to the folder with docker-compose file"
-            type: string
-            default: "docker-compose/apihub-generic"
-        compose-repository-compose-file:
-            description: "docker-compose filename"
-            type: string
-            default: "docker-compose.yml"
-        postman-collections-run:
-            description: "Flag for executing postman collections"
-            type: boolean
-            default: true
-        postman-repository-url:
-            description: "URL of the repository to clone"
-            type: string
-            default: "https://github.com/Netcracker/qubership-apihub-postman-collections"
-        postman-repository-branch:
-            description: "Branch to clone"
-            type: string
-        postman-collections-list:
-            description: "Collections to execute"
-            type: string
-            default: "./e2e/1_1_Smoke_Portal.postman_collection.json"
-        playwright-tests-run:
-            description: "Flag for executing playwright tests"
-            type: boolean
-            default: true
-        playwright-repository-url:
-            description: "URL of the repository to clone"
-            type: string
-            default: "https://github.com/Netcracker/qubership-apihub-ui-tests"
-        playwright-repository-branch:
-            description: "Branch to clone"
-            type: string
-        playwright-test-args:
-            description: "Playwright test command CLI arguments"
-            type: string
-            default: "--project=Portal --workers=8 --grep-invert=@flaky"
-        apihub-backend-image-tag:
-            description: "BE image tag to be executed"
-            type: string
-            default: "dev"
-        apihub-build-task-consumer-image-tag:
-            description: "Build Task Consumer image tag to be executed"
-            type: string
-            default: "dev"
-        apihub-ui-image-tag:
-            description: "UI image tag to be executed"
-            type: string
-            default: "dev"
-        apihub-api-linter-service-image-tag:
-            description: "API Linter Service image tag to be executed"
-            type: string
-            default: "dev"
-        apihub-agents-backend-image-tag:
-            description: "Agents Backend image tag to be executed"
-            type: string
-            default: "dev"
+      compose-repository-url:
+        description: "URL of the repository to clone"
+        type: string
+        default: "https://github.com/Netcracker/qubership-apihub"
+      compose-repository-branch:
+        description: "Branch to clone"
+        type: string
+        default: "main"
+      compose-repository-compose-folder:
+        description: "Path to the folder with docker-compose file"
+        type: string
+        default: "docker-compose/apihub-generic"
+      compose-repository-compose-file:
+        description: "docker-compose filename"
+        type: string
+        default: "docker-compose.yml"
+      postman-collections-run:
+        description: "Flag for executing postman collections"
+        type: boolean
+        default: true
+      postman-repository-url:
+        description: "URL of the repository to clone"
+        type: string
+        default: "https://github.com/Netcracker/qubership-apihub-postman-collections"
+      postman-repository-branch:
+        description: "Branch to clone"
+        type: string
+      postman-collections-list:
+        description: "Collections to execute"
+        type: string
+        default: "./e2e/1_1_Smoke_Portal.postman_collection.json"
+      playwright-tests-run:
+        description: "Flag for executing playwright tests"
+        type: boolean
+        default: true
+      playwright-repository-url:
+        description: "URL of the repository to clone"
+        type: string
+        default: "https://github.com/Netcracker/qubership-apihub-ui-tests"
+      playwright-repository-branch:
+        description: "Branch to clone"
+        type: string
+      playwright-test-args:
+        description: "Playwright test command CLI arguments"
+        type: string
+        default: "--project=Portal --workers=8 --grep-invert=@flaky"
+      apihub-backend-image-tag:
+        description: "BE image tag to be executed"
+        type: string
+        default: "dev"
+      apihub-build-task-consumer-image-tag:
+        description: "Build Task Consumer image tag to be executed"
+        type: string
+        default: "dev"
+      apihub-ui-image-tag:
+        description: "UI image tag to be executed"
+        type: string
+        default: "dev"
+      apihub-api-linter-service-image-tag:
+        description: "API Linter Service image tag to be executed"
+        type: string
+        default: "dev"
+      apihub-agents-backend-image-tag:
+        description: "Agents Backend image tag to be executed"
+        type: string
+        default: "dev"
     secrets:
-        JWT_PRIVATE_KEY:
-            required: true
-        APIHUB_ADMIN_EMAIL:
-            required: true
-        APIHUB_ADMIN_PASSWORD:
-            required: true
-        APIHUB_ACCESS_TOKEN:
-            required: true
+      JWT_PRIVATE_KEY:
+        required: true
+      APIHUB_ADMIN_EMAIL:
+        required: true
+      APIHUB_ADMIN_PASSWORD:
+        required: true
+      APIHUB_ACCESS_TOKEN:
+        required: true
 
 jobs:
   run_compose_and_run_tests:
@@ -86,7 +86,7 @@ jobs:
       - name: Clone compose repository
         run: |
           git clone --branch ${{ inputs.compose-repository-branch }} --single-branch ${{ inputs.compose-repository-url }} compose-repo
-      
+
       - name: Install Podman and envsubst
         run: |
           sudo apt-get update
@@ -107,12 +107,12 @@ jobs:
         run: |
           cd compose-repo
           set
-          for env_file in $(find . -name "*.env"); do
+          find . -name "*.env" -print0 | while IFS= read -r -d '' env_file; do
             envsubst < "$env_file" > "${env_file}.tmp"
             mv "${env_file}.tmp" "$env_file"
           done
 
-          cd ${{ inputs.compose-repository-compose-folder }}    
+          cd ${{ inputs.compose-repository-compose-folder }}
           envsubst < qubership-apihub-backend-config.yaml > qubership-apihub-backend-config.yaml.tmp
           mv qubership-apihub-backend-config.yaml.tmp qubership-apihub-backend-config.yaml
 
@@ -147,7 +147,7 @@ jobs:
       - name: Wait for APIHUB startup
         run: |
           echo "Waiting for http://localhost:8081/login to return 200..."
-          end_time=$((SECONDS + 60))  
+          end_time=$((SECONDS + 60))
           while [ $SECONDS -lt $end_time ]; do
             status_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8081/login)
             if [ "$status_code" -eq 200 ]; then
@@ -174,7 +174,7 @@ jobs:
         run: |
           # First check if a branch was provided as input
           BRANCH="${{ inputs.postman-repository-branch }}"
-          
+
           # If a branch was provided, check if it exists
           if [ -n "$BRANCH" ]; then
             if git ls-remote --heads ${{ inputs.postman-repository-url }} refs/heads/$BRANCH | grep -q $BRANCH; then
@@ -188,7 +188,7 @@ jobs:
             BRANCH="develop"
             echo "No branch specified, using develop as default"
           fi
-          
+
           echo "Using postman tests repository branch: $BRANCH"
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
 
@@ -238,9 +238,9 @@ jobs:
             FAILED_TESTS=$(grep -A1 '<h6 class="text-uppercase">Total Failed Tests</h6>' "$file" | grep -oP '(?<=<h1 class="display-1">)[0-9]+(?=</h1>)')
             TOTAL_FAILED=$((TOTAL_FAILED + FAILED_TESTS))
           done
-    
-          if [ "$TOTAL_FAILED" -ne 0 ]; then            
-            exit 1          
+
+          if [ "$TOTAL_FAILED" -ne 0 ]; then
+            exit 1
           fi
 
       - name: Calculate Playwright tests branch
@@ -249,7 +249,7 @@ jobs:
         run: |
           # First check if a branch was provided as input
           BRANCH="${{ inputs.playwright-repository-branch }}"
-          
+
           # If a branch was provided, check if it exists
           if [ -n "$BRANCH" ]; then
             if git ls-remote --heads ${{ inputs.playwright-repository-url }} refs/heads/$BRANCH | grep -q $BRANCH; then
@@ -263,7 +263,7 @@ jobs:
             BRANCH="develop"
             echo "No branch specified, using develop as default"
           fi
-          
+
           echo "Using playwright tests repository branch: $BRANCH"
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
 
@@ -275,7 +275,7 @@ jobs:
       - name: Install Playwright
         if: ${{ inputs.playwright-tests-run }}
         working-directory: ./playwright-repo
-        run: |          
+        run: |
           npm ci
           npx playwright install --with-deps chromium
         env:
@@ -291,8 +291,8 @@ jobs:
           TEST_USER_PASSWORD: ${{ secrets.APIHUB_ADMIN_PASSWORD }}
           PLAYGROUND_BACKEND_HOST: "http://host.docker.internal:8081"
           CLEAR_TD: "skip"
-        run: |          
-          npx playwright test ${{ inputs.playwright-test-args }}          
+        run: |
+          npx playwright test ${{ inputs.playwright-test-args }}
 
       - name: Upload Playwright reports as artifacts
         if: ${{ inputs.playwright-tests-run }}
@@ -320,10 +320,10 @@ jobs:
             echo "|------------------------------------------|------------------------------------------------------------------------------------------|"
             echo "| **Execute BE tests**                     | **\`${{ inputs.postman-collections-run }}\`**                                            |"
             echo "| Postman collections branch to clone      | \`${{ steps.calculate-postman-branch.outputs.branch || 'branch was not calculated' }}\`  |"
-            
+
             # Build collections list - split comma-separated string into separate lines
             # to avoid breaking table formatting with very long single line
-          
+
             echo -n "| Postman collections to execute | "
             IFS=',' read -ra COLLECTIONS <<< "${{ inputs.postman-collections-list }}"
             for i in "${!COLLECTIONS[@]}"; do
@@ -333,7 +333,7 @@ jobs:
               echo -n "\`${COLLECTIONS[$i]}\`"
             done
             echo " |"
-            
+
             echo "| **Execute UI tests**                  | **\`${{ inputs.playwright-tests-run }}\`**                                                 |"
             echo "| Playwright branch to clone            | \`${{ steps.calculate-playwright-branch.outputs.branch || 'branch was not calculated' }}\` |"
             echo "| Playwright test command CLI arguments | \`${{ inputs.playwright-test-args }}\`                                                     |"

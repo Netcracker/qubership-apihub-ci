@@ -21,6 +21,8 @@ on:
     secrets:
       NPMRC:
         required: false
+      GH_ACCESS_TOKEN:
+        required: false
     outputs:
       image_tag:
         description: "Docker image tag of the published image."
