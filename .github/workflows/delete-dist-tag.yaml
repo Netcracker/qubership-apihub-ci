@@ -1,7 +1,7 @@
 name: delete-dist-tag
 
 on:
-  workflow_call:    
+  workflow_call:
 
 jobs:
   delete-dist-tag:
@@ -10,7 +10,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
@@ -19,13 +19,13 @@ jobs:
 
       - name: Calculate NPM dist tag
         id: calculate_npm_dist_tag
-        run: |          
+        run: |
           REF=${{ github.event.ref }}
           echo "REF: $REF"
           NPM_DIST_TAG=$(echo $REF | sed 's@^refs/tags/.*@latest@;s@^refs/heads/@@;s@^refs/pull/@pull/@;s@^develop$@dev@;s@^release$@next@;s@^main$@@;s@/@-@g;')
           echo "NPM_DIST_TAG: $NPM_DIST_TAG"
           echo "npm_dist_tag=$NPM_DIST_TAG" >> $GITHUB_OUTPUT
-      
+
       - name: Delete associated NPM dist tags
         if: |
           steps.calculate_npm_dist_tag.outputs.npm_dist_tag != '' && 
@@ -51,5 +51,5 @@ jobs:
               npm dist-tag rm "$PACKAGE_NAME" "$TAG_NAME"
             fi
           done
-        env:        
+        env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
