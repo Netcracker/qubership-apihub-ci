@@ -3,7 +3,7 @@ name: Generate Current Sprint Report v2
 on:
   schedule:
     - cron: '0 15 * * *'
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 jobs:
   generate-report:
