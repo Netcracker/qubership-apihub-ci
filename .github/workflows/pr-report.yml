@@ -38,7 +38,7 @@ jobs:
           path: report_prs_*.html
 
       - name: Upload to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@v4.1
         with:
           github_token: ${{ secrets.GH_ACCESS_TOKEN }}
           publish_branch: gh-pages
