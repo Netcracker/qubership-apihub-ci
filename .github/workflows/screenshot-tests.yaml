@@ -63,7 +63,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          npm_script="${{ inputs.update_screenshots == true && 'regenerate-screenshots:docker' || 'screenshot-test:docker' }}"
+          npm_script="${{ inputs.update_screenshots == true && 'regenerate-screenshots' || 'screenshot-test' }}"
           echo "Running npm script: ${npm_script}"
           npm run "${npm_script}"
           exit_code="$?"
