@@ -221,7 +221,7 @@ jobs:
 
       - name: Upload Newman reports as artifacts
         if: ${{ inputs.postman-collections-run }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: newman-reports
           path: |
@@ -296,7 +296,7 @@ jobs:
 
       - name: Upload Playwright reports as artifacts
         if: ${{ inputs.playwright-tests-run }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-reports
           path: |
@@ -304,7 +304,7 @@ jobs:
             retention-days: 7
 
       - name: Upload containers logs as artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: containers-logs
           path: |

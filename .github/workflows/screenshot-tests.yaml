@@ -154,7 +154,7 @@ jobs:
 
       - name: Upload artifacts
         if: steps.check_diffs.outputs.has_diffs == 'true' || inputs.update_screenshots == true
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ inputs.update_screenshots == true && 'updated-screenshots' || 'screenshot-differences' }}
           path: artifact-staging
