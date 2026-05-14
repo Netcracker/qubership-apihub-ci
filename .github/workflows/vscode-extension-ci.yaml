@@ -139,7 +139,7 @@ jobs:
           echo "Found VSIX: $VSIX_PATH"
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: runner.os == 'Linux'
         with:
           name: extension

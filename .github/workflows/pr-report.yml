@@ -3,7 +3,7 @@ name: Generate Pull Requests Report
 on:
   schedule:
     - cron: '0 9 * * *'
-  workflow_dispatch:      
+  workflow_dispatch: { }
 
 jobs:
   generate-report:
@@ -14,10 +14,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -32,7 +32,7 @@ jobs:
           cp public/report_prs_*.html public/report_prs_latest.html
 
       - name: Upload report artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: prs-report
           path: report_prs_*.html
