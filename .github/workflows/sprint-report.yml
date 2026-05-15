@@ -3,7 +3,7 @@ name: Generate Current Sprint Report
 on:
   schedule:
     - cron: '0 15 * * *'
-  workflow_dispatch:      
+  workflow_dispatch: {}
 
 jobs:
   generate-report:
@@ -14,10 +14,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
@@ -28,7 +28,7 @@ jobs:
         run: python .github/workflows/scripts/github-issues-sprint-report.py
 
       - name: Upload report artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sprint-report
           path: report_*.html
