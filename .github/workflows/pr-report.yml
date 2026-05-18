@@ -5,12 +5,12 @@ on:
     - cron: '0 9 * * *'
   workflow_dispatch: {}
 
+permissions:
+  contents: write
+
 jobs:
   generate-report:
     runs-on: ubuntu-latest
-
-    env:
-      GITHUB_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
 
     steps:
       - name: Checkout repository
@@ -25,6 +25,8 @@ jobs:
         run: pip install requests jinja2
 
       - name: Run report generator
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
         run: |
           mkdir public
           python .github/workflows/scripts/github-pull-request-report.py
@@ -40,7 +42,9 @@ jobs:
       - name: Upload to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4.1.0
         with:
-          github_token: ${{ secrets.GH_ACCESS_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
           publish_dir: public
           keep_files: false
+          user_name: github-actions[bot]
+          user_email: 41898282+github-actions[bot]@users.noreply.github.com
