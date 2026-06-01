@@ -1,25 +1,28 @@
 ---
 name: apihub-skill-author
-description: Walks through adding a new skill or instruction rule to the central APIHub agent-skills store in qubership-apihub-ci. Use when creating, extending, or publishing agent skills and rules for APIHub repositories.
+description: Walks through adding a new skill or instruction rule to the APIHub agent-skills store or a consumer repository. Use when creating, extending, or publishing agent skills and rules for APIHub repositories.
 ---
 
 # APIHub Skill Author
 
-Guide for contributing to the central store at `qubership-apihub-ci/agent-skills/`.
+Guide for contributing agent skills and rules in the APIHub ecosystem.
 
 ## 1. Decide scope and placement
 
-| Content type | Generic (any Go repo) | Repo-specific (backend, etc.) |
-|--------------|----------------------|-------------------------------|
-| **Skill** (workflow checklist) | `agent-skills/skills/apihub-go-*` | `agent-skills/skills/apihub-backend-*` |
-| **Instruction** (always-on / glob rule) | `agent-skills/instructions/go-conventions/` or `common-conventions/` | `agent-skills/instructions/backend-conventions/` |
+| Content type | Generic (shared across Go repos) | Repo-specific (one service) |
+|--------------|----------------------------------|------------------------------|
+| **Skill** (workflow checklist) | `qubership-apihub-ci/agent-skills/skills/apihub-go-*` | `<repo>/agent-skills/skills/<name>/` |
+| **Instruction** (glob rule) | `qubership-apihub-ci/.../go-conventions/` or `common-conventions/` | `<repo>/agent-skills/instructions/<group>/` |
 
-- Generic content belongs in `apihub-go-*` packages; repo-specific content depends on them via `apm.yml`.
-- Name new skills `apihub-<topic>` (lowercase, hyphens).
+- **Generic** content goes in the CI central store; consumers add a Git dependency in `apm.yml`.
+- **Repo-specific** content stays in that repository's `agent-skills/` folder and is referenced
+  with a relative path (e.g. `./agent-skills/skills/my-skill`).
+- Repo-specific skills should depend on generic CI packages via `apm.yml` `dependencies`.
+- Name shared skills `apihub-<topic>` (lowercase, hyphens).
 
 ## 2. Scaffold a skill bundle (HYBRID)
 
-Create a directory under `agent-skills/skills/<name>/`:
+Create a directory under the chosen `agent-skills/skills/<name>/`:
 
 ```text
 <name>/
@@ -77,7 +80,7 @@ applyTo: "**/*.go"
 
 ## 4. Declare transitive dependencies
 
-Repo-specific skills should depend on generic ones:
+Repo-specific skills should depend on generic CI packages:
 
 ```yaml
 dependencies:
@@ -97,26 +100,27 @@ apm pack
 
 Fix all warnings (missing `description`, frontmatter issues, etc.).
 
-## 6. Update the catalog
+## 6. Update documentation
 
-Add a row to `agent-skills/README.md` (package | path | scope | summary | deps).
-
-Link the catalog from `qubership-apihub-ci/README.md` if this is a new top-level section.
+- **CI store packages:** add a row to `qubership-apihub-ci/agent-skills/README.md`.
+- **Repo-local packages:** add a row to `<repo>/agent-skills/README.md`.
 
 ## 7. Consumer rollout
 
-Consumers add the dependency to root `apm.yml` and run:
+Add dependencies to root `apm.yml` (Git refs for CI store, `./agent-skills/...` for local)
+and run:
 
 ```bash
 apm install --target cursor,claude --legacy-skill-paths
 ```
 
-Commit `apm.yml` + `apm.lock.yaml` only; deployed `.cursor/` and `.claude/` dirs are gitignored.
+Commit `apm.yml` + `apm.lock.yaml`; gitignore deployed `.cursor/` / `.claude/` dirs.
+Commit repo-local `agent-skills/` sources.
 
 ## Checklist before opening PR
 
-- [ ] Generic vs specific placement is correct.
+- [ ] Generic vs repo-specific placement is correct.
 - [ ] Both `SKILL.md` and `apm.yml` descriptions populated (skills).
 - [ ] `apm pack` passes without warnings.
-- [ ] `agent-skills/README.md` catalog updated.
+- [ ] Relevant catalog README updated.
 - [ ] Relative links in skills assume deploy path `.cursor/skills/<name>/`.
