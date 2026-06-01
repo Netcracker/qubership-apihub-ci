@@ -1,0 +1,3 @@
+name: go-conventions
+version: 0.1.0
+description: Generic Go and APIHub development conventions (error handling, SQL, migrations, OpenAPI, CI)

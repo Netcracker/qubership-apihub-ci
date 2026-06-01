@@ -1,0 +1,77 @@
+# APIHub Agent Skills — Central Store
+
+Central store of [APM](https://microsoft.github.io/apm/) (Agent Package Manager) skills and
+instruction rules for APIHub repositories. One authored source is projected onto Cursor,
+Claude Code, Copilot, and other harnesses via `apm install`.
+
+## Catalog
+
+| Package | Path | Scope | Summary | Key dependencies |
+|---------|------|-------|---------|------------------|
+| `apihub-go-developer` | `skills/apihub-go-developer/` | generic | Go backend workflow (layers, conventions, API-first, CI) | — |
+| `apihub-backend-developer` | `skills/apihub-backend-developer/` | backend | Backend-specific docs, ErrorCodes, Service.go, migration scripts | `apihub-go-developer` |
+| `apihub-go-self-review` | `skills/apihub-go-self-review/` | generic | Post-implementation self-review checklist | — |
+| `apihub-backend-self-review` | `skills/apihub-backend-self-review/` | backend | Backend self-review addendum (OpenAPI files, ErrorCodes, related repos) | `apihub-go-self-review` |
+| `github-ticket-implementation-planner` | `skills/github-ticket-implementation-planner/` | generic | Plan from GitHub issue; post approved plan as comment | — |
+| `apihub-skill-author` | `skills/apihub-skill-author/` | generic | How to add new skills/rules to this store | — |
+| `common-conventions` | `instructions/common-conventions/` | generic | Always-on rules (clarify before coding) | — |
+| `go-conventions` | `instructions/go-conventions/` | generic | Go error handling, constants, SQL, migrations, OpenAPI, CI linters | — |
+| `backend-conventions` | `instructions/backend-conventions/` | backend | Config defaults, ErrorCodes, Service.go, OpenAPI files, migration path | — |
+
+## How to consume
+
+1. Add dependencies to the consumer repository root `apm.yml`:
+
+```yaml
+name: my-service
+version: 0.0.0
+dependencies:
+  apm:
+    - Netcracker/qubership-apihub-ci/agent-skills/skills/apihub-go-developer
+    - Netcracker/qubership-apihub-ci/agent-skills/instructions/go-conventions
+```
+
+Use the `#branch` suffix only while a store change is still on a feature branch (e.g.
+`#apm_migration`). After merge, omit the suffix to track the default branch.
+
+2. Install and deploy:
+
+```bash
+apm install --target cursor,claude --legacy-skill-paths
+```
+
+3. Commit `apm.yml` and `apm.lock.yaml`. Add `apm_modules/` and deployed
+   `.cursor/skills/`, `.cursor/rules/`, `.claude/skills/`, `.claude/rules/` to
+   `.gitignore`.
+
+Skills are auto-discovered by each harness after install — no `AGENTS.md` registration
+required.
+
+## How to add a new skill or rule
+
+Use the **`apihub-skill-author`** skill (install it from this store or read
+`skills/apihub-skill-author/SKILL.md` directly). In short:
+
+1. Decide **generic** (`apihub-go-*`, `go-conventions/`) vs **specific**
+   (`apihub-backend-*`, `backend-conventions/`).
+2. Scaffold a HYBRID skill bundle (`SKILL.md` + `apm.yml`) or an instruction package
+   (`.apm/instructions/*.instructions.md` + `apm.yml`).
+3. Declare transitive deps for specific → generic packages.
+4. Run `apm pack` in the package directory; fix all warnings.
+5. Update this catalog table.
+
+## Branch and update policy
+
+Consumers track the store's default branch (no tag pin). Each `apm install` resolves the
+latest commit and records the SHA in `apm.lock.yaml`. Re-run `apm install` to pick up store
+changes.
+
+## Validation
+
+From any package directory:
+
+```bash
+apm pack
+```
+
+All packages in this store must pass without warnings before merge.

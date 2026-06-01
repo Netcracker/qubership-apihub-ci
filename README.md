@@ -6,6 +6,12 @@ Additionally, many Qubership APIHUB repositories leverage shared workflows from 
 
 By integrating these workflows, teams can maintain reliable and scalable automation while adhering to unified deployment practices across the QUbership ecosystem.
 
+## Agent skills (APM)
+
+Central store of agent skills and instruction rules for APIHub repositories, distributed via
+[APM](https://microsoft.github.io/apm/). See
+[`agent-skills/README.md`](agent-skills/README.md) for the catalog and consumption guide.
+
 Also this repository contains some workflows with custom pyton scripts which generates various reports helpful for project management purposes:
 
 - Epics per release report
