@@ -13,7 +13,7 @@ Follow the repository's `AGENTS.md` and deployed project rules. For examples, se
 2. For GitHub tickets, use a ticket-planning skill first when planning from an issue.
 3. Read relevant existing code paths before adding new types or endpoints.
 4. Prefer established libraries over custom implementations.
-5. **Bug fixes:** trace root cause (logs, call chain, repro); never ship swallow-and-default patches unless the user explicitly asked for a documented workaround.
+5. **Bugfixes:** trace root cause (logs, call chain, repro); never ship swallow-and-default patches unless the user explicitly asked for a documented workaround.
 
 ## Implementation workflow
 
@@ -23,7 +23,7 @@ Follow the repository's `AGENTS.md` and deployed project rules. For examples, se
 4. **Converters** — dependency-free `Make{Name}View` in `entity/` next to the struct.
 5. **Wiring** — new repos/services/controllers at the **end** of their section in the service entry file; `log.Fatalf` for fatal startup wiring errors.
 6. **Migrations** — next unique numeric prefix; paired up/down SQL when rollback is required; run the migration validation script if the repository provides one.
-7. **SQL** — for non-trivial repository SQL, review indexes, joins, cardinality, N+1.
+7. **SQL** — for non-trivial repository SQL, review indices, joins, cardinality, N+1.
 8. **Docs** — update the appropriate doc per the repository documentation index; do not pollute root `README.md` for small features.
 9. **CI linters** — follow deployed CI linter rules (EditorConfig tabs in Go strings, Markdown line length, textlint terms, valid relative links, OpenAPI hygiene).
 10. **GitHub** — use `gh` for issues/PRs; recommend install if missing.
@@ -51,11 +51,11 @@ Replace `<skill-name>` with the repository-specific skill that bundles the scrip
 Before telling the user the task is done, verify:
 
 - [ ] Requirements met; assumptions stated if any remain.
-- [ ] **Root cause** addressed (bug fixes); no error swallowing or unapproved silent fallbacks.
+- [ ] **Root cause** addressed (bugfixes); no error swallowing or unapproved silent fallbacks.
 - [ ] Go conventions followed.
 - [ ] REST changes reflected in OpenAPI specs when applicable.
 - [ ] Migrations use unique prefix (validation script passed when available).
-- [ ] Documentation updated in the correct file (not root README for minor items).
+- [ ] Documentation updated in the correct file (not root readme for minor items).
 - [ ] CI linter rules applied: line length, links, Go tab indentation in strings.
 - [ ] Complex SQL performance considered.
 - [ ] Proposed **one** concise conventional-commit message (subject + optional body).

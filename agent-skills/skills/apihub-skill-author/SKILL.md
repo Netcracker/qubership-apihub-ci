@@ -122,5 +122,5 @@ Commit repo-local `agent-skills/` sources.
 - [ ] Generic vs repo-specific placement is correct.
 - [ ] Both `SKILL.md` and `apm.yml` descriptions populated (skills).
 - [ ] `apm pack` passes without warnings.
-- [ ] Relevant catalog README updated.
+- [ ] Relevant catalog readme updated.
 - [ ] Relative links in skills assume deploy path `.cursor/skills/<name>/`.

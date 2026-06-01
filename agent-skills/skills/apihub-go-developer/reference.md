@@ -13,9 +13,9 @@ See deployed CI linter rules (`.cursor/rules/ci-super-linter.mdc` or equivalent)
 | OpenAPI | Match file indentation; no trailing spaces in changed lines |
 | textlint | Use terms from `.github/linters/.textlintrc` when present |
 
-## Error handling — anti-patterns
+## Error handling — antipatterns
 
-**Reject as a bug fix or new code:**
+**Reject as a bugfix or new code:**
 
 ```go
 if err != nil {

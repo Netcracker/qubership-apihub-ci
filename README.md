@@ -16,4 +16,4 @@ Also this repository contains some workflows with custom pyton scripts which gen
 
 - Epics per release report
 - Current sprint stories report
-- Pull Requests opened in all Qubership-APIHUB repositories (available on GitHub Pages: https://netcracker.github.io/qubership-apihub-ci/report_prs_latest.html)
+- Pull Requests opened in all Qubership-APIHUB repositories (available on GitHub Pages: [report_prs_latest.html](https://netcracker.github.io/qubership-apihub-ci/report_prs_latest.html))

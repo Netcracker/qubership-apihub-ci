@@ -4,7 +4,7 @@ Central store of [APM](https://microsoft.github.io/apm/) (Agent Package Manager)
 skills and instruction rules for APIHub Go repositories. One authored source is projected
 onto Cursor, Claude Code, Copilot, and other harnesses via `apm install`.
 
-**Repository-specific** packages (e.g. backend-only skills) belong in the consumer repo under
+**Repository-specific** packages (e.g. backend-only skills) belong in the consumer repository under
 its own `agent-skills/` folder — not here.
 
 ## Catalog

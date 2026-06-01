@@ -29,7 +29,7 @@ Independent review of Go backend changes. **Do not implement fixes unless the us
 
 - [ ] Changes match stated requirements; no obvious scope creep or missing cases.
 - [ ] Ambiguous behavior was not silently assumed without documenting assumptions.
-- [ ] **Bug fix:** addresses root cause; summary explains why the failure happened and why the fix is correct.
+- [ ] **Bugfix:** addresses root cause; summary explains why the failure happened and why the fix is correct.
 
 ### Error handling (fail fast)
 
@@ -60,7 +60,7 @@ Independent review of Go backend changes. **Do not implement fixes unless the us
 
 ### SQL performance
 
-- [ ] New/changed repository SQL: indexes, joins, filters, cardinality, N+1 risks noted.
+- [ ] New/changed repository SQL: indices, joins, filters, cardinality, N+1 risks noted.
 
 ### Documentation
 
