@@ -4,7 +4,7 @@ Read this file when you need examples or general patterns. Keep `SKILL.md` as th
 
 ## CI linters
 
-See deployed CI linter rules (`.cursor/rules/ci-super-linter.mdc` or equivalent). Highlights for agents:
+See deployed CI linter rules (`.cursor/rules/ci-super-linter.mdc` from `development-conventions` or equivalent). Highlights for agents:
 
 | Area | Rule |
 |------|------|

@@ -1,29 +1,28 @@
 ---
 name: apm-authoring
-description: How to author APM packages — instructions, skills, prompts, agents, hooks — for the Qubership platform. Use when editing APM primitives (`apm.yml`, `*.instructions.md`, `SKILL.md`, `*.prompt.md`, `*.agent.md`, hooks) or laying out a new `agent-packages/<name>/`.
+description: How to author APM packages — instructions, skills, prompts, agents, hooks. Use when editing APM primitives (`apm.yml`, `*.instructions.md`, `SKILL.md`, `*.prompt.md`, `*.agent.md`, hooks) or laying out a new `agent-packages/<name>/`.
 ---
 
-# Authoring APM packages for Qubership
+# Authoring APM packages
 
-APM (https://github.com/microsoft/apm) is a package manager for AI-agent
+[APM](https://github.com/microsoft/apm) is a package manager for AI-agent
 primitives: **instructions** (always-on rules), **skills** (on-demand
 how-to guides), **prompts** (user-invoked slash-commands), **agents**
 (sub-agent personas with tool boundaries) and **hooks** (lifecycle
-scripts). The Qubership platform ships its conventions as APM packages
-so service developers receive them as `apm dependencies` and agents
-like Claude Code, Copilot and Cursor pick them up natively.
+scripts). A platform can ship its conventions as APM packages so service
+developers receive them as `apm dependencies` and agents like Claude
+Code, Copilot and Cursor pick them up natively.
 
-This skill is the contract between platform-library authors and the
-agents that read their packages. Apply it whenever you touch
-`apm.yml`, anything under a `.apm/` tree, or set up a new
-`agent-packages/<name>/`.
+This skill is the contract between library authors and the agents that
+read their packages. Apply it whenever you touch `apm.yml`, anything
+under a `.apm/` tree, or set up a new `agent-packages/<name>/`.
 
 ## Package layout
 
 A library repo can host one or more APM packages. Each one lives under
 `agent-packages/<package-name>/` so the path itself is the disambiguator:
 
-```
+```text
 agent-packages/
 └── <package-name>/                  # = `name:` in apm.yml
     ├── apm.yml
@@ -43,7 +42,7 @@ agent-packages/
 Rules:
 
 - `<package-name>` is descriptive and unique (`context-propagation-go-usage`,
-  `qubership-dockerfile-usage`), **not** a generic placeholder like
+  `hardened-dockerfile-usage`), **not** a generic placeholder like
   `user-guide`. Multiple packages can sit side-by-side in one repo, so the
   directory name has to identify the package on its own.
 - A package holds a **coherent set** of primitives (instructions,
@@ -108,13 +107,13 @@ for each piece of guidance:
   trigger phrase that names a skill. The best instructions are
   *nudges*: cases where the LLM already knows how to do the task
   but defaults to a sub-optimal flavour of it.
-    - "Pass `--batch --quiet` when invoking Maven" — saves tokens
-      by suppressing chatty output. The LLM already knows Maven; the
-      instruction only steers the flag.
-    - "Place new ADRs under `docs/adr/<NNNN>-<slug>.md`" — repo-wide
-      directory convention the LLM cannot guess.
-    - "Use the `gh` CLI for all GitHub operations" — picks the right
-      tool regardless of what file the agent is touching.
+  - "Pass `--batch --quiet` when invoking Maven" — saves tokens
+    by suppressing chatty output. The LLM already knows Maven; the
+    instruction only steers the flag.
+  - "Place new ADRs under `docs/adr/<NNNN>-<slug>.md`" — repo-wide
+    directory convention the LLM cannot guess.
+  - "Use the `gh` CLI for all GitHub operations" — picks the right
+    tool regardless of what file the agent is touching.
 - **On-demand (`SKILL.md`)** — anything tied to a specific file
   type, library, or task: setup checklists, multi-step how-tos,
   code templates, library-specific call patterns, failure-mode
@@ -123,13 +122,13 @@ for each piece of guidance:
   unrelated turns (codebase exploration, bug triage, CI debugging
   on another stack). Counter-examples — these look like instruction
   material but belong in a skill:
-    - "Use `logger.InfoC(ctx, …)` in `*.go` handlers" → ships in a
-      `go-authoring` (or logging-specific) skill, triggered on
-      `**/*.go`. Loading it on every turn would pay tokens for it
-      while reading SQL, editing YAML, or reviewing CI logs.
-    - "Dockerfiles use `USER 10001:10001` and `--chown=10001:0`"
-      → ships in `qubership-dockerfile-usage`, triggered on
-      `**/{Dockerfile,Dockerfile.*,*.Dockerfile}`.
+  - "Use `logger.InfoC(ctx, …)` in `*.go` handlers" → ships in a
+    `go-authoring` (or logging-specific) skill, triggered on
+    `**/*.go`. Loading it on every turn would pay tokens for it
+    while reading SQL, editing YAML, or reviewing CI logs.
+  - "Dockerfiles use `USER 10001:10001` and `--chown=10001:0`"
+    → ships in a `hardened-dockerfile-usage` skill, triggered on
+    `**/{Dockerfile,Dockerfile.*,*.Dockerfile}`.
 
 Heuristic: an instruction earns its place only if the agent
 benefits from it on **every** turn, not just when working on a
@@ -182,20 +181,20 @@ Rules for the file:
 
 ```markdown
 ---
-description: Go coding standards for Qubership context propagation.
+description: Go coding standards for cross-service context propagation.
 applyTo: "**/*.go"
 ---
 
-## Skill trigger: `context-propagation-go-usage`
-
 When editing `*.go` and propagating request context (X-Request-Id,
-X-Version, headers, etc.) between Qubership microservices, apply the
+X-Version, headers, etc.) between microservices, apply the
 `context-propagation-go-usage` skill.
 ```
 
 Avoid in the trigger:
 
-- `When the user works with github.com/.../<long-import-path> library — registering providers, initializing context, propagating headers, writing custom providers, working with snapshots …`
+- `When the user works with github.com/.../<long-import-path>
+  library — registering providers, initializing context,
+  propagating headers, writing custom providers, working with snapshots …`
   This is the skill body, not a trigger. Pick the user-facing verb.
 - Negative scope (`Do NOT use for the X operator`). If a different repo
   must not pick up your skill, that repo's own scope handles it. Don't
@@ -232,7 +231,7 @@ Leave out everything else. In particular, don't include:
 - Generic ecosystem knowledge — `go get`, adding to `pom.xml`, Dockerfile
   multi-stage basics, how `CGO_ENABLED=0` produces a static binary. The
   agent already knows. Stating it dilutes the signal of what is
-  Qubership-specific.
+  platform-specific.
 - Material that belongs in the library's own API docs. Languages publish
   generated docs (godoc → pkg.go.dev, javadoc, rustdoc, pydoc) and the
   agent can fetch them when needed. Repeating method signatures and
@@ -267,10 +266,10 @@ once, in active voice, and let them apply to both directions.
 ## Agents, hooks, and prompts
 
 `apm` supports these three primitives in addition to instructions
-and skills, but day-to-day authoring on a Qubership platform package
+and skills, but day-to-day authoring on a library-usage package
 rarely needs them. This skill does not restate their file formats —
-fetch the upstream `apm` documentation
-(https://github.com/microsoft/apm) when you reach for one.
+fetch the [upstream `apm` documentation](https://github.com/microsoft/apm)
+when you reach for one.
 
 The rule that does belong here is about *when* to reach for them:
 **the user decides whether to introduce an agent, a hook, or a
@@ -324,28 +323,18 @@ changes (new required step, breaking rename), not on every prose edit.
 
 ## apm.yml
 
-Minimal valid manifest for a leaf package:
+Minimal valid manifest:
 
 ```yaml
 name: <package-name>           # matches agent-packages/<package-name>/
 version: 1.0.0
 description: One-sentence purpose.
-author: Qubership
-```
+author: <your-org>
 
-Umbrella / aggregator packages declare dependencies and nothing else
-substantive — the umbrella's instructions file should be a one-line
-"all platform rules apply" pointer, like
-[go-microservice-dev-kit.instructions.md](agent-packages/go-microservice-dev-kit/.apm/instructions/go-microservice-dev-kit.instructions.md).
-
-```yaml
-name: go-microservice-dev-kit
-version: 1.0.0
-description: Umbrella package for Qubership Go microservices.
-author: Qubership
+# Optional: list other APM packages this one depends on.
 dependencies:
   apm:
-    - Netcracker/<repo>/<path>/agent-packages/<package>#<ref>
+    - <owner>/<repo>/<path>/agent-packages/<package>#<ref>
 ```
 
 Conventions for the dependency list:
@@ -387,9 +376,9 @@ dependency:
    The matching `apm_modules/<owner>/<repo>/.../` path tells you
    the source repo; cross-check with `apm.yml` / `apm.lock` for the
    pinned version.
-2. File a PR against that repo's `.apm/<primitive-folder>/<name>/`
+1. File a PR against that repo's `.apm/<primitive-folder>/<name>/`
    (e.g. `.apm/skills/<name>/SKILL.md`).
-3. Once the upstream change is released, bump the version in this
+1. Once the upstream change is released, bump the version in this
    repo's `apm.yml` and run `apm install` followed by `apm compile`.
 
 ## Common authoring pitfalls

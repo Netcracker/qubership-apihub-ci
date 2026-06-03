@@ -1,6 +1,6 @@
 name: go-conventions
-version: 0.2.0
-description: Generic Go and APIHub development conventions (error handling, SQL, migrations, OpenAPI, CI)
+version: 0.3.0
+description: Generic Go and APIHub development conventions (error handling, SQL, migrations, OpenAPI)
 author: Qubership
 dependencies:
   apm: []

@@ -26,8 +26,8 @@ To add or change packages, follow [apm-authoring](https://github.com/Netcracker/
 | `apihub-go-developer` | `apihub-go-developer/` | generic | Go backend workflow (layers, conventions, API-first, CI) |
 | `apihub-go-self-review` | `apihub-go-self-review/` | generic | Post-implementation self-review checklist |
 | `github-ticket-implementation-planner` | `github-ticket-implementation-planner/` | generic | Plan from GitHub issue; post approved plan as comment |
-| `common-conventions` | `common-conventions/` | generic | Always-on rules (clarify before coding) |
-| `go-conventions` | `go-conventions/` | generic | Go error handling, constants, SQL, migrations, OpenAPI, CI linters |
+| `development-conventions` | `development-conventions/` | generic | Clarification workflow and CI super-linter / link-checker rules |
+| `go-conventions` | `go-conventions/` | generic | Go error handling, constants, SQL, migrations, OpenAPI |
 
 ## How to consume
 
