@@ -2,4 +2,4 @@ name: qubership-apihub-ci
 version: 0.0.0
 devDependencies:
   apm:
-    - Netcracker/qubership-ai-packages/agent-packages/apm-authoring#v1.0.0
+    - Netcracker/qubership-ai-packages/agent-packages/apm-authoring
