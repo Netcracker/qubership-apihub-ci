@@ -1,6 +1,6 @@
 ---
 description: Ask clarifying questions before generating code when requirements are unclear
-alwaysApply: true
+applyTo: "**"
 ---
 
 # Clarify Before Coding

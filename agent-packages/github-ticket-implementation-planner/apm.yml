@@ -1,0 +1,6 @@
+name: github-ticket-implementation-planner
+version: 0.2.0
+description: Plan implementation from a GitHub issue with clarifying questions and approved plan posting
+author: Qubership
+dependencies:
+  apm: []
