@@ -1,0 +1,6 @@
+name: apihub-go-self-review
+version: 0.2.0
+description: Post-implementation self-review checklist for APIHub Go backends
+author: Qubership
+dependencies:
+  apm: []
