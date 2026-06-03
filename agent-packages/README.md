@@ -5,7 +5,7 @@ skills and instruction rules for APIHub Go repositories. One authored source is 
 onto Cursor, Claude Code, Copilot, and other harnesses via `apm install`.
 
 **Repository-specific** packages (e.g. backend-only skills) belong in the consumer repository under
-its own `agent-skills/` folder — not here.
+its own `agent-packages/` folder — not here.
 
 ## Catalog
 
@@ -27,15 +27,15 @@ name: my-service
 version: 0.0.0
 dependencies:
   apm:
-    - Netcracker/qubership-apihub-ci/agent-skills/skills/apihub-go-developer
-    - Netcracker/qubership-apihub-ci/agent-skills/instructions/go-conventions
+    - Netcracker/qubership-apihub-ci/agent-packages/skills/apihub-go-developer
+    - Netcracker/qubership-apihub-ci/agent-packages/instructions/go-conventions
 ```
 
 Use the `#branch` suffix only while a store change is still on a feature branch (e.g.
 `#apm_migration`). After merge, omit the suffix to track the default branch.
 
 For **repo-specific** skills, add local paths alongside CI dependencies (see
-`qubership-apihub-backend/agent-skills/` for an example).
+`qubership-apihub-backend/agent-packages/` for an example).
 
 2. Install and deploy:
 
@@ -43,9 +43,8 @@ For **repo-specific** skills, add local paths alongside CI dependencies (see
 apm install --target cursor,claude --legacy-skill-paths
 ```
 
-3. Commit `apm.yml` and `apm.lock.yaml`. Add `apm_modules/` and deployed
-   `.cursor/skills/`, `.cursor/rules/`, `.claude/skills/`, `.claude/rules/` to
-   `.gitignore`. Commit repo-local `agent-skills/` sources when you have them.
+3. Commit `apm.yml`, `apm.lock.yaml`, repo-local `agent-packages/` sources, and deployed
+   `.cursor/` / `.claude/` harness trees. Gitignore only `apm_modules/`.
 
 Skills are auto-discovered by each harness after install — no `AGENTS.md` registration
 required.
@@ -56,7 +55,7 @@ Use the **`apihub-skill-author`** skill (install it from this store or read
 `skills/apihub-skill-author/SKILL.md` directly). In short:
 
 1. **Generic** → add under this store (`apihub-go-*`, `go-conventions/`).
-2. **Single-repo specific** → add under `<consumer-repo>/agent-skills/` and reference with
+2. **Single-repo specific** → add under `<consumer-repo>/agent-packages/` and reference with
    a relative path in that repo's `apm.yml`.
 3. Scaffold a HYBRID skill bundle (`SKILL.md` + `apm.yml`) or an instruction package
    (`.apm/instructions/*.instructions.md` + `apm.yml`).

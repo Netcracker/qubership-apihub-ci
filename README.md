@@ -10,7 +10,7 @@ By integrating these workflows, teams can maintain reliable and scalable automat
 
 Central store of agent skills and instruction rules for APIHub repositories, distributed via
 [APM](https://microsoft.github.io/apm/). See
-[`agent-skills/README.md`](agent-skills/README.md) for the catalog and consumption guide.
+[`agent-packages/README.md`](agent-packages/README.md) for the catalog and consumption guide.
 
 Also this repository contains some workflows with custom pyton scripts which generates various reports helpful for project management purposes:
 
