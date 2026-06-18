@@ -1,19 +1,64 @@
 name: Generate Release Report
+run-name: >-
+  ${{ github.event_name == 'workflow_dispatch'
+      && format('Generate Release Report — {0}', github.event.inputs.release-name)
+      || 'Generate Release Report (daily)' }}
 
 on:
+  schedule:
+    - cron: '0 15 * * *'
   workflow_dispatch:
     inputs:
       release-name:
-        description: "Release name (example: 25.2)"
+        description: "Release name (example: 26.2)"
         type: string
+        required: true
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      releases: ${{ steps.set.outputs.releases }}
+    steps:
+      - id: set
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo 'releases=["${{ github.event.inputs.release-name }}"]' >> "$GITHUB_OUTPUT"
+          else
+            YEAR=$(date -u +%y)
+            MONTH=$(date -u +%-m)
+            Q=$(( (10#$MONTH - 1) / 3 + 1 ))
+            CURRENT="${YEAR}.${Q}"
+
+            if [ "$Q" -eq 1 ]; then
+              PREV_Y=$((10#$YEAR - 1))
+              PREV=$(printf '%02d.4' "$PREV_Y")
+            else
+              PREV="${YEAR}.$((Q - 1))"
+            fi
+
+            if [ "$Q" -eq 4 ]; then
+              NEXT_Y=$((10#$YEAR + 1))
+              NEXT=$(printf '%02d.1' "$NEXT_Y")
+            else
+              NEXT="${YEAR}.$((Q + 1))"
+            fi
+
+            echo "releases=[\"${PREV}\",\"${CURRENT}\",\"${NEXT}\"]" >> "$GITHUB_OUTPUT"
+          fi
+
   generate-report:
+    needs: prepare
+    name: Release report ${{ matrix.release-name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        release-name: ${{ fromJSON(needs.prepare.outputs.releases) }}
     runs-on: ubuntu-latest
 
     env:
       GITHUB_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
-      RELEASE_NAME: ${{ github.event.inputs.release-name }}
+      RELEASE_NAME: ${{ matrix.release-name }}
 
     steps:
       - name: Checkout repository
@@ -33,5 +78,5 @@ jobs:
       - name: Upload report artifact
         uses: actions/upload-artifact@v7
         with:
-          name: release-report
+          name: release-report-${{ matrix.release-name }}
           path: report_*.html
