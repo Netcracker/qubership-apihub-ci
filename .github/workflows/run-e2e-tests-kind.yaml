@@ -61,6 +61,18 @@ on:
         description: "Agents Backend image tag to be executed"
         type: string
         default: "dev"
+      apihub-agent-run:
+        description: "Flag for deploying Qubership APIHUB Agent"
+        type: boolean
+        default: true
+      apihub-agent-helm-repository-branch:
+        description: "Qubership APIHUB Agent branch containing Helm templates"
+        type: string
+        default: "develop"
+      apihub-agent-image-tag:
+        description: "Qubership APIHUB Agent image tag to be executed"
+        type: string
+        default: "dev"
     secrets:
       JWT_PRIVATE_KEY:
         required: true
@@ -79,6 +91,14 @@ jobs:
         run: |
           git clone --branch ${{ inputs.helm-repository-branch }} --single-branch \
             ${{ inputs.helm-repository-url }} helm-repo
+
+      - name: Clone Qubership APIHUB Agent Helm repository
+        if: ${{ inputs.apihub-agent-run }}
+        env:
+          APIHUB_AGENT_HELM_BRANCH: ${{ inputs.apihub-agent-helm-repository-branch }}
+        run: |
+          git clone --branch "$APIHUB_AGENT_HELM_BRANCH" --single-branch \
+            https://github.com/Netcracker/qubership-apihub-agent apihub-agent-repo
 
       - name: Install envsubst
         run: |
@@ -168,6 +188,25 @@ jobs:
           kubectl rollout status deployment --all \
             --namespace qubership-apihub \
             --timeout=5m
+
+      - name: Deploy Qubership APIHUB Agent
+        if: ${{ inputs.apihub-agent-run }}
+        working-directory: apihub-agent-repo
+        env:
+          APIHUB_ACCESS_TOKEN: ${{ secrets.APIHUB_ACCESS_TOKEN }}
+          APIHUB_AGENT_IMAGE_TAG: ${{ inputs.apihub-agent-image-tag }}
+        run: |
+          printf '%s' "$APIHUB_ACCESS_TOKEN" > "$RUNNER_TEMP/apihub-agent-access-token"
+          helm upgrade --install qubership-apihub-agent ./helm-templates/qubership-apihub-agent \
+            --namespace qubership-apihub-agent \
+            --create-namespace \
+            --values ./helm-templates/qubership-apihub-agent/local-k8s-values.yaml \
+            --set-string qubershipApihubAgent.version="$APIHUB_AGENT_IMAGE_TAG" \
+            --set-string qubershipApihubAgent.image.tag="$APIHUB_AGENT_IMAGE_TAG" \
+            --set-file \
+            qubershipApihubAgent.env.technicalParameters.apihub.accessToken="$RUNNER_TEMP/apihub-agent-access-token" \
+            --wait \
+            --timeout 5m
 
       - name: Forward APIHUB port
         run: |
@@ -332,7 +371,7 @@ jobs:
           kubectl get all --all-namespaces > ./kubernetes-resources.log 2>&1 || true
           kubectl get events --all-namespaces \
             --sort-by='.metadata.creationTimestamp' > ./kubernetes-events.log 2>&1 || true
-          for namespace in postgres-db qubership-apihub ingress-nginx; do
+          for namespace in postgres-db qubership-apihub qubership-apihub-agent ingress-nginx; do
             kubectl get pods --namespace "$namespace" -o name 2>/dev/null | while read -r pod; do
               log_name=$(echo "${namespace}-${pod#pod/}" | tr '/' '-')
               kubectl logs --namespace "$namespace" "$pod" \
@@ -377,6 +416,9 @@ jobs:
             echo "| UI image tag | \`${{ inputs.apihub-ui-image-tag }}\` |"
             echo "| API Linter Service image tag | \`${{ inputs.apihub-api-linter-service-image-tag }}\` |"
             echo "| Agents Backend image tag | \`${{ inputs.apihub-agents-backend-image-tag }}\` |"
+            echo "| **Deploy APIHUB Agent** | **\`${{ inputs.apihub-agent-run }}\`** |"
+            echo "| APIHUB Agent Helm branch | \`${{ inputs.apihub-agent-helm-repository-branch }}\` |"
+            echo "| APIHUB Agent image tag | \`${{ inputs.apihub-agent-image-tag }}\` |"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Fail job if there are failed tests
