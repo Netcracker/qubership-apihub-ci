@@ -193,6 +193,35 @@ jobs:
               --timeout=5m
           done
 
+      - name: Forward APIHUB port
+        run: |
+          kubectl port-forward \
+            --namespace qubership-apihub \
+            service/qubership-apihub-ui 8081:8080 \
+            > ./port-forward.log 2>&1 &
+
+      - name: Wait for APIHUB startup
+        env:
+          APIHUB_ACCESS_TOKEN: ${{ secrets.APIHUB_ACCESS_TOKEN }}
+        run: |
+          echo "Waiting for APIHUB UI and API key authentication..."
+          end_time=$((SECONDS + 300))
+          while [ $SECONDS -lt $end_time ]; do
+            login_status=$(curl -s -o /dev/null -w "%{http_code}" \
+              http://localhost:8081/login || true)
+            api_key_status=$(curl -s -o /dev/null -w "%{http_code}" \
+              --header "api-key: $APIHUB_ACCESS_TOKEN" \
+              http://localhost:8081/api/v1/system/info || true)
+            if [ "$login_status" = "200" ] && [ "$api_key_status" = "200" ]; then
+              echo "APIHUB UI is ready and the API key is accepted."
+              exit 0
+            fi
+            echo "Login status: $login_status; API key status: $api_key_status. Retrying in 5 seconds..."
+            sleep 5
+          done
+          echo "Timeout reached. APIHUB was not ready within 5 minutes."
+          exit 1
+
       - name: Deploy Qubership APIHUB Agent
         if: ${{ inputs.apihub-agent-run }}
         working-directory: apihub-agent-repo
@@ -211,29 +240,6 @@ jobs:
             qubershipApihubAgent.env.technicalParameters.apihub.accessToken="$RUNNER_TEMP/apihub-agent-access-token" \
             --wait \
             --timeout 5m
-
-      - name: Forward APIHUB port
-        run: |
-          kubectl port-forward \
-            --namespace qubership-apihub \
-            service/qubership-apihub-ui 8081:8080 \
-            > ./port-forward.log 2>&1 &
-
-      - name: Wait for APIHUB startup
-        run: |
-          echo "Waiting for http://localhost:8081/login to return 200..."
-          end_time=$((SECONDS + 300))
-          while [ $SECONDS -lt $end_time ]; do
-            status_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8081/login)
-            if [ "$status_code" -eq 200 ]; then
-              echo "Received HTTP 200!"
-              exit 0
-            fi
-            echo "Received HTTP $status_code. Retrying in 5 seconds..."
-            sleep 5
-          done
-          echo "Timeout reached. Did not receive HTTP 200 within 5 minutes."
-          exit 1
 
       - name: Install Newman
         if: ${{ inputs.postman-collections-run }}
