@@ -185,9 +185,13 @@ jobs:
 
       - name: Wait for APIHUB rollout
         run: |
-          kubectl rollout status deployment --all \
+          for deployment in $(kubectl get deployments \
             --namespace qubership-apihub \
-            --timeout=5m
+            --output=name); do
+            kubectl rollout status "$deployment" \
+              --namespace qubership-apihub \
+              --timeout=5m
+          done
 
       - name: Deploy Qubership APIHUB Agent
         if: ${{ inputs.apihub-agent-run }}
