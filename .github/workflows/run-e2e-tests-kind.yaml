@@ -204,19 +204,25 @@ jobs:
         env:
           APIHUB_ACCESS_TOKEN: ${{ secrets.APIHUB_ACCESS_TOKEN }}
         run: |
-          echo "Waiting for APIHUB UI and API key authentication..."
+          echo "Waiting for APIHUB and end-to-end API key authentication..."
           end_time=$((SECONDS + 300))
           while [ $SECONDS -lt $end_time ]; do
             login_status=$(curl -s -o /dev/null -w "%{http_code}" \
               http://localhost:8081/login || true)
             api_key_status=$(curl -s -o /dev/null -w "%{http_code}" \
               --header "api-key: $APIHUB_ACCESS_TOKEN" \
-              http://localhost:8081/api/v1/system/info || true)
-            if [ "$login_status" = "200" ] && [ "$api_key_status" = "200" ]; then
-              echo "APIHUB UI is ready and the API key is accepted."
+              http://localhost:8081/api/v2/auth/apiKey || true)
+            agents_backend_status=$(curl -s -o /dev/null -w "%{http_code}" \
+              --header "api-key: $APIHUB_ACCESS_TOKEN" \
+              http://localhost:8081/agents-backend/api/v2/agents || true)
+            if [ "$login_status" = "200" ] \
+              && [ "$api_key_status" = "200" ] \
+              && [ "$agents_backend_status" = "200" ]; then
+              echo "APIHUB and Agents Backend accept the API key."
               exit 0
             fi
-            echo "Login status: $login_status; API key status: $api_key_status. Retrying in 5 seconds..."
+            echo "Login: $login_status; API key: $api_key_status; Agents Backend: $agents_backend_status."
+            echo "Retrying in 5 seconds..."
             sleep 5
           done
           echo "Timeout reached. APIHUB was not ready within 5 minutes."
@@ -240,6 +246,22 @@ jobs:
             qubershipApihubAgent.env.technicalParameters.apihub.accessToken="$RUNNER_TEMP/apihub-agent-access-token" \
             --wait \
             --timeout 5m
+
+      - name: Verify Qubership APIHUB Agent access token
+        if: ${{ inputs.apihub-agent-run }}
+        env:
+          APIHUB_ACCESS_TOKEN: ${{ secrets.APIHUB_ACCESS_TOKEN }}
+        run: |
+          if kubectl get secret qubership-apihub-agent-config-secret \
+            --namespace qubership-apihub-agent \
+            --output=jsonpath='{.data.config\.yaml}' \
+            | base64 --decode \
+            | grep --fixed-strings --quiet -- "$APIHUB_ACCESS_TOKEN"; then
+            echo "Agent configuration contains the expected APIHUB access token."
+          else
+            echo "::error::Agent configuration does not contain the expected APIHUB access token."
+            exit 1
+          fi
 
       - name: Install Newman
         if: ${{ inputs.postman-collections-run }}
