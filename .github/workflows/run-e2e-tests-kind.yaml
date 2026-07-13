@@ -181,7 +181,7 @@ jobs:
 
       - name: Patch APIHUB hosts
         working-directory: helm-repo/helm-templates/local-k8s-quickstart/scripts
-        run: ./6-patch-apihub-hosts.sh
+        run: sh ./6-patch-apihub-hosts.sh
 
       - name: Wait for APIHUB rollout
         run: |
