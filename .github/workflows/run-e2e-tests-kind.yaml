@@ -237,11 +237,12 @@ jobs:
         run: |
           printf '%s' "$APIHUB_ACCESS_TOKEN" > "$RUNNER_TEMP/apihub-agent-access-token"
           helm upgrade --install qubership-apihub-agent ./helm-templates/qubership-apihub-agent \
-            --namespace qubership-apihub-agent \
-            --create-namespace \
+            --namespace qubership-apihub \
             --values ./helm-templates/qubership-apihub-agent/local-k8s-values.yaml \
             --set-string qubershipApihubAgent.version="$APIHUB_AGENT_IMAGE_TAG" \
             --set-string qubershipApihubAgent.image.tag="$APIHUB_AGENT_IMAGE_TAG" \
+            --set-string \
+            qubershipApihubAgent.env.technicalParameters.agentHost=qubership-apihub-agent.qubership-apihub.svc.cluster.local \
             --set-file \
             qubershipApihubAgent.env.technicalParameters.apihub.accessToken="$RUNNER_TEMP/apihub-agent-access-token" \
             --wait \
@@ -253,7 +254,7 @@ jobs:
           APIHUB_ACCESS_TOKEN: ${{ secrets.APIHUB_ACCESS_TOKEN }}
         run: |
           if kubectl get secret qubership-apihub-agent-config-secret \
-            --namespace qubership-apihub-agent \
+            --namespace qubership-apihub \
             --output=jsonpath='{.data.config\.yaml}' \
             | base64 --decode \
             | grep --fixed-strings --quiet -- "$APIHUB_ACCESS_TOKEN"; then
@@ -403,7 +404,7 @@ jobs:
           kubectl get all --all-namespaces > ./kubernetes-resources.log 2>&1 || true
           kubectl get events --all-namespaces \
             --sort-by='.metadata.creationTimestamp' > ./kubernetes-events.log 2>&1 || true
-          for namespace in postgres-db qubership-apihub qubership-apihub-agent ingress-nginx; do
+          for namespace in postgres-db qubership-apihub ingress-nginx; do
             kubectl get pods --namespace "$namespace" -o name 2>/dev/null | while read -r pod; do
               log_name=$(echo "${namespace}-${pod#pod/}" | tr '/' '-')
               kubectl logs --namespace "$namespace" "$pod" \
