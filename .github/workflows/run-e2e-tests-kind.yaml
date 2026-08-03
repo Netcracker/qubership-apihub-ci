@@ -162,6 +162,11 @@ jobs:
             mv "${config_file}.tmp" "$config_file"
           done
 
+          chmod +x scripts/generate-local-tls.sh scripts/create-custom-ca-secrets.sh
+          ./scripts/generate-local-tls.sh
+          export APIHUB_TLS_CRT=$(base64 -w 0 < qubership-apihub/certs/tls.crt)
+          export APIHUB_TLS_KEY=$(base64 -w 0 < qubership-apihub/certs/tls.key)
+
           envsubst < qubership-apihub/local-secrets.yaml.template \
             > qubership-apihub/local-secrets.yaml
 
@@ -173,6 +178,10 @@ jobs:
             --create-namespace \
             --wait \
             --timeout 5m
+
+      - name: Create local custom CA Secret
+        working-directory: helm-repo/helm-templates/local-k8s-quickstart/scripts
+        run: ./create-custom-ca-secrets.sh
 
       - name: Deploy APIHUB
         working-directory: helm-repo/helm-templates/local-k8s-quickstart
@@ -394,9 +403,8 @@ jobs:
         continue-on-error: true
         working-directory: playwright-repo
         env:
-          BASE_URL: "http://localhost:8081"
+          BASE_URL: "https://qubership-apihub.localtest.me"
           TEST_USER_PASSWORD: ${{ secrets.APIHUB_ADMIN_PASSWORD }}
-          PLAYGROUND_BACKEND_HOST: "http://host.docker.internal:8081"
           CLEAR_TD: "skip"
         run: |
           npx playwright test ${{ inputs.playwright-test-args }}
