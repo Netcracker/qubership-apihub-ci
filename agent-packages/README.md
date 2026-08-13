@@ -28,6 +28,7 @@ To add or change packages, follow [apm-authoring](https://github.com/Netcracker/
 | `github-ticket-implementation-planner` | `github-ticket-implementation-planner/` | generic | Plan from GitHub issue; post approved plan as comment |
 | `development-conventions` | `development-conventions/` | generic | Clarification workflow and CI super-linter / link-checker rules |
 | `go-conventions` | `go-conventions/` | generic | Go error handling, constants, SQL, migrations, OpenAPI |
+| `apihub-publish-version` | `apihub-publish-version/` | generic | Publish a package version to APIHub over the REST API |
 
 ## How to consume
 
