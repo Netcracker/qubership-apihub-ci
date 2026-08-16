@@ -34,6 +34,14 @@ on:
         description: "Collections to execute"
         type: string
         default: "./e2e/1_1_Smoke_Portal.postman_collection.json"
+      newman-timeout-request:
+        description: "Newman timeout for a single request, in milliseconds"
+        type: number
+        default: 60000
+      newman-timeout-collection:
+        description: "Newman timeout for a whole collection run, in milliseconds"
+        type: number
+        default: 1200000
       playwright-tests-run:
         description: "Flag for executing playwright tests"
         type: boolean
@@ -69,6 +77,10 @@ on:
         description: "Agents Backend image tag to be executed"
         type: string
         default: "dev"
+      job-timeout-minutes:
+        description: "Timeout for the whole E2E job, in minutes"
+        type: number
+        default: 120
     secrets:
       JWT_PRIVATE_KEY:
         required: true
@@ -82,6 +94,7 @@ on:
 jobs:
   run_compose_and_run_tests:
     runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.job-timeout-minutes }}
     steps:
       - name: Clone compose repository
         run: |
@@ -218,7 +231,7 @@ jobs:
           for collection in "${COLLECTIONS[@]}"; do
             sanitized_collection_name=$(echo "$collection" | tr -d './')
             echo "Running collection: $collection"
-            newman run "$collection" -e ./ci.postman_environment.json -x --reporters cli,htmlextra --reporter-htmlextra-export "./reports/${sanitized_collection_name}_results.html"
+            newman run "$collection" -e ./ci.postman_environment.json -x --timeout ${{ inputs.newman-timeout-collection }} --timeout-request ${{ inputs.newman-timeout-request }} --reporters cli,htmlextra --reporter-htmlextra-export "./reports/${sanitized_collection_name}_results.html"
           done
 
       - name: Upload Newman reports as artifacts
