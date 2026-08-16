@@ -37,11 +37,11 @@ on:
       newman-timeout-request:
         description: "Newman timeout for a single request, in milliseconds"
         type: number
-        default: 60000
+        default: 120000
       newman-timeout-collection:
         description: "Newman timeout for a whole collection run, in milliseconds"
         type: number
-        default: 1200000
+        default: 1800000
       playwright-tests-run:
         description: "Flag for executing playwright tests"
         type: boolean
