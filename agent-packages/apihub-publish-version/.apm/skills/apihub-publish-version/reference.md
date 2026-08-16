@@ -1,4 +1,4 @@
-# APIHub publish reference
+# APIHUB publish reference
 
 Companion to `SKILL.md`: the build config fields, the shell commands for each step, and the recipe
 for rendering a backend error. `SKILL.md` holds the workflow and the rules — this file holds the
@@ -122,7 +122,7 @@ printf 'url=%s\n' "https://apihub.example.com" > "$apihub/config"
 The credential file is the user's to write. When either file is missing, show them this:
 
 ```text
-Create $HOME/.apihub/config with your APIHub base URL:
+Create $HOME/.apihub/config with your APIHUB base URL:
 
     url=https://apihub.example.com
 
@@ -229,7 +229,7 @@ An MCP document needs `metadata.mcpEndpoint` on its `files[]` entry. Three rules
 - **It is required.** The builder throws without it and the build fails, so the version never
   appears. The backend re-checks the build result and rejects it with code `1603`.
 - **It must be a relative path starting with a single `/`** — `/mcp`, `/mcp/support`. An absolute
-  URL is rejected, and so is a leading `//`. Note that APIHub's own published `APIHUB_API.yaml`
+  URL is rejected, and so is a leading `//`. Note that APIHUB's own published `APIHUB_API.yaml`
   documents `mcpEndpoint: "https://api.example.com/mcp"` as its example; that value does not work.
   Trust this rule over that spec.
 - **Exactly one init document is required per endpoint.** An endpoint that publishes tools, prompts
@@ -331,7 +331,7 @@ with the recipe below and stop.
 
 ## Rendering a backend error
 
-An APIHub error body looks like this — a real rejection for a `fileId` that no zip entry matches:
+An APIHUB error body looks like this — a real rejection for a `fileId` that no zip entry matches:
 
 ```json
 {

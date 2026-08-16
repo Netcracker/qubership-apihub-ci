@@ -1,0 +1,6 @@
+name: apihub-create-package
+version: 0.1.0
+description: Create packages and groups in an APIHUB instance over the REST API
+author: Qubership
+dependencies:
+  apm: []

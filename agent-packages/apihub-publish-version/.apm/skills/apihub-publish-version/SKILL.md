@@ -1,12 +1,12 @@
 ---
 name: apihub-publish-version
-description: Publish a version of an APIHub package over the REST API — assemble the build config and sources zip, POST the publish request, then poll the build to completion. Use whenever the user wants to publish, upload, or release API specifications (OpenAPI, Swagger, AsyncAPI, GraphQL) or contracts (DDL, MCP) to a Qubership APIHub instance, even if they never name the REST API.
+description: Publish a version of an APIHUB package over the REST API — assemble the build config and sources zip, POST the publish request, then poll the build to completion. Use whenever the user wants to publish, upload, or release API specifications (OpenAPI, Swagger, AsyncAPI, GraphQL) or contracts (DDL, MCP) to an APIHUB instance, even if they never name the REST API.
 ---
 
-# Publishing an API version to APIHub
+# Publishing an API version to APIHUB
 
-Publish one version of one APIHub **package** from the source files the user names — API
-specifications, DDL, MCP contracts, or anything else APIHub accepts as a document.
+Publish one version of one APIHUB **package** from the source files the user names — API
+specifications, DDL, MCP contracts, or anything else APIHUB accepts as a document.
 
 Publishing is asynchronous. The `POST` queues a build, an external builder picks it up, and you
 poll for the result. A `202` means the request was accepted, not that the version exists — only a
@@ -63,7 +63,7 @@ files in the user's home directory — `$HOME`, or `$USERPROFILE` where a Git Ba
 There is no environment-variable fallback for the settings themselves: a variable exported in the
 user's terminal never reaches this agent's shell.
 
-- `$HOME/.apihub/config` — non-secret settings, one `key=value` per line: `url=` for the APIHub
+- `$HOME/.apihub/config` — non-secret settings, one `key=value` per line: `url=` for the APIHUB
   base URL. Write this file for the user on request.
 - `$HOME/.apihub/pat` — the personal access token, sent as the `X-Personal-Access-Token` header;
   or `$HOME/.apihub/api-key`, sent as `api-key`. Prefer the PAT, which attributes the published
@@ -76,7 +76,7 @@ If `url=` is missing, ask the user to create `$HOME/.apihub/config` containing
 credential file exists, ask the user to create `$HOME/.apihub/pat` with the token as its only line,
 and to `chmod 600` it on macOS or Linux — on Windows say nothing about the mode, where Git Bash's
 `chmod` often changes nothing and the profile directory's own ACL is what restricts access. Never
-ask for a token in the chat. A PAT is created in the APIHub UI or via
+ask for a token in the chat. A PAT is created in the APIHUB UI or via
 `POST /api/v1/personalAccessToken`; a package-scoped API key via
 `POST /api/v4/packages/{packageId}/apiKeys`. The commands that load these files are in
 [reference.md](reference.md).
@@ -120,7 +120,7 @@ Substitute the resolved `SKILL_DIR` into that command literally, as into every c
 
 ### 1. Resolve the package, only if needed
 
-First work out what the user actually gave you. An APIHub `packageId` is a dotted path of identifier
+First work out what the user actually gave you. An APIHUB `packageId` is a dotted path of identifier
 segments — `MYWS.BACKEND`, `WS.GROUP.MYSERVICE` — with no spaces. If the value matches that shape,
 it is already an id: use it and do not search.
 
@@ -213,7 +213,7 @@ altered parameters to make a request pass, because a publish that only succeeded
 changed the version, the status, or the file list is a wrong publish, not a recovered one.
 Distinguish three cases:
 
-- **Connection failure, or a response that is not APIHub** — the base URL is wrong. Say so and stop.
+- **Connection failure, or a response that is not APIHUB** — the base URL is wrong. Say so and stop.
   Do not try other hosts, ports, or path prefixes.
 - **`401`** — the credential is invalid, expired, or revoked. Say which file it came from, never its
   contents.
@@ -260,5 +260,5 @@ Report the statuses honestly:
 - Never invent or guess an `mcpEndpoint`, and never infer one from a filename or directory — it
   becomes part of every `mcpEntityId`.
 - Never print or copy a credential, and never write one to a file.
-- Never fall back to a different APIHub host, `packageId`, or version than the user gave or approved.
+- Never fall back to a different APIHUB host, `packageId`, or version than the user gave or approved.
 - On failure, show the rendered backend error and stop.
