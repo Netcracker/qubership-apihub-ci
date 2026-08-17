@@ -32,14 +32,12 @@ Out of scope. Say plainly that this skill does not cover it, and stop:
 
 ## Environment
 
-The commands need `bash` and `curl`. Creating a hierarchy also needs Python 3, which does the tree
-walk and writes each request body — creating a single node does not, so skip the interpreter probe
-when the user asked for one group. On Windows run everything in Git Bash (or WSL); PowerShell will
-not do, because its `curl` is a different command.
+The commands need `bash` and `curl`. Creating a hierarchy also needs Python 3 — creating a single
+node does not, so skip the interpreter probe when the user asked for one group. On Windows run
+everything in Git Bash (or WSL), never PowerShell.
 
 The helpers are bundled beside this file in `scripts/`, and are invoked as files. Do not paste their
-contents inline and do not re-implement one — they encode the classification, alias and
-descendant-skipping rules that make a partly-failed run resumable.
+contents inline and do not re-implement one.
 
 Step 0 resolves the two values every later command needs: the Python interpreter name (`python3` is
 not the right name on every platform) and `SKILL_DIR` (the directory holding this file). The shell
@@ -69,21 +67,17 @@ successful create inherits its grants from the parent and there is no role step 
 ## Inputs
 
 **Configuration.** A value the user states in the conversation wins; otherwise it comes from two
-files in the user's home directory — `$HOME`, or `$USERPROFILE` where a Git Bash has no `HOME`.
-There is no environment-variable fallback for the settings themselves: a variable exported in the
-user's terminal never reaches this agent's shell.
+files in the user's home directory:
 
 - `$HOME/.apihub/config` — non-secret settings, one `key=value` per line: `url=` for the APIHUB base
   URL. Write this file for the user on request.
 - `$HOME/.apihub/pat` — the personal access token, sent as the `X-Personal-Access-Token` header; or
-  `$HOME/.apihub/api-key`, sent as `api-key`. Prefer the PAT, which attributes the created nodes to
-  the real user rather than to the key. Read the file inside the command that needs it, and nowhere
-  else: never write a credential file, never print or copy its contents, and never place a credential
-  under the repository — a token that reaches git history cannot be taken back.
+  `$HOME/.apihub/api-key`, sent as `api-key`. Ask for a PAT rather than an API key. Read either file
+  only inside the command that needs it, and nowhere else.
 
 If either file is missing, tell the user exactly what to create and stop. Never ask for a token in
-the chat. The wording to show them, and the `chmod 600` advice that applies on macOS and Linux only,
-are in [reference.md](reference.md).
+the chat. The wording to show them, the `chmod 600` advice that applies on macOS and Linux only,
+and the endpoints that mint a PAT or an API key are in [reference.md](reference.md).
 
 **Base URL.** If the user pastes a full portal URL, use the scheme and host only and ignore the path
 — portal paths and API coordinates are not the same thing, and a silent mis-parse creates packages in
@@ -137,10 +131,8 @@ Then check the target parent, before building anything:
 bash "$SKILL_DIR/scripts/check_ids.sh" --parent MYWS
 ```
 
-This is the first request of the flow because every id in the plan is `parentId + "." + alias`. A
-parent that is missing, has moved, or is itself a package makes the whole plan void — and finding that
-out now costs one `GET`, where finding it out later costs a tree walk, a request body per folder, and
-one `GET` per node, all of them discarded.
+This is the first request of the flow, because every id in the plan is `parentId + "." + alias`. A
+parent that is missing, has moved, or is itself a package makes the whole plan void.
 
 A non-zero exit means stop and tell the user what came back. Do not walk the tree "to show them
 anyway": a plan under a parent that does not exist is a list of ids that cannot be created, and
@@ -153,12 +145,9 @@ remember that creating a workspace is out of scope.
 For a directory tree, `scripts/plan_tree.py` walks it and classifies every folder by what it holds:
 only subfolders → `group`, only files → `package`, both → a conflict that stops the run, neither →
 skipped. It derives each alias, resolves sibling collisions, computes every id, and writes one
-request body per node so a folder name with a quote or a space reaches the server intact. Invocation
-and the alias rule are in [reference.md](reference.md).
+request body per node. Invocation and the alias rule are in [reference.md](reference.md).
 
-The classification is purely structural — *any* file counts, whatever its extension. A folder of
-`.md` notes is as much a package as a folder of OpenAPI documents, because what a package may hold is
-the publish step's business, not this one's.
+The classification is purely structural — *any* file counts, whatever its extension.
 
 For a single node, the plan is one line: kind, name, alias, and the id you get by joining the parent
 and the alias with a `.`.
@@ -169,17 +158,14 @@ and the alias with a `.`.
 whose `kind` matches means reuse, a `404` means new, and anything else — a kind that differs, a `301`
 from a node that was renamed, a `401` — is something a human has to resolve.
 
-It asks about the target parent a second time here. That one repeated `GET` is what lets the record
-stand on its own, so the create step reads a single file rather than trusting that an earlier command
-it cannot see was run against the same instance.
-
 Because ids are computable, this needs no search and no pagination. It is also what makes step 5
 restartable: after a partial failure, everything already created reads back as `reuse`.
 
 ### 4. Show the plan, then get explicit confirmation
 
 Print the whole plan as one table before creating anything. Re-running `plan_tree.py` with `--status`
-folds the existence check in and emits the Markdown table to show the user:
+folds the existence check in and emits the Markdown table to show the user — repeat every `--alias`
+override already in play on this run too:
 
 ```bash
 python3 "$SKILL_DIR/scripts/plan_tree.py" ./specs MYWS --out apihub-plan --status
@@ -189,18 +175,14 @@ python3 "$SKILL_DIR/scripts/plan_tree.py" ./specs MYWS --out apihub-plan --statu
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | archive | package | archive | archive | MYWS.archive | new |
 | 2 | backend | group | backend | backend | MYWS.backend | reuse |
-| 3 | backend/Billing API | package | Billing API | billing-api | MYWS.backend.billing-api | new |
+| 3 | backend/Billing API | package | Billing API | Billing-API | MYWS.backend.Billing-API | new |
 | 4 | backend/orders | package | orders | orders | MYWS.backend.orders | new |
 | - | empty | skip | empty | | | |
 
-**Pass that output through unchanged.** It is tempting to compress a large plan — to fold fifty
-sibling packages into `4-18  package  add-info, add-tags-name, …`, or to draw the tree with `├─` and
-`└─` characters. Both destroy the thing the table is for: a folded row no longer shows the
-`packageId` and `status` of each node, so a user confirming it is approving a summary rather than the
-work. A hundred-row table is the honest size of a hundred-node request, and the user can scroll it.
-
-The same goes for re-typing it in your own layout. Every hand-copied table is a chance to drop a row
-or mistype an id, and the user then confirms something the script never planned.
+**Pass that output through unchanged** — every row the script emitted, with no folded ranges, no
+box-drawing tree characters, and no re-typing it in your own layout. A folded or hand-copied row no
+longer carries the `packageId` and `status` the user is being asked to approve. The full argument is
+in [reference.md](reference.md).
 
 Show the notes underneath it too — the empty folders that were skipped, the hidden entries that were
 ignored, the sibling collisions that were suffixed. They are how the user notices that a folder they
@@ -223,8 +205,7 @@ group always exists before its children, and reuses whatever the check found rat
 it.
 
 When a create fails, its descendants are skipped — their parent does not exist — while unrelated
-branches carry on, because one bad node should not block fifty good ones elsewhere in the tree.
-Nothing is ever retried with an altered alias or parent.
+branches carry on. Nothing is ever retried with an altered alias or parent.
 
 A single node needs no script; the `POST` is in [reference.md](reference.md).
 
@@ -239,8 +220,7 @@ Build every such link from the node's `kind` — the portal has a separate route
 cannot be caught by fetching it, are in [reference.md](reference.md).
 
 Say plainly that a re-run only redoes the failed branch, because everything already created reads
-back as `reuse`. That is the whole point of the existence check, and it turns "23 of 50 created" from
-a mess into a resumable job.
+back as `reuse`.
 
 ## Rendering a failure
 
@@ -253,13 +233,12 @@ parent is a wrong node, not a recovered one. Distinguish three cases:
 - **`401`** — the credential is invalid, expired, or revoked. Say which file it came from, never its
   contents.
 - **Any other `4xx` or `5xx`** — the body is `{status, code, message, params, debug}`, where
-  `message` is a template with `$placeholders` and `params` holds their values. Substitute each `$key`
-  from `params` into `message`, show the result, and append `debug` when present. If a placeholder
-  does not resolve, show the raw body instead of a half-filled sentence — that mismatch is a backend
-  defect, and the raw body is both the honest answer and what a bug report needs. `code` is an opaque
-  identifier, so do not branch on it — the substituted message is already a complete and current
-  explanation, which is why this skill carries no error table of its own. A hand-maintained one would
-  drift from the server. Recipe and three real examples in [reference.md](reference.md).
+  `message` is a template with `$placeholders` and `params` holds their values. Substitute each
+  `$key` from `params` into `message`, show the result, and append `debug` when present. If a
+  placeholder does not resolve, show the raw body instead of a half-filled sentence — that mismatch
+  is a backend defect, and the raw body is both the honest answer and what a bug report needs.
+  `code` is an opaque identifier, so do not branch on it, and do not build an error table of your
+  own. Recipe and three real examples in [reference.md](reference.md).
 
 ## Safety rules
 
@@ -270,6 +249,7 @@ parent is a wrong node, not a recovered one. Distinguish three cases:
 - Never auto-fix and retry a failed create with an altered alias or parent.
 - Never guess on a folder holding both files and subfolders, or on an id that exists with a different
   kind — stop and ask.
-- Never print or copy a credential, and never write one to a file.
+- Never print or copy a credential, never write one to a file, and never place one under the
+  repository.
 - Never fall back to a different APIHUB host or parent than the user gave or approved.
 - On failure, show the rendered backend error and stop.

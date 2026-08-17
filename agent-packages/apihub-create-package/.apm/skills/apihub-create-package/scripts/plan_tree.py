@@ -50,12 +50,18 @@ def die(message):
 
 
 def derive_alias(name):
-    """Lower-case, collapse anything outside [a-zA-Z0-9_-] to '-', trim.
+    """Collapse anything outside [a-zA-Z0-9_-] to '-', trim.
 
     The character class is already URL-safe and excludes '.', which would
     otherwise read as a level separator in the packageId the server computes.
+
+    Case is left alone. The server accepts any URL-safe alias, so folding it
+    buys nothing and loses something: a folder named BACKEND would derive
+    'backend', whose id then fails to match an existing MYWS.BACKEND on the
+    existence check and reads as 'new'. It also matches how an explicit
+    --alias is treated, which is sent exactly as typed.
     """
-    alias = re.sub(r"[^a-zA-Z0-9_-]+", "-", name.lower())
+    alias = re.sub(r"[^a-zA-Z0-9_-]+", "-", name)
     return alias.strip("-")
 
 

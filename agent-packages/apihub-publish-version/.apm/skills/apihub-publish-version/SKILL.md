@@ -27,13 +27,10 @@ fails after a slow round-trip or, worse, creates a half-built version somebody t
 ## Environment
 
 The commands need `bash`, `curl` and Python 3, and nothing else — in particular not `zip` or
-`unzip`. Python covers only three jobs: building the sources zip, listing its entries, and
-classifying MCP documents. On Windows run everything in Git Bash (or WSL); PowerShell will not do,
-because its `curl` is a different command.
+`unzip`. On Windows run everything in Git Bash (or WSL), never PowerShell.
 
 The helpers are bundled beside this file in `scripts/`, and are invoked as files. Do not paste
-their contents inline and do not re-implement one — they encode the entry-name and detection rules
-the backend enforces.
+their contents inline and do not re-implement one.
 
 Step 0 resolves the two values every later command needs: the Python interpreter name (`python3` is
 not the right name on every platform) and `SKILL_DIR` (the directory holding this file). The shell
@@ -59,27 +56,17 @@ without it you have nothing to put in the URL.
 ## Inputs
 
 **Configuration.** A value the user states in the conversation wins; otherwise it comes from two
-files in the user's home directory — `$HOME`, or `$USERPROFILE` where a Git Bash has no `HOME`.
-There is no environment-variable fallback for the settings themselves: a variable exported in the
-user's terminal never reaches this agent's shell.
+files in the user's home directory:
 
 - `$HOME/.apihub/config` — non-secret settings, one `key=value` per line: `url=` for the APIHUB
   base URL. Write this file for the user on request.
 - `$HOME/.apihub/pat` — the personal access token, sent as the `X-Personal-Access-Token` header;
-  or `$HOME/.apihub/api-key`, sent as `api-key`. Prefer the PAT, which attributes the published
-  version to the real user rather than to the key. Read the file inside the command that needs it,
-  and nowhere else: never write a credential file, never print or copy its contents, and never
-  place a credential under the repository — a token that reaches git history cannot be taken back.
+  or `$HOME/.apihub/api-key`, sent as `api-key`. Ask for a PAT rather than an API key. Read either
+  file only inside the command that needs it, and nowhere else.
 
-If `url=` is missing, ask the user to create `$HOME/.apihub/config` containing
-`url=https://apihub.example.com`, or offer to write it once they give you the URL. If neither
-credential file exists, ask the user to create `$HOME/.apihub/pat` with the token as its only line,
-and to `chmod 600` it on macOS or Linux — on Windows say nothing about the mode, where Git Bash's
-`chmod` often changes nothing and the profile directory's own ACL is what restricts access. Never
-ask for a token in the chat. A PAT is created in the APIHUB UI or via
-`POST /api/v1/personalAccessToken`; a package-scoped API key via
-`POST /api/v4/packages/{packageId}/apiKeys`. The commands that load these files are in
-[reference.md](reference.md).
+If either file is missing, tell the user exactly what to create and stop. Never ask for a token in
+the chat. The wording to show them, the `chmod 600` advice that applies on macOS and Linux only,
+and the endpoints that mint a PAT or an API key are in [reference.md](reference.md).
 
 **Base URL.** If the user pastes a full portal URL, use the scheme and host only and ignore the
 path — portal paths and API coordinates are not the same thing, and a silent mis-parse publishes to
@@ -147,22 +134,19 @@ Zip exactly the files the user named, then read `config.files[]` off the archive
 `fileId` is an entry path. If the user supplied a ready-made `.zip`, list that instead of repacking
 it.
 
-The archive filename must end in `.zip`; the backend rejects any other name. Quote paths in shell
-commands so names containing spaces or brackets survive, and never rename or sanitise a file.
+The archive filename must end in `.zip`; the backend rejects any other name. Quote every path, and
+never rename or sanitise a file.
 
 Use `scripts/zip_sources.py` to build the archive and `scripts/list_zip.py` to read its entries.
 See [reference.md](reference.md) for both invocations and the build config fields.
 
 ### 3. Classify MCP documents and resolve their endpoints
 
-Every MCP contract document needs `metadata.mcpEndpoint` on its `files[]` entry. It is required —
-the build fails without it — and it is not cosmetic: the endpoint is slugified into every
-`mcpEntityId`, so a wrong value silently renames every tool, prompt and resource and breaks the
-changelog against the previous version.
+Every MCP contract document needs `metadata.mcpEndpoint` on its `files[]` entry. Without it the
+build fails; with a wrong value every `mcpEntityId` is silently renamed.
 
-Run `scripts/classify_mcp.py` over the `.json` entries. It prints one line per
-MCP document and nothing for anything else, so file contents never enter your context — which
-matters because specifications are large and none of that text helps you here.
+Run `scripts/classify_mcp.py` over the `.json` entries. It prints one line per MCP document and
+nothing for anything else, so no file contents reach your context.
 
 **Match the invocation to where the documents actually are.** If you built the archive in step 2,
 the entries are also files on disk, so pass them as paths. If the user supplied a ready-made `.zip`,
@@ -172,9 +156,7 @@ they are *not* on disk — pass `--zip` and let the script read inside the archi
 Read stdout and stderr as two different answers. There are no MCP documents only when stdout is
 empty **and** stderr is empty **and** the user has not called any file an MCP contract — then skip
 the rest of this step. A `cannot read` or `cannot parse` line on stderr means the opposite: the
-documents are there and you have not classified them, usually because you passed paths for an
-archive that wanted `--zip`. Resolve that before going on; an MCP document that reaches the publish
-unclassified has no `metadata.mcpEndpoint`, and the build fails long after the `202`.
+documents are there and you have not classified them. Resolve that before going on.
 
 Then count the `mcp-init` lines. Exactly one init is required per endpoint, so **the init count is
 the endpoint count**.
@@ -184,9 +166,11 @@ the endpoint count**.
 - *Two or more inits* — print the decision table from [reference.md](reference.md) and ask the user
   to assign each document to an endpoint.
 
-Ask for the endpoint as a relative path beginning with `/`, such as `/mcp/support`. Never invent
-one, and never infer it from a filename or directory: the builder detects MCP documents by their
-JSON shape and attaches no meaning whatsoever to what they are called.
+Ask for the endpoint as a relative path beginning with a single `/`, such as `/mcp/support`.
+Reject an absolute URL such as `https://api.example.com/mcp`, and reject a leading `//` — ask again
+rather than converting one yourself. Never invent an endpoint, and never infer it from a filename
+or directory: the builder detects MCP documents by their JSON shape and attaches no meaning
+whatsoever to what they are called.
 
 Add `metadata.mcpEndpoint` to each MCP entry. Leave every other `files[]` entry untouched.
 
@@ -199,12 +183,9 @@ POST {base}/api/v2/packages/{packageId}/publish
 `multipart/form-data` with exactly two parts: `config` (the JSON build config as a form field) and
 `sources` (the zip). A `202` returns `{"publishId": "..."}`.
 
-Send nothing else. `resolveRefs` and `resolveConflicts` act only on `config.refs[]`, which is empty
-for a package publish, so they are inert here — and they govern **package references**, the
-dashboard-to-package-version graph, not `$ref` resolution inside OpenAPI documents, which the builder
-handles by itself. `clientBuild` and `builderId` belong to the browser-based build path, and
-`dependencies` to chained builds. Do not offer any of them to the user, and do not accept them if
-asked.
+Send nothing else. `resolveRefs`, `resolveConflicts`, `clientBuild`, `builderId` and `dependencies`
+all have no role in a package publish — do not offer any of them to the user, and do not accept them
+if asked. What each one actually governs is in [reference.md](reference.md).
 
 ### 5. Render any failure, do not interpret it
 
@@ -219,11 +200,11 @@ Distinguish three cases:
   contents.
 - **Any other `4xx` or `5xx`** — the body is `{status, code, message, params, debug}`, where
   `message` is a template with `$placeholders` and `params` holds their values. Substitute each
-  `$key` from `params` into `message`, show the result, and append `debug` when present. `code` is
-  an opaque numeric identifier, so do not branch on it — the substituted message is already a
-  complete and current explanation, which is why this skill carries no error table of its own. A
-  hand-maintained one would drift from the server. Recipe and worked example in
-  [reference.md](reference.md).
+  `$key` from `params` into `message`, show the result, and append `debug` when present. If a
+  placeholder does not resolve, show the raw body instead of a half-filled sentence — that mismatch
+  is a backend defect, and the raw body is both the honest answer and what a bug report needs.
+  `code` is an opaque identifier, so do not branch on it, and do not build an error table of your
+  own. Recipe and worked example in [reference.md](reference.md).
 
 ### 6. Poll to completion
 
@@ -232,11 +213,9 @@ GET {base}/api/v2/packages/{packageId}/publish/{publishId}/status
 ```
 
 Poll with backoff until the status is `complete` or `error`. Be prepared to wait **30 minutes or
-more** — a large publish genuinely takes that long, and a build that is still `running` has not
-failed. Your own command timeout is much shorter than the build, so poll in repeated windows rather
-than one long-running call. Use `scripts/poll_build.sh`, which is written for exactly that and
-signals with its exit code whether it finished or merely ran out of window; re-run it unchanged for
-each window. Its arguments and exit codes are in [reference.md](reference.md).
+more** — a build that is still `running` has not failed. Poll in repeated windows rather than one
+long-running call, using `scripts/poll_build.sh` and re-running it unchanged for each window. Its
+arguments and exit codes are in [reference.md](reference.md).
 
 Report the statuses honestly:
 
@@ -248,17 +227,17 @@ Report the statuses honestly:
   Do not call this a failure and do not abandon it silently — the build is alive.
 - `complete` — done. Give the user the version link:
   `{base}/portal/packages/{packageId}/{version}`.
-- `error` — report the `message` field verbatim. Content errors inside the documents surface here
-  rather than at publish time, so a clean `202` says nothing about the outcome. This is also where
-  MCP failures land: a missing or malformed `metadata.mcpEndpoint`, or an endpoint with entities but
-  no init. A failed publish is a failure, not a partial success.
+- `error` — report the `message` field verbatim. This is where content errors and MCP failures land:
+  a missing or malformed `metadata.mcpEndpoint`, or an endpoint with entities but no init. A failed
+  publish is a failure, not a partial success.
 
 ## Safety rules
 
 - Never publish to a `packageId` that came from a search without the user confirming it.
 - Never publish a file the user did not name.
-- Never invent or guess an `mcpEndpoint`, and never infer one from a filename or directory — it
-  becomes part of every `mcpEntityId`.
-- Never print or copy a credential, and never write one to a file.
+- Never invent or guess an `mcpEndpoint`, never infer one from a filename or directory, and never
+  accept an absolute URL as one — it becomes part of every `mcpEntityId`.
+- Never print or copy a credential, never write one to a file, and never place one under the
+  repository.
 - Never fall back to a different APIHUB host, `packageId`, or version than the user gave or approved.
 - On failure, show the rendered backend error and stop.

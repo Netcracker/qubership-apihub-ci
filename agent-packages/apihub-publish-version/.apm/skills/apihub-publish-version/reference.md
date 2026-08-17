@@ -69,7 +69,8 @@ process environment:
 
 - `$HOME/.apihub/pat` — the personal access token on the first line, or `$HOME/.apihub/api-key` for
   a package-scoped API key. Which file exists decides which header is sent, so nothing has to be
-  inferred from the value itself.
+  inferred from the value itself, and the PAT wins when both exist. Ask the user for a PAT rather
+  than an API key: it attributes the work to the real user instead of to a key.
 
 Shell state does not survive between tool calls, so each command loads what it needs itself. Every
 command below opens by sourcing the shared prelude:
@@ -97,7 +98,8 @@ carries. Four details in it are load-bearing rather than defensive:
   blank header and come back as a `401` blamed on the token.
 
 The token lives only in `$tok`, unexported, for the length of one command. Pass it as
-`-H "$hdr: $tok"` and never anywhere else.
+`-H "$hdr: $tok"` and never anywhere else. Never write a credential file yourself, and never place
+one under the repository — a token that reaches git history cannot be taken back.
 
 Read what is configured without exposing anything:
 
@@ -133,6 +135,9 @@ On macOS or Linux, restrict it:
 ```
 
 If the user offers the token in the chat instead, ask them to write it to the file themselves.
+
+A PAT is created in the APIHUB UI or via `POST /api/v1/personalAccessToken`; a package-scoped API
+key via `POST /api/v4/packages/{packageId}/apiKeys`.
 
 ### File mode
 
@@ -189,7 +194,10 @@ icacls "%USERPROFILE%\.apihub\pat" /inheritance:r /grant:r "%USERNAME%:R"
   not equal `packageId`.
 - `refs` is `[]` for a package publish. It carries dashboard references, which are out of scope for
   this skill. Because it is empty, the `resolveRefs` and `resolveConflicts` form values have nothing
-  to act on — omit them.
+  to act on — omit them. Both govern **package references**, the dashboard-to-package-version graph,
+  not `$ref` resolution inside OpenAPI documents, which the builder handles by itself.
+- `clientBuild` and `builderId` belong to the browser-based build path, and `dependencies` to
+  chained builds. None of the three has a role in a package publish; do not send them.
 - `metadata.versionLabels` is a list of free-form labels.
 - `files[].publish` defaults to `true` and `labels` may be `[]`. As the example shows, a `fileId` may
   contain spaces — that is legal and must be preserved.
@@ -356,10 +364,16 @@ Then apply this recipe:
 
 1. Substitute each `$key` in `message` with `params[key]`. Join a **list** value with `, ` —
    `fileIds` above is a list.
-2. Print `status`, then `code` when present, then `: `, then the substituted message.
-3. Append `debug` on its own line when present.
-4. Leave any `$placeholder` with no matching `param` exactly as it is. A `message` may carry no
-   `params` at all; a partially-populated error is still worth showing.
+2. If every placeholder resolved, print `status`, then `code` when present, then `: `, then the
+   substituted message, and append `debug` on its own line when present. A `message` carrying no
+   placeholders at all is already complete: a status request for an unknown `publishId` answers
+   `{"status":404,"message":"build not found"}`, with neither `code` nor `params`, and that renders
+   as it stands.
+3. If any `$placeholder` is still unresolved, stop rendering and **show the raw body exactly as it
+   arrived**. The template and `params` disagreeing is a backend defect, not a shape to accommodate.
+   Do not guess that one param was meant to fill another, and do not quietly print a message with a
+   placeholder still in it — the raw body is both the honest answer and what a bug report against
+   the backend needs.
 
 The example above renders as:
 
@@ -367,11 +381,14 @@ The example above renders as:
 400 1610: Files with fileIds 'not-in-zip.yaml' not found in 'sources'
 ```
 
+A body that would not render prints as itself, verbatim, with a line saying the server sent a
+message it did not supply the values for.
+
 `code` is an opaque numeric identifier, not a symbolic name, so it is worth printing for a bug
 report but never worth branching on.
 
-Report the rendered line as-is and stop. The message is the server's current rule, and arguing with
-it client-side is how the two drift apart.
+Report the rendered line — or the raw body, where it would not render — as-is, and stop. The
+message is the server's current rule, and arguing with it client-side is how the two drift apart.
 
 ## Polling
 

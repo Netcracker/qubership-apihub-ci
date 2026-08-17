@@ -41,6 +41,15 @@ Do not rewrite a script, and do not re-implement one inline. `plan_tree.py` in p
 request body as a file so a folder name containing a quote, a backslash or a non-ASCII character
 reaches the server intact; rebuilding that JSON in a shell string is how `name` bugs get made.
 
+One Git Bash rule the commands below already follow, and any command you improvise should too:
+
+**Never pass a value that merely looks like a path as an argument to `curl` or `python`.** Git Bash
+rewrites POSIX-looking arguments before handing them to a native `.exe`. For a real filesystem path
+this is correct and wanted — `/c/Users/…` arrives as `C:/Users/…`, which is why passing `$SKILL_DIR`
+and the root directory as arguments is safe. For a value that is not a path it is destructive:
+`/MYWS` would arrive as `C:/Program Files/Git/MYWS`. Nothing here needs to pass one (a parent id
+never starts with `/`), but `MSYS_NO_PATHCONV=1` is the escape hatch if you find a case that does.
+
 ## Configuration
 
 Two files in the user's home directory. `$HOME` resolves the same way on macOS, Linux and Git Bash on
@@ -57,7 +66,8 @@ environment:
 
 - `$HOME/.apihub/pat` — the personal access token on the first line, or `$HOME/.apihub/api-key` for a
   package-scoped API key. Which file exists decides which header is sent, so nothing has to be
-  inferred from the value itself. The PAT wins when both exist.
+  inferred from the value itself, and the PAT wins when both exist. Ask the user for a PAT rather
+  than an API key: it attributes the work to the real user instead of to a key.
 
 Shell state does not survive between tool calls, so each command loads what it needs itself. Every
 command below opens by sourcing the shared prelude:
@@ -71,8 +81,22 @@ it** — an executed copy sets those variables in a subshell that dies immediate
 configuration it prints which file is at fault and exits `2`, which ends the calling command; that is
 intended, and it is the `2` in the exit codes below.
 
+It parses with builtins only, so no assumption is made about which text utilities the platform
+carries. Four details in it are load-bearing rather than defensive:
+
+- `[ -f "$apihub/config" ]` reports a missing config file as itself, instead of the misleading
+  `no url= in …` that a bare read would produce.
+- `${v%$'\r'}` and `${tok%$'\r'}` strip the carriage return a Windows editor leaves on every line.
+  Left in place it travels into the URL and into the header, where it produces a malformed request
+  rather than an obvious error.
+- `|| [ -n "$k" ]` keeps the last line when the file ends without a newline, which is otherwise
+  dropped silently.
+- `[ -n "$tok" ]` catches an empty credential file, which would otherwise reach the server as a
+  blank header and come back as a `401` blamed on the token.
+
 The token lives only in `$tok`, unexported, for the length of one command. Pass it as
-`-H "$hdr: $tok"` and never anywhere else.
+`-H "$hdr: $tok"` and never anywhere else. Never write a credential file yourself, and never place
+one under the repository — a token that reaches git history cannot be taken back.
 
 Read what is configured without exposing anything:
 
@@ -109,11 +133,22 @@ On macOS or Linux, restrict it:
 
 If the user offers the token in the chat instead, ask them to write it to the file themselves.
 
-`chmod 600` keeps other unprivileged accounts out of the token. It restrains nothing that already runs
-as the user, so do not describe it as more than that. On Windows, do not report a mode at all: Git
-Bash's `chmod` frequently changes nothing while `ls -l` still prints a plausible mode, so checking it
-would confirm a restriction that was never applied. The profile directory's ACL already excludes other
-non-administrator accounts.
+A PAT is created in the APIHUB UI or via `POST /api/v1/personalAccessToken`; a package-scoped API
+key via `POST /api/v4/packages/{packageId}/apiKeys`.
+
+### File mode
+
+`chmod 600` keeps other unprivileged accounts out of the token. It restrains nothing that already
+runs as the user, so do not describe it as more than that.
+
+On Windows, do not report a mode at all. Git Bash's `chmod` frequently changes nothing while `ls -l`
+still prints a plausible mode, so checking it would confirm a restriction that was never applied.
+The profile directory's ACL already excludes other non-administrator accounts. Only if the user asks
+for an explicit restriction, this sets one from a Command Prompt:
+
+```text
+icacls "%USERPROFILE%\.apihub\pat" /inheritance:r /grant:r "%USERNAME%:R"
+```
 
 ## The create request
 
@@ -237,12 +272,16 @@ stray `.DS_Store` would otherwise turn every leaf folder into a mixed-content co
 
 Applied only where the user has not given one:
 
-1. Lower-case the folder name.
-2. Replace runs of characters outside `[a-zA-Z0-9_-]` with a single `-`.
-3. Trim leading and trailing `-`.
+1. Replace runs of characters outside `[a-zA-Z0-9_-]` with a single `-`.
+2. Trim leading and trailing `-`.
 
-`Billing API` becomes `billing-api`; `Very Long Folder Name Here` becomes
-`very-long-folder-name-here`.
+`Billing API` becomes `Billing-API`; `Very Long Folder Name Here` becomes
+`Very-Long-Folder-Name-Here`.
+
+Case is preserved. The server's only rule is that an alias be URL-safe as typed, and upper-case ASCII
+is, so folding the case would buy nothing and lose the match against nodes that already exist under
+an upper-case id — a folder named `BACKEND` would derive `backend`, and `MYWS.backend` is a different
+node from `MYWS.BACKEND`.
 
 When two sibling folders under the same parent derive the same alias they would compute the same
 `packageId`, so one would silently reuse the other. The second is suffixed `-2`, the third `-3`, and
@@ -273,6 +312,15 @@ alias, so every row already carries its parent.
 
 One row per node, always. Nothing groups, folds or abbreviates, and a plan of a hundred folders
 prints a hundred rows.
+
+That constraint survives into how you relay the table, and it is tempting to break. Compressing a
+large plan — folding fifty sibling packages into `4-18  package  add-info, add-tags-name, …`, or
+drawing the tree with `├─` and `└─` characters — destroys the thing the table is for: a folded row
+no longer shows the `packageId` and `status` of each node, so a user confirming it is approving a
+summary rather than the work. A hundred-row table is the honest size of a hundred-node request, and
+the user can scroll it. The same goes for re-typing it in your own layout; every hand-copied table
+is a chance to drop a row or mistype an id, and the user then confirms something the script never
+planned.
 
 A folder whose name yields an empty alias (nothing but punctuation) stops the run and asks for an
 `--alias`. Guessing a name for it would create something nobody chose.
