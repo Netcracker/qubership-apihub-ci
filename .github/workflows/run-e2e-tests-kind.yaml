@@ -113,6 +113,12 @@ jobs:
           git clone --branch "$APIHUB_AGENT_HELM_BRANCH" --single-branch \
             https://github.com/Netcracker/qubership-apihub-agent apihub-agent-repo
 
+      - name: Clone Qubership APIHUB test service repository
+        if: ${{ inputs.apihub-agent-run }}
+        run: |
+          git clone --branch main --single-branch --depth 1 \
+            https://github.com/Netcracker/qubership-apihub-test-service test-service-repo
+
       - name: Install envsubst
         run: |
           sudo apt-get update
@@ -121,8 +127,8 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '24'
-          registry-url: 'https://npm.pkg.github.com/'
+          node-version: "24"
+          registry-url: "https://npm.pkg.github.com/"
 
       - name: Create Kind configuration
         run: |
@@ -177,8 +183,9 @@ jobs:
 
           chmod +x scripts/generate-local-tls.sh scripts/create-custom-ca-secrets.sh
           ./scripts/generate-local-tls.sh
-          export APIHUB_TLS_CRT=$(base64 -w 0 < qubership-apihub/certs/tls.crt)
-          export APIHUB_TLS_KEY=$(base64 -w 0 < qubership-apihub/certs/tls.key)
+          APIHUB_TLS_CRT=$(base64 -w 0 < qubership-apihub/certs/tls.crt)
+          APIHUB_TLS_KEY=$(base64 -w 0 < qubership-apihub/certs/tls.key)
+          export APIHUB_TLS_CRT APIHUB_TLS_KEY
 
           envsubst < qubership-apihub/local-secrets.yaml.template \
             > qubership-apihub/local-secrets.yaml
@@ -199,11 +206,35 @@ jobs:
       - name: Deploy APIHUB
         working-directory: helm-repo/helm-templates/local-k8s-quickstart
         run: |
+          cat > "$RUNNER_TEMP/apihub-ui-tests-values.yaml" <<'EOF'
+          qubershipApihubBackend:
+            env:
+              businessParameters:
+                defaultWorkspaceId: 'QS'
+              extensions:
+                - name: api-linter
+                  baseUrl: http://qubership-api-linter-service:8080
+                  pathPrefix: api-linter
+                - name: agents-backend
+                  baseUrl: http://qubership-apihub-agents-backend:8080
+                  pathPrefix: agents-backend
+                - name: nc-service
+                  baseUrl: http://qubership-apihub-backend:8080
+                  pathPrefix: apihub-nc
+          qubershipApihubAgentsBackend:
+            env:
+              businessParameters:
+                defaultWorkspaceId: 'QS'
+              technicalParameters:
+                apihub:
+                  url: 'https://qubership-apihub.localtest.me'
+          EOF
           helm upgrade --install apihub ../qubership-apihub \
             --namespace qubership-apihub \
             --create-namespace \
             --values qubership-apihub/local-k8s-values.yaml \
             --values qubership-apihub/local-secrets.yaml \
+            --values "$RUNNER_TEMP/apihub-ui-tests-values.yaml" \
             --set-string qubershipApihubBackend.image.tag=${{ inputs.apihub-backend-image-tag }} \
             --set-string qubershipApihubBuildTaskConsumer.image.tag=${{ inputs.apihub-build-task-consumer-image-tag }} \
             --set-string qubershipApihubUi.image.tag=${{ inputs.apihub-ui-image-tag }} \
@@ -211,6 +242,84 @@ jobs:
             --set-string qubershipApihubAgentsBackend.image.tag=${{ inputs.apihub-agents-backend-image-tag }} \
             --wait \
             --timeout 10m
+
+      - name: Deploy test services
+        if: ${{ inputs.apihub-agent-run }}
+        working-directory: test-service-repo
+        run: |
+          chart=./helm-template/qubership-apihub-test-service
+          apply_test_service() {
+            namespace=$1
+            name=$2
+            image_tag=$3
+            part_of=$4
+            helm template "$name" "$chart" \
+              --namespace "$namespace" \
+              --set-string "qubershipApihubTestService.image.tag=${image_tag}" \
+              --show-only templates/Deployment.yaml \
+              --show-only templates/Service.yaml \
+            | sed \
+              -e "s/name: qubership-apihub-test-service/name: ${name}/g" \
+              -e "s/part-of: qubership-apihub-test-service/part-of: ${part_of}/g" \
+            | awk -v ver="$image_tag" '
+                /app\.kubernetes\.io\/part-of:/ {
+                  print
+                  match($0, /^[[:space:]]*/)
+                  print substr($0, 1, RLENGTH) "app.kubernetes.io/version: \"" ver "\""
+                  next
+                }
+                { print }
+              ' \
+            | kubectl apply --namespace "$namespace" -f -
+          }
+
+          for namespace in api-hub-ci api-hub-preprod; do
+            kubectl create namespace "$namespace" --dry-run=client -o yaml | kubectl apply -f -
+            apply_test_service "$namespace" apihub-agent-test-service protected-atui APIHUB
+            apply_test_service "$namespace" apihub-backend protected-atui "API-HUB"
+            apply_test_service "$namespace" apihub-agent protected-atui-empty APIHUB-AGENT
+          done
+
+          for namespace in api-hub-ci api-hub-preprod; do
+            for name in apihub-agent-test-service apihub-backend apihub-agent; do
+              kubectl rollout status "deployment/${name}" \
+                --namespace "$namespace" \
+                --timeout=5m
+            done
+          done
+
+      - name: Deploy Qubership APIHUB Agent
+        if: ${{ inputs.apihub-agent-run }}
+        working-directory: apihub-agent-repo
+        env:
+          APIHUB_ACCESS_TOKEN: ${{ secrets.APIHUB_ACCESS_TOKEN }}
+          APIHUB_AGENT_IMAGE_TAG: ${{ inputs.apihub-agent-image-tag }}
+        run: |
+          printf '%s' "$APIHUB_ACCESS_TOKEN" > "$RUNNER_TEMP/apihub-agent-access-token"
+          cat > "$RUNNER_TEMP/apihub-agent-ui-tests-values.yaml" <<'EOF'
+          qubershipApihubAgent:
+            customCa:
+              enabled: true
+              secretName: apihub-local-custom-ca
+            env:
+              discovery:
+                groupingLabels:
+                  - app.kubernetes.io/part-of
+                  - app.kubernetes.io/version
+              technicalParameters:
+                apihub:
+                  url: 'https://qubership-apihub.localtest.me'
+          EOF
+          helm upgrade --install qubership-apihub-agent ./helm-templates/qubership-apihub-agent \
+            --namespace qubership-apihub \
+            --values ./helm-templates/qubership-apihub-agent/local-k8s-values.yaml \
+            --values "$RUNNER_TEMP/apihub-agent-ui-tests-values.yaml" \
+            --set-string qubershipApihubAgent.version="$APIHUB_AGENT_IMAGE_TAG" \
+            --set-string qubershipApihubAgent.image.tag="$APIHUB_AGENT_IMAGE_TAG" \
+            --set-string \
+            qubershipApihubAgent.env.technicalParameters.agentHost=qubership-apihub-agent.qubership-apihub.svc.cluster.local \
+            --set-file \
+            qubershipApihubAgent.env.technicalParameters.apihub.accessToken="$RUNNER_TEMP/apihub-agent-access-token"
 
       - name: Patch APIHUB hosts
         working-directory: helm-repo/helm-templates/local-k8s-quickstart/scripts
@@ -261,41 +370,32 @@ jobs:
           echo "Timeout reached. APIHUB was not ready within 5 minutes."
           exit 1
 
-      - name: Deploy Qubership APIHUB Agent
-        if: ${{ inputs.apihub-agent-run }}
-        working-directory: apihub-agent-repo
-        env:
-          APIHUB_ACCESS_TOKEN: ${{ secrets.APIHUB_ACCESS_TOKEN }}
-          APIHUB_AGENT_IMAGE_TAG: ${{ inputs.apihub-agent-image-tag }}
-        run: |
-          printf '%s' "$APIHUB_ACCESS_TOKEN" > "$RUNNER_TEMP/apihub-agent-access-token"
-          helm upgrade --install qubership-apihub-agent ./helm-templates/qubership-apihub-agent \
-            --namespace qubership-apihub \
-            --values ./helm-templates/qubership-apihub-agent/local-k8s-values.yaml \
-            --set-string qubershipApihubAgent.version="$APIHUB_AGENT_IMAGE_TAG" \
-            --set-string qubershipApihubAgent.image.tag="$APIHUB_AGENT_IMAGE_TAG" \
-            --set-string \
-            qubershipApihubAgent.env.technicalParameters.agentHost=qubership-apihub-agent.qubership-apihub.svc.cluster.local \
-            --set-file \
-            qubershipApihubAgent.env.technicalParameters.apihub.accessToken="$RUNNER_TEMP/apihub-agent-access-token" \
-            --wait \
-            --timeout 5m
-
-      - name: Verify Qubership APIHUB Agent access token
+      - name: Verify Qubership APIHUB Agent configuration
         if: ${{ inputs.apihub-agent-run }}
         env:
           APIHUB_ACCESS_TOKEN: ${{ secrets.APIHUB_ACCESS_TOKEN }}
         run: |
-          if kubectl get secret qubership-apihub-agent-config-secret \
+          agent_config=$(kubectl get secret qubership-apihub-agent-config-secret \
             --namespace qubership-apihub \
             --output=jsonpath='{.data.config\.yaml}' \
-            | base64 --decode \
-            | grep --fixed-strings --quiet -- "$APIHUB_ACCESS_TOKEN"; then
-            echo "Agent configuration contains the expected APIHUB access token."
-          else
-            echo "::error::Agent configuration does not contain the expected APIHUB access token."
-            exit 1
-          fi
+            | base64 --decode)
+          require_in_agent_config() {
+            needle=$1
+            message=$2
+            if ! printf '%s' "$agent_config" | grep --fixed-strings --quiet -- "$needle"; then
+              echo "::error::$message"
+              exit 1
+            fi
+          }
+          require_in_agent_config "$APIHUB_ACCESS_TOKEN" \
+            "Agent configuration does not contain the expected APIHUB access token."
+          require_in_agent_config 'https://qubership-apihub.localtest.me' \
+            "Agent configuration does not use the public APIHUB URL."
+          require_in_agent_config 'app.kubernetes.io/part-of' \
+            "Agent configuration does not enable part-of grouping labels."
+          require_in_agent_config 'app.kubernetes.io/version' \
+            "Agent configuration does not enable version grouping labels."
+          echo "Agent configuration contains the access token, public APIHUB URL, and grouping labels."
 
       - name: Install Newman
         if: ${{ inputs.postman-collections-run }}
@@ -420,6 +520,7 @@ jobs:
         env:
           BASE_URL: "https://qubership-apihub.localtest.me"
           TEST_USER_PASSWORD: ${{ secrets.APIHUB_ADMIN_PASSWORD }}
+          AGENT_TEST_CLOUD: "kind_qubership-apihub"
           CLEAR_TD: "skip"
         run: |
           npx playwright test ${{ inputs.playwright-test-args }}
@@ -438,7 +539,7 @@ jobs:
           kubectl get all --all-namespaces > ./kubernetes-resources.log 2>&1 || true
           kubectl get events --all-namespaces \
             --sort-by='.metadata.creationTimestamp' > ./kubernetes-events.log 2>&1 || true
-          for namespace in postgres-db qubership-apihub ingress-nginx; do
+          for namespace in postgres-db qubership-apihub ingress-nginx api-hub-ci api-hub-preprod; do
             kubectl get pods --namespace "$namespace" -o name 2>/dev/null | while read -r pod; do
               log_name=$(echo "${namespace}-${pod#pod/}" | tr '/' '-')
               kubectl logs --namespace "$namespace" "$pod" \
