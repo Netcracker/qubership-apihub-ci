@@ -247,6 +247,19 @@ jobs:
         if: ${{ inputs.apihub-agent-run }}
         working-directory: test-service-repo
         run: |
+          # The test-service chart hardcodes metadata.name and
+          # app.kubernetes.io/part-of, so the same chart is instantiated
+          # six times via helm template + sed + awk. That pipeline is
+          # coupled to the chart's literal YAML (resource names, unquoted
+          # part-of values, the app.kubernetes.io/part-of key, and
+          # --show-only template paths). Drop it when the chart accepts
+          # name / part-of / version as values.
+          #
+          # Failures split across two checks below:
+          # - rollout status: missing or unready Deployment (rename)
+          # - assert_test_service: silent label miss (Agent groups by
+          #   part-of + version; Playwright expects APIHUB / API-HUB /
+          #   APIHUB-AGENT)
           chart=./helm-template/qubership-apihub-test-service
           apply_test_service() {
             namespace=$1
@@ -272,6 +285,33 @@ jobs:
               ' \
             | kubectl apply --namespace "$namespace" -f -
           }
+          assert_test_service() {
+            namespace=$1
+            name=$2
+            part_of=$3
+            version=$4
+            if ! deploy_got=$(kubectl get deployment "$name" \
+              --namespace "$namespace" \
+              --output=jsonpath='{.metadata.labels.app\.kubernetes\.io/part-of}{"|"}{.spec.template.metadata.labels.app\.kubernetes\.io/part-of}{"|"}{.spec.template.metadata.labels.app\.kubernetes\.io/version}'); then
+              echo "::error::deployment/${name} is missing in namespace ${namespace}."
+              exit 1
+            fi
+            deploy_want="${part_of}|${part_of}|${version}"
+            if [ "$deploy_got" != "$deploy_want" ]; then
+              echo "::error::deployment/${name} in ${namespace}: expected ${deploy_want}, got ${deploy_got}."
+              exit 1
+            fi
+            if ! service_got=$(kubectl get service "$name" \
+              --namespace "$namespace" \
+              --output=jsonpath='{.metadata.labels.app\.kubernetes\.io/part-of}'); then
+              echo "::error::service/${name} is missing in namespace ${namespace}."
+              exit 1
+            fi
+            if [ "$service_got" != "$part_of" ]; then
+              echo "::error::service/${name} in ${namespace}: expected part-of=${part_of}, got ${service_got}."
+              exit 1
+            fi
+          }
 
           for namespace in api-hub-ci api-hub-preprod; do
             kubectl create namespace "$namespace" --dry-run=client -o yaml | kubectl apply -f -
@@ -286,6 +326,9 @@ jobs:
                 --namespace "$namespace" \
                 --timeout=5m
             done
+            assert_test_service "$namespace" apihub-agent-test-service APIHUB protected-atui
+            assert_test_service "$namespace" apihub-backend "API-HUB" protected-atui
+            assert_test_service "$namespace" apihub-agent APIHUB-AGENT protected-atui-empty
           done
 
       - name: Deploy Qubership APIHUB Agent
