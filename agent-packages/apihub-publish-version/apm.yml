@@ -1,0 +1,6 @@
+name: apihub-publish-version
+version: 0.1.0
+description: Publish an API version to an APIHUB instance over the REST API
+author: Qubership
+dependencies:
+  apm: []
