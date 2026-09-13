@@ -1,0 +1,287 @@
+name: Monorepo CI
+
+on:
+  workflow_call:
+    inputs:
+      modules-file:
+        description: "Path to ci/modules.yaml in the caller repository"
+        type: string
+        default: "ci/modules.yaml"
+      registry-owner:
+        description: "GHCR namespace for images built in this run"
+        type: string
+        default: ""
+      ci-store-repository:
+        description: "Repository that holds this reusable workflow and helper scripts"
+        type: string
+        default: "Netcracker/qubership-apihub-ci"
+      ci-store-ref:
+        description: "Ref of the CI store to check out for helper scripts"
+        type: string
+        default: "main"
+      run-e2e-compose:
+        type: boolean
+        default: true
+      run-e2e-kind:
+        type: boolean
+        default: true
+    secrets:
+      NPMRC:
+        required: false
+      GH_ACCESS_TOKEN:
+        required: false
+      JWT_PRIVATE_KEY:
+        required: false
+      APIHUB_ADMIN_EMAIL:
+        required: false
+      APIHUB_ADMIN_PASSWORD:
+        required: false
+      APIHUB_ACCESS_TOKEN:
+        required: false
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.detect.outputs.backend }}
+      ui: ${{ steps.detect.outputs.ui }}
+      build_task_consumer: ${{ steps.detect.outputs.build_task_consumer }}
+      api_linter_service: ${{ steps.detect.outputs.api_linter_service }}
+      agents_backend: ${{ steps.detect.outputs.agents_backend }}
+      commons_go: ${{ steps.detect.outputs.commons_go }}
+      any_image: ${{ steps.detect.outputs.any_image }}
+      e2e_needed: ${{ steps.detect.outputs.e2e_needed }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ inputs.ci-store-repository }}
+          ref: ${{ inputs.ci-store-ref }}
+          path: .ci-store
+      - name: List changed files
+        id: files
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+          elif [ "${{ github.event.before }}" != "" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            BASE="${{ github.event.before }}"
+          else
+            git fetch --depth=1 origin develop || git fetch --depth=1 origin main
+            BASE="$(git merge-base HEAD origin/develop 2>/dev/null || git merge-base HEAD origin/main)"
+          fi
+          git diff --name-only "$BASE" "${{ github.sha }}" > /tmp/changed.txt || true
+          if [ ! -s /tmp/changed.txt ]; then
+            git diff --name-only HEAD^ HEAD > /tmp/changed.txt || true
+          fi
+          echo "Changed files:"
+          cat /tmp/changed.txt
+      - name: Detect modules
+        id: detect
+        env:
+          MODULES_FILE: ${{ inputs.modules-file }}
+          CHANGED_FILES: /tmp/changed.txt
+        run: |
+          pip install --quiet pyyaml
+          python3 .ci-store/.github/workflows/scripts/monorepo_detect.py
+
+  compute-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      registry_owner: ${{ steps.tag.outputs.registry_owner }}
+    steps:
+      - id: tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          REF="${{ github.ref }}"
+          TAG=$(echo "$REF" | sed 's@refs/tags/@@;s@refs/heads/@@;s@refs/pull/@pull/@;s@^develop$@dev@;s@^release$@next@;s@/@-@g;')
+          # Prefixed module tags: <module>/<semver> -> semver for the image
+          if [[ "$REF" == refs/tags/*/* ]]; then
+            TAG="${REF##*/}"
+          fi
+          OWNER="${{ inputs.registry-owner }}"
+          if [ -z "$OWNER" ]; then
+            OWNER="${{ github.repository_owner }}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "registry_owner=$OWNER" >> "$GITHUB_OUTPUT"
+          echo "TAG=$TAG OWNER=$OWNER"
+
+  frontend-ui:
+    needs: detect
+    if: needs.detect.outputs.ui == 'true'
+    uses: ./.github/workflows/frontend-ci.yaml
+    secrets: inherit
+    with:
+      working-directory: qubership-apihub-ui
+
+  frontend-btc:
+    needs: detect
+    if: needs.detect.outputs.build_task_consumer == 'true'
+    uses: ./.github/workflows/frontend-ci.yaml
+    secrets: inherit
+    with:
+      working-directory: qubership-apihub-build-task-consumer
+
+  docker-backend:
+    needs: [detect, compute-tag]
+    if: needs.detect.outputs.backend == 'true'
+    uses: ./.github/workflows/docker-ci.yml
+    secrets: inherit
+    with:
+      name: qubership-apihub-backend
+      file: qubership-apihub-backend/Dockerfile
+      context: "."
+      platforms: linux/amd64,linux/arm64
+      image-tag: ${{ needs.compute-tag.outputs.tag }}
+      image-repository: ghcr.io/${{ needs.compute-tag.outputs.registry_owner }}/qubership-apihub-backend
+      labels: |
+        maintainer=qubership
+
+  docker-ui:
+    needs: [detect, compute-tag, frontend-ui]
+    if: needs.detect.outputs.ui == 'true'
+    uses: ./.github/workflows/docker-ci.yml
+    secrets: inherit
+    with:
+      name: qubership-apihub-ui
+      file: qubership-apihub-ui/Dockerfile
+      context: qubership-apihub-ui
+      platforms: linux/amd64,linux/arm64
+      image-tag: ${{ needs.compute-tag.outputs.tag }}
+      image-repository: ghcr.io/${{ needs.compute-tag.outputs.registry_owner }}/qubership-apihub-ui
+      labels: |
+        maintainer=qubership
+
+  docker-btc:
+    needs: [detect, compute-tag, frontend-btc]
+    if: needs.detect.outputs.build_task_consumer == 'true'
+    uses: ./.github/workflows/docker-ci.yml
+    secrets: inherit
+    with:
+      name: qubership-apihub-build-task-consumer
+      file: qubership-apihub-build-task-consumer/Dockerfile
+      context: qubership-apihub-build-task-consumer
+      platforms: linux/amd64,linux/arm64
+      image-tag: ${{ needs.compute-tag.outputs.tag }}
+      image-repository: ghcr.io/${{ needs.compute-tag.outputs.registry_owner }}/qubership-apihub-build-task-consumer
+      labels: |
+        maintainer=qubership
+
+  docker-linter:
+    needs: [detect, compute-tag]
+    if: needs.detect.outputs.api_linter_service == 'true'
+    uses: ./.github/workflows/docker-ci.yml
+    secrets: inherit
+    with:
+      name: qubership-api-linter-service
+      file: qubership-api-linter-service/Dockerfile
+      context: "."
+      platforms: linux/amd64,linux/arm64
+      image-tag: ${{ needs.compute-tag.outputs.tag }}
+      image-repository: ghcr.io/${{ needs.compute-tag.outputs.registry_owner }}/qubership-api-linter-service
+      labels: |
+        maintainer=qubership
+
+  docker-agents:
+    needs: [detect, compute-tag]
+    if: needs.detect.outputs.agents_backend == 'true'
+    uses: ./.github/workflows/docker-ci.yml
+    secrets: inherit
+    with:
+      name: qubership-apihub-agents-backend
+      file: qubership-apihub-agents-backend/Dockerfile
+      context: "."
+      platforms: linux/amd64,linux/arm64
+      image-tag: ${{ needs.compute-tag.outputs.tag }}
+      image-repository: ghcr.io/${{ needs.compute-tag.outputs.registry_owner }}/qubership-apihub-agents-backend
+      labels: |
+        maintainer=qubership
+
+  commons-go-ci:
+    needs: detect
+    if: needs.detect.outputs.commons_go == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: qubership-apihub-commons-go
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: qubership-apihub-commons-go/go.mod
+      - run: go test ./...
+      - run: go vet ./...
+
+  resolve-images:
+    needs:
+      - detect
+      - compute-tag
+      - docker-backend
+      - docker-ui
+      - docker-btc
+      - docker-linter
+      - docker-agents
+    if: ${{ always() && !cancelled() && (needs.detect.outputs.e2e_needed == 'true' || github.event_name == 'pull_request') }}
+    runs-on: ubuntu-latest
+    outputs:
+      backend_image: ${{ steps.resolve.outputs.backend_image }}
+      ui_image: ${{ steps.resolve.outputs.ui_image }}
+      build_task_consumer_image: ${{ steps.resolve.outputs.build_task_consumer_image }}
+      api_linter_service_image: ${{ steps.resolve.outputs.api_linter_service_image }}
+      agents_backend_image: ${{ steps.resolve.outputs.agents_backend_image }}
+      image_refs_json: ${{ steps.resolve.outputs.image_refs_json }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ inputs.ci-store-repository }}
+          ref: ${{ inputs.ci-store-ref }}
+          path: .ci-store
+      - id: resolve
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          REGISTRY_OWNER: ${{ needs.compute-tag.outputs.registry_owner }}
+          CURRENT_TAG: ${{ needs.compute-tag.outputs.tag }}
+          FALLBACK_REGISTRY: ghcr.io/netcracker
+          FALLBACK_TAG: dev
+          BUILT_JSON: >-
+            {
+              "backend": "${{ needs.docker-backend.result == 'success' && needs.docker-backend.outputs.image_tag || '' }}",
+              "ui": "${{ needs.docker-ui.result == 'success' && needs.docker-ui.outputs.image_tag || '' }}",
+              "build_task_consumer": "${{ needs.docker-btc.result == 'success' && needs.docker-btc.outputs.image_tag || '' }}",
+              "api_linter_service": "${{ needs.docker-linter.result == 'success' && needs.docker-linter.outputs.image_tag || '' }}",
+              "agents_backend": "${{ needs.docker-agents.result == 'success' && needs.docker-agents.outputs.image_tag || '' }}"
+            }
+        run: python3 .ci-store/.github/workflows/scripts/monorepo_resolve_images.py
+
+  e2e-compose:
+    needs: [detect, resolve-images]
+    if: ${{ always() && !cancelled() && inputs.run-e2e-compose && github.event_name == 'pull_request' && needs.detect.outputs.e2e_needed == 'true' }}
+    uses: ./.github/workflows/run-e2e-tests.yml
+    secrets: inherit
+    with:
+      source-layout: monorepo
+      compose-repository-branch: ${{ github.head_ref }}
+      postman-path: qubership-apihub-postman-collections
+      playwright-path: qubership-apihub-ui-tests
+      postman-collections-list: ./e2e/1_1_Smoke_Portal.postman_collection.json,./e2e/1_3_Linter_Portal.postman_collection.json,./e2e/2_1_Negative_Portal.postman_collection.json,./e2e/3_1_Stories_Bugs.postman_collection.json,./e2e/3_2_Stories_Bugs.postman_collection.json,./e2e/4_Access_control.postman_collection.json
+      image-refs-json: ${{ needs.resolve-images.outputs.image_refs_json }}
+
+  e2e-kind:
+    needs: [detect, resolve-images]
+    if: ${{ always() && !cancelled() && inputs.run-e2e-kind && github.event_name == 'pull_request' && needs.detect.outputs.e2e_needed == 'true' }}
+    uses: ./.github/workflows/run-e2e-tests-kind.yaml
+    secrets: inherit
+    with:
+      source-layout: monorepo
+      helm-repository-branch: ${{ github.head_ref }}
+      postman-path: qubership-apihub-postman-collections
+      playwright-path: qubership-apihub-ui-tests
+      postman-collections-list: ./e2e/1_1_Smoke_Portal.postman_collection.json,./e2e/1_2_Smoke_Agent.postman_collection.json,./e2e/1_3_Linter_Portal.postman_collection.json,./e2e/2_1_Negative_Portal.postman_collection.json,./e2e/3_1_Stories_Bugs.postman_collection.json,./e2e/3_2_Stories_Bugs.postman_collection.json,./e2e/4_Access_control.postman_collection.json
+      image-refs-json: ${{ needs.resolve-images.outputs.image_refs_json }}

@@ -1,0 +1,60 @@
+name: Monorepo module release notes
+
+on:
+  workflow_call:
+    inputs:
+      module:
+        description: "Top-level module folder / git tag prefix. Empty derives it from tag."
+        type: string
+        required: false
+        default: ""
+      tag:
+        description: "Prefixed git tag, e.g. qubership-apihub-backend/1.2.3"
+        type: string
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release-notes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Generate notes and publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MODULE: ${{ inputs.module }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [ -z "$MODULE" ]; then
+            MODULE="${TAG%%/*}"
+          fi
+          PREV=$(git tag --list "${MODULE}/*" --sort=-v:refname | awk -v t="$TAG" '$0 != t { print; exit }')
+          if [ -z "$PREV" ]; then
+            RANGE="$TAG"
+            NOTES="Initial release of ${MODULE}."
+          else
+            RANGE="${PREV}..${TAG}"
+            NOTES=$(git log --pretty=format:'- %s (%h)' "$RANGE" -- "$MODULE" || true)
+            if [ -z "$NOTES" ]; then
+              NOTES="No module-path commits between ${PREV} and ${TAG}."
+            fi
+          fi
+          {
+            echo "# ${TAG}"
+            echo
+            echo "## Changes"
+            echo
+            echo "$NOTES"
+            echo
+            echo "**Full changelog**: https://github.com/${{ github.repository }}/compare/${PREV:-$TAG}...${TAG}"
+          } > /tmp/notes.md
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "$TAG" --notes-file /tmp/notes.md
+          else
+            gh release create "$TAG" --title "$TAG" --notes-file /tmp/notes.md
+          fi
