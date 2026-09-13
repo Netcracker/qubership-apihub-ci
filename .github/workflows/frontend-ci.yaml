@@ -12,6 +12,11 @@ on:
         description: "Container image to use for the job (optional)"
         required: false
         type: string
+      working-directory:
+        description: "Directory that contains package.json / lerna.json. Default is the repository root."
+        required: false
+        type: string
+        default: "."
     outputs:
       npm_dist_tag:
         description: "NPM dist-tag of the published package."
@@ -25,6 +30,9 @@ jobs:
     if: (github.event_name == 'push') || (github.event_name == 'pull_request')
     runs-on: ubuntu-latest
     container: ${{ inputs.container }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
     outputs:
       npm_dist_tag: ${{ steps.publish.outputs.npm_dist_tag }}
       package_version: ${{ steps.get_version.outputs.package_version }}

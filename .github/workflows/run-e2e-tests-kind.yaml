@@ -81,6 +81,19 @@ on:
         description: "Qubership APIHUB Agent image tag to be executed"
         type: string
         default: "dev"
+      source-layout:
+        description: "polyrepo clones sibling repositories; monorepo checkouts the caller once"
+        type: string
+        default: "polyrepo"
+      postman-path:
+        type: string
+        default: "qubership-apihub-postman-collections"
+      playwright-path:
+        type: string
+        default: "qubership-apihub-ui-tests"
+      image-refs-json:
+        type: string
+        default: ""
       job-timeout-minutes:
         description: "Timeout for the whole E2E job, in minutes"
         type: number
@@ -100,7 +113,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: ${{ inputs.job-timeout-minutes }}
     steps:
+      - name: Checkout caller (monorepo)
+        if: ${{ inputs.source-layout == 'monorepo' }}
+        uses: actions/checkout@v6
+        with:
+          path: src
+      - name: Link monorepo trees
+        if: ${{ inputs.source-layout == 'monorepo' }}
+        run: |
+          ln -s "$GITHUB_WORKSPACE/src" helm-repo
+          ln -s "$GITHUB_WORKSPACE/src/${{ inputs.postman-path }}" postman-repo
+          ln -s "$GITHUB_WORKSPACE/src/${{ inputs.playwright-path }}" playwright-repo
       - name: Clone deployment repository
+        if: ${{ inputs.source-layout != 'monorepo' }}
         run: |
           git clone --branch ${{ inputs.helm-repository-branch }} --single-branch \
             ${{ inputs.helm-repository-url }} helm-repo
@@ -205,6 +230,8 @@ jobs:
 
       - name: Deploy APIHUB
         working-directory: helm-repo/helm-templates/local-k8s-quickstart
+        env:
+          IMAGE_REFS_JSON: ${{ inputs.image-refs-json }}
         run: |
           cat > "$RUNNER_TEMP/apihub-ui-tests-values.yaml" <<'EOF'
           qubershipApihubBackend:
@@ -229,17 +256,48 @@ jobs:
                 apihub:
                   url: 'https://qubership-apihub.localtest.me'
           EOF
+          EXTRA_VALUES=()
+          EXTRA_SETS=()
+          if [ -n "$IMAGE_REFS_JSON" ]; then
+            python3 - <<'PY'
+          import json, os, pathlib
+          refs = json.loads(os.environ["IMAGE_REFS_JSON"])
+          mapping = {
+              "backend": "qubershipApihubBackend",
+              "ui": "qubershipApihubUi",
+              "build_task_consumer": "qubershipApihubBuildTaskConsumer",
+              "api_linter_service": "qubershipApiLinterService",
+              "agents_backend": "qubershipApihubAgentsBackend",
+          }
+          lines = []
+          for key, helm in mapping.items():
+              ref = refs.get(key) or ""
+              if ":" not in ref:
+                  continue
+              repo, tag = ref.rsplit(":", 1)
+              lines.extend([f"{helm}:", "  image:", f"    repository: {repo}", f"    tag: '{tag}'", ""])
+          path = pathlib.Path(os.environ["RUNNER_TEMP"]) / "image-refs-values.yaml"
+          path.write_text("\n".join(lines), encoding="utf-8")
+          print(path.read_text(encoding="utf-8"))
+          PY
+            EXTRA_VALUES+=(--values "$RUNNER_TEMP/image-refs-values.yaml")
+          else
+            EXTRA_SETS+=(
+              --set-string qubershipApihubBackend.image.tag=${{ inputs.apihub-backend-image-tag }}
+              --set-string qubershipApihubBuildTaskConsumer.image.tag=${{ inputs.apihub-build-task-consumer-image-tag }}
+              --set-string qubershipApihubUi.image.tag=${{ inputs.apihub-ui-image-tag }}
+              --set-string qubershipApiLinterService.image.tag=${{ inputs.apihub-api-linter-service-image-tag }}
+              --set-string qubershipApihubAgentsBackend.image.tag=${{ inputs.apihub-agents-backend-image-tag }}
+            )
+          fi
           helm upgrade --install apihub ../qubership-apihub \
             --namespace qubership-apihub \
             --create-namespace \
             --values qubership-apihub/local-k8s-values.yaml \
             --values qubership-apihub/local-secrets.yaml \
             --values "$RUNNER_TEMP/apihub-ui-tests-values.yaml" \
-            --set-string qubershipApihubBackend.image.tag=${{ inputs.apihub-backend-image-tag }} \
-            --set-string qubershipApihubBuildTaskConsumer.image.tag=${{ inputs.apihub-build-task-consumer-image-tag }} \
-            --set-string qubershipApihubUi.image.tag=${{ inputs.apihub-ui-image-tag }} \
-            --set-string qubershipApiLinterService.image.tag=${{ inputs.apihub-api-linter-service-image-tag }} \
-            --set-string qubershipApihubAgentsBackend.image.tag=${{ inputs.apihub-agents-backend-image-tag }} \
+            "${EXTRA_VALUES[@]}" \
+            "${EXTRA_SETS[@]}" \
             --wait \
             --timeout 10m
 
@@ -449,7 +507,7 @@ jobs:
 
       - name: Calculate Newman tests branch
         id: calculate-postman-branch
-        if: ${{ inputs.postman-collections-run }}
+        if: ${{ inputs.postman-collections-run && inputs.source-layout != 'monorepo' }}
         run: |
           BRANCH="${{ inputs.postman-repository-branch }}"
           if [ -n "$BRANCH" ]; then
@@ -467,7 +525,7 @@ jobs:
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
 
       - name: Clone apihub-postman-collections repository
-        if: ${{ inputs.postman-collections-run }}
+        if: ${{ inputs.postman-collections-run && inputs.source-layout != 'monorepo' }}
         run: |
           git clone --branch ${{ steps.calculate-postman-branch.outputs.branch }} --single-branch \
             ${{ inputs.postman-repository-url }} postman-repo
@@ -523,7 +581,7 @@ jobs:
 
       - name: Calculate Playwright tests branch
         id: calculate-playwright-branch
-        if: ${{ inputs.playwright-tests-run }}
+        if: ${{ inputs.playwright-tests-run && inputs.source-layout != 'monorepo' }}
         run: |
           BRANCH="${{ inputs.playwright-repository-branch }}"
           if [ -n "$BRANCH" ]; then
@@ -541,7 +599,7 @@ jobs:
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
 
       - name: Clone Playwright tests repository
-        if: ${{ inputs.playwright-tests-run }}
+        if: ${{ inputs.playwright-tests-run && inputs.source-layout != 'monorepo' }}
         run: |
           git clone --branch ${{ steps.calculate-playwright-branch.outputs.branch }} --single-branch \
             ${{ inputs.playwright-repository-url }} playwright-repo

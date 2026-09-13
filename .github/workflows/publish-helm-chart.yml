@@ -1,0 +1,39 @@
+name: Publish Helm chart
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: "Chart version (semver without prefix)"
+        type: string
+        required: true
+      chart-path:
+        type: string
+        default: "helm-templates/qubership-apihub"
+      git-tag:
+        description: "Optional git tag to attach the packaged chart to"
+        type: string
+        default: ""
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Package chart
+        env:
+          VERSION: ${{ inputs.version }}
+          CHART: ${{ inputs.chart-path }}
+        run: |
+          helm package "$CHART" --version "$VERSION" --app-version "$VERSION" --destination /tmp/helm
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u "${{ github.actor }}" --password-stdin
+          helm push /tmp/helm/*.tgz "oci://ghcr.io/${{ github.repository_owner }}/charts"
+      - name: Attach to GitHub Release
+        if: ${{ inputs.git-tag != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ inputs.git-tag }}" /tmp/helm/*.tgz --clobber

@@ -1,0 +1,91 @@
+name: Monorepo application release
+
+on:
+  workflow_call:
+    inputs:
+      sprint-name:
+        description: "GitHub Project sprint / iteration name, e.g. APIHUB-26.3.3"
+        type: string
+        required: true
+      app-tag-prefix:
+        description: "Git tag prefix for application releases"
+        type: string
+        default: "qubership-apihub"
+      helm-chart-path:
+        type: string
+        default: "helm-templates/qubership-apihub"
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Compute next application version
+        id: version
+        env:
+          PREFIX: ${{ inputs.app-tag-prefix }}
+        run: |
+          set -euo pipefail
+          PREV=$(git tag --list "${PREFIX}/*" --sort=-v:refname | head -n1 || true)
+          if [ -z "$PREV" ]; then
+            NEXT="0.1.0"
+            echo "previous=" >> "$GITHUB_OUTPUT"
+          else
+            VER="${PREV#${PREFIX}/}"
+            echo "previous=$PREV" >> "$GITHUB_OUTPUT"
+            IFS=. read -r MAJ MIN PAT <<<"$VER"
+            NEXT="${MAJ}.${MIN}.$((PAT + 1))"
+          fi
+          echo "version=$NEXT" >> "$GITHUB_OUTPUT"
+          echo "tag=${PREFIX}/${NEXT}" >> "$GITHUB_OUTPUT"
+          echo "Next version ${NEXT}"
+      - name: Write release notes
+        env:
+          SPRINT: ${{ inputs.sprint-name }}
+          TAG: ${{ steps.version.outputs.tag }}
+          PREV: ${{ steps.version.outputs.previous }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          {
+            echo "# ${TAG}"
+            echo
+            echo "Sprint: **${SPRINT}**"
+            echo
+            echo "## Changes"
+            echo
+            if [ -n "$PREV" ]; then
+              git log --pretty=format:'- %s (%h)' "${PREV}..HEAD"
+              echo
+              echo
+              echo "**Full changelog**: https://github.com/${{ github.repository }}/compare/${PREV}...${TAG}"
+            else
+              echo "Initial application release."
+            fi
+          } > /tmp/app-notes.md
+      - name: Create git tag and GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git tag -a "$TAG" -m "$TAG"
+          git push origin "$TAG"
+          gh release create "$TAG" --title "$TAG" --notes-file /tmp/app-notes.md
+      - name: Package and push Helm chart
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          CHART: ${{ inputs.helm-chart-path }}
+        run: |
+          set -euo pipefail
+          helm package "$CHART" --version "$VERSION" --app-version "$VERSION" --destination /tmp/helm
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u "${{ github.actor }}" --password-stdin
+          helm push /tmp/helm/*.tgz "oci://ghcr.io/${{ github.repository_owner }}/charts"
+          gh release upload "${{ steps.version.outputs.tag }}" /tmp/helm/*.tgz --clobber

@@ -18,6 +18,16 @@ on:
       labels:
         required: false
         type: string
+      image-tag:
+        description: "Override the published image tag. Empty uses the ref-based formula."
+        required: false
+        type: string
+        default: ""
+      image-repository:
+        description: "Full image name without tag, e.g. ghcr.io/netcracker/qubership-apihub-backend. Empty uses ghcr.io/netcracker/<name>."
+        required: false
+        type: string
+        default: ""
     secrets:
       NPMRC:
         required: false
@@ -27,6 +37,9 @@ on:
       image_tag:
         description: "Docker image tag of the published image."
         value: ${{ jobs.build_and_push_image.outputs.image_tag }}
+      image_repository:
+        description: "Docker image repository without tag."
+        value: ${{ jobs.build_and_push_image.outputs.image_repository }}
 
 env:
   REF_NAME: ${{ github.ref }}
@@ -38,6 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       image_tag: ${{ steps.prepare_tag.outputs.TAG }}
+      image_repository: ${{ steps.prepare_tag.outputs.IMAGE_REPOSITORY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -54,9 +68,20 @@ jobs:
       - name: Prepare Tag
         id: prepare_tag
         run: |
-          TAG=$(echo ${REF_NAME} | sed 's@refs/tags/@@;s@refs/heads/@@;s@refs/pull/@pull/@;s@^develop$@dev@;s@^release$@next@;s@/@-@g;')
+          if [ -n "${{ inputs.image-tag }}" ]; then
+            TAG="${{ inputs.image-tag }}"
+          else
+            TAG=$(echo ${REF_NAME} | sed 's@refs/tags/@@;s@refs/heads/@@;s@refs/pull/@pull/@;s@^develop$@dev@;s@^release$@next@;s@/@-@g;')
+          fi
+          if [ -n "${{ inputs.image-repository }}" ]; then
+            IMAGE_REPOSITORY="${{ inputs.image-repository }}"
+          else
+            IMAGE_REPOSITORY="ghcr.io/netcracker/${{ inputs.name }}"
+          fi
           echo "TAG=$TAG"
+          echo "IMAGE_REPOSITORY=$IMAGE_REPOSITORY"
           echo "TAG=$TAG" >> $GITHUB_OUTPUT
+          echo "IMAGE_REPOSITORY=$IMAGE_REPOSITORY" >> $GITHUB_OUTPUT
       - name: Extract branch name
         id: extract_branch
         shell: bash
@@ -72,7 +97,7 @@ jobs:
           file: ${{ inputs.file }}
           platforms: ${{ inputs.platforms }}
           push: true
-          tags: ghcr.io/netcracker/${{ inputs.name }}:${{ steps.prepare_tag.outputs.TAG }}
+          tags: ${{ steps.prepare_tag.outputs.IMAGE_REPOSITORY }}:${{ steps.prepare_tag.outputs.TAG }}
           provenance: false
           build-args: |
             GH_ACCESS_TOKEN=${{ secrets.GH_ACCESS_TOKEN }}

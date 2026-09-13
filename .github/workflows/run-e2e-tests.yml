@@ -77,6 +77,22 @@ on:
         description: "Agents Backend image tag to be executed"
         type: string
         default: "dev"
+      source-layout:
+        description: "polyrepo clones sibling repositories; monorepo checkouts the caller once"
+        type: string
+        default: "polyrepo"
+      postman-path:
+        description: "Path to Postman collections inside a monorepo checkout"
+        type: string
+        default: "qubership-apihub-postman-collections"
+      playwright-path:
+        description: "Path to Playwright tests inside a monorepo checkout"
+        type: string
+        default: "qubership-apihub-ui-tests"
+      image-refs-json:
+        description: "Optional JSON map of full image refs used to rewrite compose image names"
+        type: string
+        default: ""
       job-timeout-minutes:
         description: "Timeout for the whole E2E job, in minutes"
         type: number
@@ -96,7 +112,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: ${{ inputs.job-timeout-minutes }}
     steps:
+      - name: Checkout caller (monorepo)
+        if: ${{ inputs.source-layout == 'monorepo' }}
+        uses: actions/checkout@v6
+        with:
+          path: src
+      - name: Link monorepo trees
+        if: ${{ inputs.source-layout == 'monorepo' }}
+        run: |
+          ln -s "$GITHUB_WORKSPACE/src" compose-repo
+          ln -s "$GITHUB_WORKSPACE/src/${{ inputs.postman-path }}" postman-repo
+          ln -s "$GITHUB_WORKSPACE/src/${{ inputs.playwright-path }}" playwright-repo
       - name: Clone compose repository
+        if: ${{ inputs.source-layout != 'monorepo' }}
         run: |
           git clone --branch ${{ inputs.compose-repository-branch }} --single-branch ${{ inputs.compose-repository-url }} compose-repo
 
@@ -144,6 +172,34 @@ jobs:
             ./${{ inputs.compose-repository-compose-file }}
           echo "$(<./${{ inputs.compose-repository-compose-file }})"
 
+      - name: Substitute full image refs in compose file
+        if: ${{ inputs.image-refs-json != '' }}
+        env:
+          IMAGE_REFS_JSON: ${{ inputs.image-refs-json }}
+        run: |
+          cd compose-repo
+          cd ${{ inputs.compose-repository-compose-folder }}
+          python3 - <<'PY'
+          import json, os, pathlib, re
+          refs = json.loads(os.environ["IMAGE_REFS_JSON"])
+          mapping = {
+              "backend": "ghcr.io/netcracker/qubership-apihub-backend",
+              "ui": "ghcr.io/netcracker/qubership-apihub-ui",
+              "build_task_consumer": "ghcr.io/netcracker/qubership-apihub-build-task-consumer",
+              "api_linter_service": "ghcr.io/netcracker/qubership-api-linter-service",
+              "agents_backend": "ghcr.io/netcracker/qubership-apihub-agents-backend",
+          }
+          path = pathlib.Path("${{ inputs.compose-repository-compose-file }}")
+          text = path.read_text(encoding="utf-8")
+          for key, prefix in mapping.items():
+              image = refs.get(key)
+              if not image:
+                  continue
+              text = re.sub(re.escape(prefix) + r":\S+", image, text)
+          path.write_text(text, encoding="utf-8")
+          print(text)
+          PY
+
       - name: Run podman-compose up
         run: |
           cd compose-repo
@@ -185,7 +241,7 @@ jobs:
 
       - name: Calculate Newman tests branch
         id: calculate-postman-branch
-        if: ${{ inputs.postman-collections-run }}
+        if: ${{ inputs.postman-collections-run && inputs.source-layout != 'monorepo' }}
         run: |
           # First check if a branch was provided as input
           BRANCH="${{ inputs.postman-repository-branch }}"
@@ -208,7 +264,7 @@ jobs:
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
 
       - name: Clone apihub-postman-collections repository
-        if: ${{ inputs.postman-collections-run }}
+        if: ${{ inputs.postman-collections-run && inputs.source-layout != 'monorepo' }}
         run: |
           git clone --branch ${{ steps.calculate-postman-branch.outputs.branch }} --single-branch ${{ inputs.postman-repository-url }} postman-repo
 
@@ -260,7 +316,7 @@ jobs:
 
       - name: Calculate Playwright tests branch
         id: calculate-playwright-branch
-        if: ${{ inputs.playwright-tests-run }}
+        if: ${{ inputs.playwright-tests-run && inputs.source-layout != 'monorepo' }}
         run: |
           # First check if a branch was provided as input
           BRANCH="${{ inputs.playwright-repository-branch }}"
@@ -283,7 +339,7 @@ jobs:
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
 
       - name: Clone Playwright tests repository
-        if: ${{ inputs.playwright-tests-run }}
+        if: ${{ inputs.playwright-tests-run && inputs.source-layout != 'monorepo' }}
         run: |
           git clone --branch ${{ steps.calculate-playwright-branch.outputs.branch }} --single-branch ${{ inputs.playwright-repository-url }} playwright-repo
 
