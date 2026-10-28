@@ -102,9 +102,51 @@
         }
         .attention-icon { color: red; font-weight: bold; display: block; }
         .attention-text { margin-left: 4px; font-style: italic; }
+        #snake-hatch {
+            position: fixed;
+            right: 4px;
+            bottom: 4px;
+            width: 16px;
+            height: 16px;
+            border: 0;
+            padding: 0;
+            background: transparent;
+            cursor: pointer;
+            z-index: 5;
+        }
+        #snake-hatch::after {
+            content: "";
+            display: block;
+            width: 5px;
+            height: 5px;
+            margin: 5px;
+            border-radius: 50%;
+            background: #ddd;
+        }
+        #snake-hatch:hover::after { background: #888; }
+        body.snake-on #snake-hatch { display: none; }
+        body.snake-on #report-chrome,
+        body.snake-on #pr-report .filters { display: none; }
+        body.snake-on #pr-report a,
+        body.snake-on #pr-report th { pointer-events: none; }
+        #snake-hud {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 0 0 8px;
+            font-weight: 700;
+        }
+        #snake-hud[hidden] { display: none; }
+        #snake-score { color: #1b5e20; }
+        body.snake-on td.snake-body { background: #c8e6c9; }
+        body.snake-on td.snake-head { background: #1b5e20; color: #fff; }
+        body.snake-on td.snake-head a { color: #fff; }
+        body.snake-on td.snake-food { background: #ffe082; }
     </style>
 </head>
 <body>
+    <button type='button' id='snake-hatch' tabindex='-1' aria-hidden='true'></button>
+    <div id='report-chrome'>
     <h1>GitHub Pull Requests Report</h1>
 
     <div class="rules-panel">
@@ -114,8 +156,13 @@
              If no related issue (chore, docs, small tech improvements cases) – PR must be added to GitHub Project
              to current Sprint directly (set 'Project' field in PR)</div>
     </div>
+    </div>
 
     <div id='pr-report'>
+    <div id='snake-hud' hidden>
+        <span id='snake-score'>0</span>
+        <span id='snake-hint'></span>
+    </div>
     <div class='filters'>
         
         <div class='filter-dropdown' data-prefix='User' data-attr='data-user-group'>
@@ -267,7 +314,7 @@
                     <td class='status'>Not Draft</td>
                     <td class='ci'>
                         
-                        <span class='ci-mark ci-red' title='At least one check failed'>red</span>
+                        <span class='ci-mark ci-progress' title='Checks are still running'>in progress</span>
                         
                     </td>
                     <td class='approval'>not approved yet</td>
@@ -632,7 +679,7 @@
                 
                 <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/923' target='_blank'>feat(api-linter-service): split AI issue deduplication into token-budgeted requests</a></td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/923' target='_blank'>feat(api-linter-service)!: split AI issue deduplication into token-budgeted requests</a></td>
                     <td class='author'>karpov-aleksandr</td>
                     <td class='status'>Not Draft</td>
                     <td class='ci'>
@@ -648,7 +695,7 @@
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/852' target='_blank'>[Feat]: Consider limited context for AI linter</a>
                         
                     </td>
-                    <td class='comment'><div class='comment-clip' title='AI review of bfe2eef: 1 inline finding(s). The summary is in the AI review comment of this pull request.'>AI review of bfe2eef: 1 inline finding(s). The summary is in the AI review comment of this pull request.</div></td>
+                    <td class='comment'><div class='comment-clip' title='AI review of 6e380b9: 1 inline finding(s). The summary is in the AI review comment of this pull request.'>AI review of 6e380b9: 1 inline finding(s). The summary is in the AI review comment of this pull request.</div></td>
                     <td class='attention'>
                         
                     </td>
@@ -2380,6 +2427,10 @@
         document.querySelector('#pr-report .pr-search').addEventListener('input', applyFilters);
         document.addEventListener('click', closeDropdowns);
         document.addEventListener('keydown', function(event) {
+            if (snakeState) {
+                handleSnakeKey(event);
+                return;
+            }
             if (event.key === 'Escape') {
                 closeDropdowns();
             }
@@ -2392,6 +2443,233 @@
         });
 
         applyFilters();
+
+        var snakeState = null;
+        var SNAKE_TICK_MS = 150;
+
+        document.getElementById('snake-hatch').addEventListener('click', function(event) {
+            event.stopPropagation();
+            startSnake();
+        });
+
+        function stopSnakeLoop() {
+            if (snakeState && snakeState.timer) {
+                clearInterval(snakeState.timer);
+                snakeState.timer = null;
+            }
+        }
+
+        function clearSnakeMarks() {
+            document.querySelectorAll('#pr-report td.snake-head, #pr-report td.snake-body, #pr-report td.snake-food').forEach(function(cell) {
+                cell.classList.remove('snake-head', 'snake-body', 'snake-food');
+            });
+        }
+
+        function exitSnake() {
+            stopSnakeLoop();
+            clearSnakeMarks();
+            snakeState = null;
+            document.body.classList.remove('snake-on');
+            document.getElementById('snake-hud').hidden = true;
+        }
+
+        function updateSnakeHud() {
+            document.getElementById('snake-score').textContent = String(snakeState.score);
+            document.getElementById('snake-hint').textContent = snakeState.hint;
+        }
+
+        function paintSnake() {
+            clearSnakeMarks();
+            snakeState.snake.forEach(function(part, index) {
+                var cell = snakeState.grid[part.r][part.c];
+                cell.classList.add(index === 0 ? 'snake-head' : 'snake-body');
+            });
+            if (snakeState.food) {
+                snakeState.grid[snakeState.food.r][snakeState.food.c].classList.add('snake-food');
+            }
+        }
+
+        function snakeOccupied(row, column, ignoreTail) {
+            var parts = snakeState.snake;
+            var limit = ignoreTail ? parts.length - 1 : parts.length;
+            for (var i = 0; i < limit; i++) {
+                if (parts[i].r === row && parts[i].c === column) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function finishSnake(message) {
+            stopSnakeLoop();
+            snakeState.alive = false;
+            snakeState.hint = message + ' Enter retries. Esc leaves.';
+            updateSnakeHud();
+            paintSnake();
+        }
+
+        function placeSnakeFood() {
+            var empty = [];
+            for (var row = 0; row < snakeState.grid.length; row++) {
+                for (var column = 0; column < snakeState.grid[row].length; column++) {
+                    if (!snakeOccupied(row, column, false)) {
+                        empty.push({r: row, c: column});
+                    }
+                }
+            }
+            if (!empty.length) {
+                snakeState.food = null;
+                finishSnake('Cleared the table.');
+                return;
+            }
+            snakeState.food = empty[Math.floor(Math.random() * empty.length)];
+        }
+
+        function snakeTick() {
+            if (!snakeState || !snakeState.alive) {
+                return;
+            }
+            var dir = snakeState.nextDir;
+            if (dir.r === -snakeState.dir.r && dir.c === -snakeState.dir.c) {
+                dir = snakeState.dir;
+            }
+            snakeState.dir = dir;
+            snakeState.nextDir = {r: dir.r, c: dir.c};
+            var head = snakeState.snake[0];
+            var nextRow = head.r + dir.r;
+            var nextColumn = head.c + dir.c;
+            var rowCount = snakeState.grid.length;
+            var columnCount = snakeState.grid[0].length;
+            if (nextRow < 0 || nextColumn < 0 || nextRow >= rowCount || nextColumn >= columnCount) {
+                finishSnake('Hit the edge.');
+                return;
+            }
+            var eating = snakeState.food && snakeState.food.r === nextRow && snakeState.food.c === nextColumn;
+            if (snakeOccupied(nextRow, nextColumn, !eating)) {
+                finishSnake('Bit itself.');
+                return;
+            }
+            snakeState.snake.unshift({r: nextRow, c: nextColumn});
+            if (eating) {
+                snakeState.score += 1;
+                placeSnakeFood();
+                if (!snakeState.alive) {
+                    return;
+                }
+                updateSnakeHud();
+            } else {
+                snakeState.snake.pop();
+            }
+            paintSnake();
+        }
+
+        function startSnake() {
+            exitSnake();
+            var grid = [];
+            document.querySelectorAll('#pr-report tbody.list tr').forEach(function(row) {
+                if (row.style.display === 'none') {
+                    return;
+                }
+                var cells = [];
+                Array.prototype.forEach.call(row.children, function(cell) {
+                    if (cell.tagName === 'TD') {
+                        cells.push(cell);
+                    }
+                });
+                if (cells.length) {
+                    grid.push(cells);
+                }
+            });
+            if (!grid.length) {
+                return;
+            }
+            var columns = grid[0].length;
+            grid.forEach(function(line) {
+                if (line.length < columns) {
+                    columns = line.length;
+                }
+            });
+            grid = grid.map(function(line) { return line.slice(0, columns); });
+            if (columns < 1 || grid.length * columns < 2) {
+                return;
+            }
+
+            var snake = [];
+            var dir;
+            if (columns >= 2) {
+                var length = Math.min(3, columns - 1);
+                for (var index = 0; index < length; index++) {
+                    snake.push({r: 0, c: length - 1 - index});
+                }
+                dir = {r: 0, c: 1};
+            } else {
+                var verticalLength = Math.min(3, grid.length - 1);
+                for (var verticalIndex = 0; verticalIndex < verticalLength; verticalIndex++) {
+                    snake.push({r: verticalLength - 1 - verticalIndex, c: 0});
+                }
+                dir = {r: 1, c: 0};
+            }
+
+            snakeState = {
+                grid: grid,
+                snake: snake,
+                dir: dir,
+                nextDir: {r: dir.r, c: dir.c},
+                food: null,
+                score: 0,
+                alive: true,
+                hint: 'Arrows move. Esc leaves.',
+                timer: null
+            };
+            document.body.classList.add('snake-on');
+            document.getElementById('snake-hud').hidden = false;
+            closeDropdowns();
+            placeSnakeFood();
+            updateSnakeHud();
+            paintSnake();
+            if (snakeState.alive) {
+                snakeState.timer = setInterval(snakeTick, SNAKE_TICK_MS);
+            }
+        }
+
+        function handleSnakeKey(event) {
+            var key = event.key;
+            if (key === 'Escape') {
+                event.preventDefault();
+                exitSnake();
+                return;
+            }
+            if (!snakeState) {
+                return;
+            }
+            if (key.length === 1) {
+                key = key.toLowerCase();
+            }
+            if ((key === 'Enter' || key === ' ') && !snakeState.alive) {
+                event.preventDefault();
+                startSnake();
+                return;
+            }
+            var directions = {
+                ArrowUp: {r: -1, c: 0},
+                ArrowDown: {r: 1, c: 0},
+                ArrowLeft: {r: 0, c: -1},
+                ArrowRight: {r: 0, c: 1},
+                w: {r: -1, c: 0},
+                a: {r: 0, c: -1},
+                s: {r: 1, c: 0},
+                d: {r: 0, c: 1}
+            };
+            var next = directions[key];
+            if (!next || !snakeState.alive) {
+                return;
+            }
+            event.preventDefault();
+            if (next.r === -snakeState.dir.r && next.c === -snakeState.dir.c) {
+                return;
+            }
+            snakeState.nextDir = next;
+        }
     </script>
 </body>
 </html>
