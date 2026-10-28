@@ -36,6 +36,21 @@ REPO_GROUP_MONOREPO = "monorepo"
 STATUS_DRAFT = "Draft"
 STATUS_NOT_DRAFT = "Not Draft"
 
+CI_RED = "red"
+CI_GREEN = "green"
+CI_PROGRESS = "in progress"
+CI_NONE = "no checks"
+APPROVAL_YES = "approved"
+APPROVAL_NO = "not approved yet"
+COMMENT_LIMIT = 160
+COMMENT_TITLE_LIMIT = 400
+
+# Rollup state is the aggregate GitHub already shows on the PR.
+# Individual CANCELLED runs are often superseded jobs and must not paint a green PR red.
+RED_ROLLUP_STATES = frozenset({"FAILURE", "ERROR"})
+GREEN_ROLLUP_STATES = frozenset({"SUCCESS"})
+PROGRESS_ROLLUP_STATES = frozenset({"PENDING"})
+
 CLPLCI_LOGIN = "NetcrackerCLPLCI"
 DEPENDABOT_LOGIN = "dependabot[bot]"
 
@@ -150,83 +165,165 @@ def classify_repo(repo_name, archived):
         return REPO_GROUP_MONOREPO
     return REPO_GROUP_OLD_POLYREPOS
 
-# --- GraphQL helper to get linked issues via the Development section ---
-def get_linked_issues_via_graphql(owner, repo, pr_number):
-    """
-    Fetch closing issues for a given pull request via GraphQL.
-    Returns a list of (url, title) tuples.
-    """
-    query = '''
-    query($owner: String!, $repo: String!, $prNumber: Int!) {
-      repository(owner: $owner, name: $repo) {
-        pullRequest(number: $prNumber) {
-          closingIssuesReferences(first: 10) {
-            nodes {
-              title
-              url
-            }
-          }
-        }
-      }
-    }
-    '''
-    variables = {"owner": owner, "repo": repo, "prNumber": pr_number}
-    if VERBOSE:
-        print(f"[GraphQL] Requesting issues for {owner}/{repo} PR #{pr_number} with variables: {variables}")
-    response = requests.post(GRAPHQL_URL, json={"query": query, "variables": variables}, headers=HEADERS)
-    data = response.json()
-    if VERBOSE:
-        print(f"[GraphQL] Response for issues (PR #{pr_number}): {json.dumps(data, indent=2)}")
+def classify_ci(rollup):
+    """Red when any check failed, yellow while checks are still running, green when they passed."""
+    if not rollup:
+        return CI_NONE
+    state = rollup.get("state") or ""
+    if state in RED_ROLLUP_STATES:
+        return CI_RED
+    if state in PROGRESS_ROLLUP_STATES:
+        return CI_PROGRESS
+    if state in GREEN_ROLLUP_STATES:
+        return CI_GREEN
+    return CI_NONE
 
-    repository = data.get("data", {}).get("repository") or {}
-    pr_node = repository.get("pullRequest") or {}
+def classify_approval(reviews):
+    """Approved when at least one reviewer's latest review is an approval."""
+    latest_by_author = {}
+    for index, review in enumerate(reviews or []):
+        if not review:
+            continue
+        author = ((review.get("author") or {}).get("login")) or f"unknown-{index}"
+        submitted_at = review.get("submittedAt") or ""
+        previous = latest_by_author.get(author)
+        if previous is None or submitted_at >= previous[0]:
+            latest_by_author[author] = (submitted_at, review.get("state") or "")
+    for _, state in latest_by_author.values():
+        if state == "APPROVED":
+            return APPROVAL_YES
+    return APPROVAL_NO
+
+def truncate_comment(text, limit):
+    collapsed = " ".join((text or "").split())
+    if len(collapsed) <= limit:
+        return collapsed
+    if limit <= 1:
+        return "…"
+    return collapsed[: limit - 1].rstrip() + "…"
+
+def latest_comment_text(timeline_nodes):
+    """Return a short preview and a longer hover text for the newest PR comment."""
+    best_at = ""
+    best_body = ""
+    for node in timeline_nodes or []:
+        if not node:
+            continue
+        candidates = []
+        if node.get("__typename") == "PullRequestReviewThread":
+            comments = (node.get("comments") or {}).get("nodes") or []
+            for comment in comments:
+                if comment:
+                    candidates.append((comment.get("createdAt") or "", comment.get("body") or ""))
+        elif node.get("__typename") == "PullRequestReview":
+            candidates.append((node.get("submittedAt") or "", node.get("body") or ""))
+        else:
+            candidates.append((node.get("createdAt") or "", node.get("body") or ""))
+        for created_at, body in candidates:
+            if body.strip() and created_at >= best_at:
+                best_at = created_at
+                best_body = body
+    return truncate_comment(best_body, COMMENT_LIMIT), truncate_comment(best_body, COMMENT_TITLE_LIMIT)
+
+def empty_pr_graphql_details():
+    return {
+        "issues": [],
+        "projects": [],
+        "ci": CI_NONE,
+        "approval": APPROVAL_NO,
+        "comment": "",
+        "comment_title": "",
+    }
+
+def parse_pr_graphql_payload(pr_node):
+    if not pr_node:
+        return empty_pr_graphql_details()
     issues = []
-    for node in pr_node.get("closingIssuesReferences", {}).get("nodes", []):
+    for node in (pr_node.get("closingIssuesReferences") or {}).get("nodes") or []:
+        if not node:
+            continue
         url = node.get("url")
         title = node.get("title")
         if url and title:
             issues.append((url, title))
-    if VERBOSE:
-        print(f"[GraphQL] Parsed issues for PR #{pr_number}: {issues}")
-    return issues
+    projects = []
+    for node in (pr_node.get("projectsV2") or {}).get("nodes") or []:
+        if not node:
+            continue
+        title = node.get("title")
+        if title:
+            projects.append(title)
+    commits = (pr_node.get("commits") or {}).get("nodes") or []
+    rollup = None
+    if commits and commits[0] and commits[0].get("commit"):
+        rollup = commits[0]["commit"].get("statusCheckRollup")
+    comment, comment_title = latest_comment_text((pr_node.get("timelineItems") or {}).get("nodes"))
+    return {
+        "issues": issues,
+        "projects": projects,
+        "ci": classify_ci(rollup),
+        "approval": classify_approval((pr_node.get("reviews") or {}).get("nodes")),
+        "comment": comment,
+        "comment_title": comment_title,
+    }
 
-# --- GraphQL helper to get project assignments from ProjectsV2 ---
-def get_pr_projects_via_graphql(owner, repo, pr_number):
-    """
-    Fetch ProjectsV2 entries (project titles) for a given pull request via GraphQL.
-    Returns a list of project titles.
-    """
-    query = '''
-    query($owner: String!, $repo: String!, $prNumber: Int!) {
-      repository(owner: $owner, name: $repo) {
-        pullRequest(number: $prNumber) {
-          projectsV2(first: 10) {
-            nodes {
-              title
-            }
+PR_DETAILS_QUERY = """
+query($owner: String!, $repo: String!, $prNumber: Int!) {
+  repository(owner: $owner, name: $repo) {
+    pullRequest(number: $prNumber) {
+      closingIssuesReferences(first: 10) {
+        nodes { title url }
+      }
+      projectsV2(first: 10) {
+        nodes { title }
+      }
+      reviews(last: 100) {
+        nodes {
+          state
+          submittedAt
+          author { login }
+        }
+      }
+      timelineItems(last: 20, itemTypes: [ISSUE_COMMENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD]) {
+        nodes {
+          __typename
+          ... on IssueComment { body createdAt }
+          ... on PullRequestReview { body submittedAt }
+          ... on PullRequestReviewThread {
+            comments(last: 1) { nodes { body createdAt } }
+          }
+        }
+      }
+      commits(last: 1) {
+        nodes {
+          commit {
+            statusCheckRollup { state }
           }
         }
       }
     }
-    '''
+  }
+}
+"""
+
+def get_pr_details_via_graphql(owner, repo, pr_number):
+    """Fetch linked issues, projects, check rollup, reviews, and the latest comment."""
     variables = {"owner": owner, "repo": repo, "prNumber": pr_number}
     if VERBOSE:
-        print(f"[GraphQL] Requesting projectsV2 for {owner}/{repo} PR #{pr_number} with variables: {variables}")
-    response = requests.post(GRAPHQL_URL, json={"query": query, "variables": variables}, headers=HEADERS)
+        print(f"[GraphQL] Requesting PR details for {owner}/{repo}#{pr_number}")
+    response = requests.post(
+        GRAPHQL_URL,
+        json={"query": PR_DETAILS_QUERY, "variables": variables},
+        headers=HEADERS,
+    )
     data = response.json()
+    if data.get("errors"):
+        message = data["errors"][0].get("message", data["errors"][0])
+        print(f"[GraphQL] Partial error for {owner}/{repo}#{pr_number}: {message}")
     if VERBOSE:
-        print(f"[GraphQL] Response for projectsV2 (PR #{pr_number}): {json.dumps(data, indent=2)}")
-
-    repository = data.get("data", {}).get("repository") or {}
-    pr_node = repository.get("pullRequest") or {}
-    projects = []
-    for node in pr_node.get("projectsV2", {}).get("nodes", []):
-        title = node.get("title")
-        if title:
-            projects.append(title)
-    if VERBOSE:
-        print(f"[GraphQL] Parsed projects for PR #{pr_number}: {projects}")
-    return projects
+        print(f"[GraphQL] Response for PR #{pr_number}: {json.dumps(data, indent=2)[:500]}...")
+    repository = (data.get("data") or {}).get("repository") or {}
+    return parse_pr_graphql_payload(repository.get("pullRequest"))
 
 # --- Search for repositories with the specified topic using GitHub search API ---
 def get_repositories_with_topic(org, topic):
@@ -277,10 +374,8 @@ def get_pull_requests(repo_info):
         owner, repo = repo_full_name.split("/")
         pr_number = pr["number"]
 
-        # Fetch issues via GraphQL
-        issues = get_linked_issues_via_graphql(owner, repo, pr_number)
-        # Fetch projects via GraphQL
-        projects = get_pr_projects_via_graphql(owner, repo, pr_number)
+        # One GraphQL call covers issues, projects, checks, reviews, and the latest comment.
+        details = get_pr_details_via_graphql(owner, repo, pr_number)
 
         user = pr.get("user") or {}
         login = user.get("login", "")
@@ -296,12 +391,20 @@ def get_pull_requests(repo_info):
             "repo": repo_full_name,
             "repo_name": repo,
             "repo_group": repo_group,
-            "issues": issues,
-            "projects": projects,
+            "issues": details["issues"],
+            "projects": details["projects"],
+            "ci": details["ci"],
+            "approval": details["approval"],
+            "comment": details["comment"],
+            "comment_title": details["comment_title"],
             "status": STATUS_DRAFT if is_draft else STATUS_NOT_DRAFT
         }
         if VERBOSE:
-            print(f"[PR] Collected details for PR #{pr_number}: issues={issues}, projects={projects}")
+            print(
+                f"[PR] Collected details for PR #{pr_number}: "
+                f"issues={details['issues']}, projects={details['projects']}, "
+                f"ci={details['ci']}, approval={details['approval']}"
+            )
         # Collect reasons why this PR requires attention
         pr_details["attention_reasons"] = get_attention_reasons(pr_details)
         if VERBOSE and pr_details["attention_reasons"]:
@@ -393,6 +496,25 @@ HTML_TEMPLATE = """
             min-width: 220px;
         }
         #visible-count { color: #555; }
+        .ci-mark {
+            display: inline-block;
+            padding: 2px 8px;
+            white-space: nowrap;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+        }
+        .ci-red { background: #f8d0d0; color: #9b1c1c; }
+        .ci-progress { background: #fff3cd; color: #8a6d00; }
+        .ci-green { background: #d8f3dc; color: #1b7a32; }
+        .ci-none { background: #eee; color: #666; font-weight: 600; }
+        .comment-clip {
+            max-width: 280px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
         .attention-icon { color: red; font-weight: bold; display: block; }
         .attention-text { margin-left: 4px; font-style: italic; }
     </style>
@@ -433,9 +555,12 @@ HTML_TEMPLATE = """
                 <th class='sort' data-sort='title'>📌 PR name</th>
                 <th class='sort' data-sort='author'>👤 PR author</th>
                 <th class='sort' data-sort='status'>📋 Status</th>
+                <th class='sort' data-sort='ci'>CI</th>
+                <th class='sort' data-sort='approval'>Approvals</th>
                 <th class='sort' data-sort='age'>📅 PR age</th>
                 <th class='sort' data-sort='assignee'>👤 PR assignee</th>
                 <th>🔗 PR issues</th>
+                <th class='sort' data-sort='comment'>Last comment</th>
                 <th class='sort' data-sort='attention'>❗ Attention Required</th>
             </tr>
         </thead>
@@ -451,6 +576,18 @@ HTML_TEMPLATE = """
                     <td class='title'><a href='{{ pr.html_url }}' target='_blank'>{{ pr.title }}</a></td>
                     <td class='author'>{{ pr.user }}</td>
                     <td class='status'>{{ pr.status }}</td>
+                    <td class='ci'>
+                        {% if pr.ci == 'red' %}
+                        <span class='ci-mark ci-red' title='At least one check failed'>red</span>
+                        {% elif pr.ci == 'in progress' %}
+                        <span class='ci-mark ci-progress' title='Checks are still running'>in progress</span>
+                        {% elif pr.ci == 'green' %}
+                        <span class='ci-mark ci-green' title='No failing checks'>green</span>
+                        {% else %}
+                        <span class='ci-mark ci-none'>no checks</span>
+                        {% endif %}
+                    </td>
+                    <td class='approval'>{{ pr.approval }}</td>
                     <td class='age'>{{ pr.age }}</td>
                     <td class='assignee'>{{ pr.assignee }}</td>
                     <td class='issues'>
@@ -458,6 +595,7 @@ HTML_TEMPLATE = """
                             <a href='{{ issue[0] }}' target='_blank'>{{ issue[1] }}</a>{% if not loop.last %}, {% endif %}
                         {% endfor %}
                     </td>
+                    <td class='comment'><div class='comment-clip' title='{{ pr.comment_title }}'>{{ pr.comment }}</div></td>
                     <td class='attention'>
                         {% if pr.attention_reasons %}
                             <span class="attention-icon">❗</span>
@@ -537,7 +675,7 @@ HTML_TEMPLATE = """
         }
 
         var prList = new List('pr-report', {
-            valueNames: ['repo', 'title', 'author', 'status', 'age', 'assignee', 'issues', 'attention'],
+            valueNames: ['repo', 'title', 'author', 'status', 'ci', 'approval', 'age', 'assignee', 'issues', 'comment', 'attention'],
             page: 10000
         });
 
