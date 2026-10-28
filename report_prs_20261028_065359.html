@@ -6,7 +6,7 @@
     <title>GitHub PR Report</title>
     <script src='https://unpkg.com/list.js@1.5.0/dist/list.min.js'></script>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
+        body { font-family: Arial, sans-serif; padding: 20px; background: #fff; color: #222; }
         .rules-panel {
             border: 1px solid #ccc;
             padding: 10px;
@@ -18,14 +18,69 @@
             margin-bottom: 8px;
         }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; vertical-align: top; }
-        th { cursor: pointer; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; vertical-align: top; color: #222; }
+        th { cursor: pointer; background: #f3f3f3; }
         .color-0 { background-color: #f9f9f9; }
         .color-1 { background-color: #e7f4ff; }
         .color-2 { background-color: #fef9e7; }
         .color-3 { background-color: #eaf7ea; }
         .color-4 { background-color: #fceeee; }
-        #statusFilter { margin-left: 5px; margin-right: 15px; padding: 4px; }
+        .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+        .filter-dropdown { position: relative; }
+        .filter-toggle {
+            background: #fff;
+            border: 1px solid #bbb;
+            border-radius: 4px;
+            padding: 6px 28px 6px 10px;
+            cursor: pointer;
+            font: inherit;
+            text-align: left;
+            position: relative;
+        }
+        .filter-toggle::after {
+            content: "";
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            margin-top: -2px;
+            border: 5px solid transparent;
+            border-top-color: #333;
+        }
+        .filter-dropdown.open .filter-toggle::after {
+            margin-top: -7px;
+            border-top-color: transparent;
+            border-bottom-color: #333;
+        }
+        .filter-menu {
+            display: none;
+            position: absolute;
+            z-index: 20;
+            top: calc(100% + 4px);
+            left: 0;
+            min-width: 100%;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 8px 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+        .filter-dropdown.open .filter-menu { display: block; }
+        .filter-menu label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 4px 0;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .pr-search {
+            padding: 6px 8px;
+            border: 1px solid #bbb;
+            border-radius: 4px;
+            font: inherit;
+            min-width: 220px;
+        }
+        #visible-count { color: #555; }
         .attention-icon { color: red; font-weight: bold; display: block; }
         .attention-text { margin-left: 4px; font-style: italic; }
     </style>
@@ -41,17 +96,79 @@
              to current Sprint directly (set 'Project' field in PR)</div>
     </div>
 
-    <button id="toggleButton" onclick='toggleCLPLCI()'>Show PRs from NetcrackerCLPLCI</button>
-
-    <label for="statusFilter">Status:</label>
-    <select id="statusFilter" onchange="applyFilters()">
-        <option value="Not Draft" selected>Not Draft</option>
-        <option value="Draft">Draft</option>
-        <option value="all">All</option>
-    </select>
-
-    <input class='search' placeholder='Filter PRs...'>
-    <table id='pr-table'>
+    <div id='pr-report'>
+    <div class='filters'>
+        
+        <div class='filter-dropdown' data-prefix='User' data-attr='data-user-group'>
+            <button type='button' class='filter-toggle' aria-haspopup='true' aria-expanded='false'></button>
+            <div class='filter-menu' role='group' aria-label='User'>
+                
+                <label>
+                    <input type='checkbox' value='clplci'>
+                    NetcrackerCLPLCI
+                </label>
+                
+                <label>
+                    <input type='checkbox' value='dependabot'>
+                    dependabot[bot]
+                </label>
+                
+                <label>
+                    <input type='checkbox' value='other-bots'>
+                    other bots
+                </label>
+                
+                <label>
+                    <input type='checkbox' value='humans' checked>
+                    Humans
+                </label>
+                
+            </div>
+        </div>
+        
+        <div class='filter-dropdown' data-prefix='Repositories' data-attr='data-repo-group'>
+            <button type='button' class='filter-toggle' aria-haspopup='true' aria-expanded='false'></button>
+            <div class='filter-menu' role='group' aria-label='Repositories'>
+                
+                <label>
+                    <input type='checkbox' value='archived'>
+                    Archived
+                </label>
+                
+                <label>
+                    <input type='checkbox' value='old-polyrepos'>
+                    Old polyrepos
+                </label>
+                
+                <label>
+                    <input type='checkbox' value='monorepo' checked>
+                    Monorepo & Co
+                </label>
+                
+            </div>
+        </div>
+        
+        <div class='filter-dropdown' data-prefix='Status' data-attr='data-status'>
+            <button type='button' class='filter-toggle' aria-haspopup='true' aria-expanded='false'></button>
+            <div class='filter-menu' role='group' aria-label='Status'>
+                
+                <label>
+                    <input type='checkbox' value='Draft'>
+                    Draft
+                </label>
+                
+                <label>
+                    <input type='checkbox' value='Not Draft' checked>
+                    Not Draft
+                </label>
+                
+            </div>
+        </div>
+        
+        <input class='pr-search' placeholder='Filter PRs...' aria-label='Filter PRs'>
+        <span id='visible-count'></span>
+    </div>
+    <table>
         <thead>
             <tr>
                 <th class='sort' data-sort='repo'>📁 Repository</th>
@@ -71,31 +188,14 @@
                     
                 
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/958' target='_blank'>fix(portal-backend): Preserve the requested revision when checking version errors</a></td>
-                    <td class='author'>alagishev</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/975' target='_blank'>refactor: tidy System Information after the review</a></td>
+                    <td class='author'>vOrigins</td>
                     <td class='status'>Not Draft</td>
                     <td class='age'>0 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
-                        
-                            <a href='https://github.com/Netcracker/qubership-apihub/issues/839' target='_blank'>[Bug][gap][BE] Revision comparison fails with PreviousVersionHasErrors when only the latest revision has errors</a>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-0' data-status='Not Draft'>
-                    <td class='repo'>Netcracker/qubership-apihub</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/956' target='_blank'>feat(ui): show build versions of all components in System Information</a></td>
-                    <td class='author'>alagishev</td>
-                    <td class='status'>Not Draft</td>
-                    <td class='age'>0 days</td>
-                    <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -106,14 +206,119 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/955' target='_blank'>fix(ui-tests): Guard snapshot portal-link assertions on localhost</a></td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/974' target='_blank'>fix(ci): point the Kind agent at the ingress</a></td>
                     <td class='author'>alagishev</td>
                     <td class='status'>Not Draft</td>
                     <td class='age'>0 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">No linked issues and title does not start with 'chore', 'doc', or 'tech'<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
+                    <td class='repo'>Netcracker/qubership-apihub</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/966' target='_blank'>test(api-unifier): give channel fixtures an address with their parame…</a></td>
+                    <td class='author'>makeev-pavel</td>
+                    <td class='status'>Not Draft</td>
+                    <td class='age'>0 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td class='issues'>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">No linked issues and title does not start with 'chore', 'doc', or 'tech'<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
+                    <td class='repo'>Netcracker/qubership-apihub</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/964' target='_blank'>fix(ui): show dashboard publication feedback like a package and tidy the publication error code</a></td>
+                    <td class='author'>vOrigins</td>
+                    <td class='status'>Not Draft</td>
+                    <td class='age'>0 days</td>
+                    <td class='assignee'>alagishev</td>
+                    <td class='issues'>
+                        
+                            <a href='https://github.com/Netcracker/qubership-apihub/issues/885' target='_blank'>[FE] Show version publication errors in UI follow-up</a>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
+                    <td class='repo'>Netcracker/qubership-apihub</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/963' target='_blank'>fix: read the apihub-validate ESLint report from a file and update APM packages</a></td>
+                    <td class='author'>vOrigins</td>
+                    <td class='status'>Not Draft</td>
+                    <td class='age'>0 days</td>
+                    <td class='assignee'>alagishev</td>
+                    <td class='issues'>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">No linked issues and title does not start with 'chore', 'doc', or 'tech'</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
+                    <td class='repo'>Netcracker/qubership-apihub</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/962' target='_blank'>docs(api): baseline releaseVersionPattern for Agent UI rework</a></td>
+                    <td class='author'>zloiadil</td>
+                    <td class='status'>Not Draft</td>
+                    <td class='age'>0 days</td>
+                    <td class='assignee'>alagishev</td>
+                    <td class='issues'>
+                        
+                            <a href='https://github.com/Netcracker/qubership-apihub/issues/537' target='_blank'>[BE] Agent has Warning "Services without baseline version" due to Agent Validation Results</a>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
+                    <td class='repo'>Netcracker/qubership-apihub</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/958' target='_blank'>fix(portal-backend): Preserve the requested revision when checking version errors</a></td>
+                    <td class='author'>alagishev</td>
+                    <td class='status'>Not Draft</td>
+                    <td class='age'>1 days</td>
+                    <td class='assignee'>alagishev</td>
+                    <td class='issues'>
+                        
+                            <a href='https://github.com/Netcracker/qubership-apihub/issues/839' target='_blank'>[Bug][gap][BE] Revision comparison fails with PreviousVersionHasErrors when only the latest revision has errors</a>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
+                    <td class='repo'>Netcracker/qubership-apihub</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/955' target='_blank'>fix(ui-tests): Guard snapshot portal-link assertions on localhost</a></td>
+                    <td class='author'>alagishev</td>
+                    <td class='status'>Not Draft</td>
+                    <td class='age'>1 days</td>
+                    <td class='assignee'>alagishev</td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/837' target='_blank'>[Bug][Agent] Snapshot name with space leads to error</a>
                         
@@ -123,14 +328,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='dependabot' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/954' target='_blank'>chore: deps: bump @types/node in /</a></td>
                     <td class='author'>dependabot[bot]</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>1 days</td>
+                    <td class='age'>2 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -141,14 +346,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='dependabot' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/951' target='_blank'>chore: deps: bump @typescript-eslint/parser in /</a></td>
                     <td class='author'>dependabot[bot]</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>1 days</td>
+                    <td class='age'>2 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -159,14 +364,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='dependabot' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/950' target='_blank'>chore: deps: bump @typescript-eslint/eslint-plugin in /</a></td>
                     <td class='author'>dependabot[bot]</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>1 days</td>
+                    <td class='age'>2 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -177,14 +382,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='dependabot' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/949' target='_blank'>chore: deps: bump @types/node in /</a></td>
                     <td class='author'>dependabot[bot]</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>1 days</td>
+                    <td class='age'>2 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -195,14 +400,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='dependabot' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/948' target='_blank'>chore: deps: bump the github-actions group across 2 directories with 12 updates</a></td>
                     <td class='author'>dependabot[bot]</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>1 days</td>
+                    <td class='age'>2 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -213,14 +418,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/944' target='_blank'>fix(portal-backend): Validate parent kind when creating packages</a></td>
                     <td class='author'>alagishev</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>2 days</td>
+                    <td class='age'>3 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/858' target='_blank'>[Bug]: Package kind for parent id is not validated on package create</a>
                         
@@ -230,14 +435,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/943' target='_blank'>fix(deps): resolve high Dependabot alerts</a></td>
                     <td class='author'>alagishev</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>3 days</td>
+                    <td class='age'>4 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -248,14 +453,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/930' target='_blank'>fix: update tests for role</a></td>
                     <td class='author'>dmuratkan</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>3 days</td>
+                    <td class='age'>4 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -266,14 +471,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/923' target='_blank'>feat(api-linter-service): split AI issue deduplication into token-budgeted requests</a></td>
                     <td class='author'>karpov-aleksandr</td>
                     <td class='status'>Not Draft</td>
                     <td class='age'>4 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/852' target='_blank'>[Feat]: Consider limited context for AI linter</a>
                         
@@ -283,14 +488,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='dependabot' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/918' target='_blank'>chore: deps: bump typescript in /</a></td>
                     <td class='author'>dependabot[bot]</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>4 days</td>
+                    <td class='age'>5 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -301,14 +506,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='dependabot' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/917' target='_blank'>chore: deps: bump @asyncapi/parser in /</a></td>
                     <td class='author'>dependabot[bot]</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>4 days</td>
+                    <td class='age'>5 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -319,14 +524,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='dependabot' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/916' target='_blank'>chore: deps: bump fast-equals in /</a></td>
                     <td class='author'>dependabot[bot]</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>4 days</td>
+                    <td class='age'>5 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -337,14 +542,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/912' target='_blank'>ci: exercise affected checks for the API linter</a></td>
                     <td class='author'>alagishev</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>4 days</td>
+                    <td class='age'>5 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/123' target='_blank'>[26.3] OpenAPI Operations/Diff Rendering in APIHUB Doc Viewer</a>
                         
@@ -354,14 +559,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/910' target='_blank'>ci: exercise affected checks across the monorepo stack</a></td>
                     <td class='author'>alagishev</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>4 days</td>
+                    <td class='age'>5 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/123' target='_blank'>[26.3] OpenAPI Operations/Diff Rendering in APIHUB Doc Viewer</a>
                         
@@ -371,14 +576,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='dependabot' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/906' target='_blank'>chore: deps: bump nx in /</a></td>
                     <td class='author'>dependabot[bot]</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>4 days</td>
+                    <td class='age'>5 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -389,14 +594,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='dependabot' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/905' target='_blank'>chore: deps: bump @types/react in /frontend/api-doc-viewer</a></td>
                     <td class='author'>dependabot[bot]</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>4 days</td>
+                    <td class='age'>5 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -407,14 +612,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='dependabot' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/903' target='_blank'>chore: deps: bump @nx/js in /</a></td>
                     <td class='author'>dependabot[bot]</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>4 days</td>
+                    <td class='age'>5 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -425,14 +630,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='dependabot' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/895' target='_blank'>chore: deps: bump k8s.io/apimachinery in /backend/agent</a></td>
                     <td class='author'>dependabot[bot]</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>4 days</td>
+                    <td class='age'>5 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -443,14 +648,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='dependabot' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/894' target='_blank'>chore: deps: bump github.com/spf13/viper in /backend/agent</a></td>
                     <td class='author'>dependabot[bot]</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>4 days</td>
+                    <td class='age'>5 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -461,14 +666,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='dependabot' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/893' target='_blank'>chore: deps: bump github.com/shaj13/libcache in /backend/agent</a></td>
                     <td class='author'>dependabot[bot]</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>4 days</td>
+                    <td class='age'>5 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -479,14 +684,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='dependabot' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/890' target='_blank'>chore: deps: bump github.com/netcracker/qubership-core-lib-go-paas-mediation-client/v8 in /backend/agent</a></td>
                     <td class='author'>dependabot[bot]</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>4 days</td>
+                    <td class='age'>5 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -497,14 +702,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/879' target='_blank'>fix: add missing return after error responses in export, comparison a…</a></td>
                     <td class='author'>arycha1990</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>6 days</td>
+                    <td class='age'>7 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/854' target='_blank'>fix: add missing return after error responses in export, comparison and transition handlers</a>
                         
@@ -514,57 +719,19 @@
                     </td>
                 </tr>
                 
-                <tr class='color-0' data-status='Not Draft'>
-                    <td class='repo'>Netcracker/qubership-apihub</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/778' target='_blank'>feat: add retry validation config</a></td>
-                    <td class='author'>dmuratkan</td>
-                    <td class='status'>Not Draft</td>
-                    <td class='age'>68 days</td>
-                    <td class='assignee'>alagishev</td>
-                    <td>
-                        
-                            <a href='https://github.com/Netcracker/qubership-apihub/issues/669' target='_blank'>[Bug][BE] Quality validation failed due to failed attempt to get operation</a>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <div class="attention-text">PR open for more than 10 days</div>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-0' data-status='Draft'>
-                    <td class='repo'>Netcracker/qubership-apihub</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/755' target='_blank'>chore: Include MCP test suite</a></td>
-                    <td class='author'>viacheslav-lunev</td>
-                    <td class='status'>Draft</td>
-                    <td class='age'>87 days</td>
-                    <td class='assignee'>alagishev</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
-                        
-                    </td>
-                </tr>
-                
             
                 
                     
                 
                 
-                <tr class='color-1' data-status='Not Draft'>
+                <tr class='color-1' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-backend</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-backend/pull/608' target='_blank'>fix: add missing return after error responses in export, comparison and transition handlers  #854</a></td>
                     <td class='author'>arycha1990</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>4 days</td>
+                    <td class='age'>5 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -575,14 +742,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-1' data-status='Not Draft'>
+                <tr class='color-1' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-backend</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-backend/pull/607' target='_blank'>feat: support refPackageId in operation changes</a></td>
                     <td class='author'>dmuratkan</td>
                     <td class='status'>Not Draft</td>
                     <td class='age'>5 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/766' target='_blank'>[BE] Support refPackageId for Dashboard context in Operation Changes API</a>
                         
@@ -592,14 +759,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-1' data-status='Not Draft'>
+                <tr class='color-1' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-backend</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-backend/pull/598' target='_blank'>feat: analyze migration skill</a></td>
                     <td class='author'>dmuratkan</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>11 days</td>
+                    <td class='age'>12 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/482' target='_blank'>Migration results analysis tool</a>
                         
@@ -612,14 +779,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-1' data-status='Not Draft'>
+                <tr class='color-1' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-backend</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-backend/pull/596' target='_blank'>fix: safesync recover panics</a></td>
                     <td class='author'>dmuratkan</td>
                     <td class='status'>Not Draft</td>
                     <td class='age'>14 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/853' target='_blank'>fix: SafeSync does not recover — panic escapes the wrapper 13 migration stages rely on</a>
                         
@@ -632,14 +799,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-1' data-status='Not Draft'>
+                <tr class='color-1' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-backend</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-backend/pull/567' target='_blank'>fix: Invalid suspicious builds for dashboard comparisons</a></td>
                     <td class='author'>dmuratkan</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>37 days</td>
+                    <td class='age'>38 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/849' target='_blank'>[Bug]: Invalid suspicious builds for dashboard comparisons</a>
                         
@@ -652,14 +819,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-1' data-status='Not Draft'>
+                <tr class='color-1' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-backend</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-backend/pull/566' target='_blank'>feat: Grouping functionality for DDL tables</a></td>
                     <td class='author'>viacheslav-lunev</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>41 days</td>
+                    <td class='age'>42 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -670,14 +837,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-1' data-status='Not Draft'>
+                <tr class='color-1' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-backend</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-backend/pull/565' target='_blank'>feat: add ability to search in groups</a></td>
                     <td class='author'>dmuratkan</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>42 days</td>
+                    <td class='age'>43 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/784' target='_blank'>[BE][MCP] add ability to search API in a list of explicitly passed groups under workspace</a>
                         
@@ -690,14 +857,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-1' data-status='Not Draft'>
+                <tr class='color-1' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-backend</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-backend/pull/553' target='_blank'>fix: roles hierarchy order validation</a></td>
                     <td class='author'>dmuratkan</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>47 days</td>
+                    <td class='age'>48 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/734' target='_blank'>[Bug][FE] Changed Roles Hierarchy can't be saved</a>
                         
@@ -710,14 +877,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-1' data-status='Draft'>
+                <tr class='color-1' data-status='Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-backend</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-backend/pull/474' target='_blank'>Bugfix/dashboard deletion adopt tests</a></td>
                     <td class='author'>iurii-golovinskii</td>
                     <td class='status'>Draft</td>
                     <td class='age'>124 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -728,14 +895,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-1' data-status='Draft'>
+                <tr class='color-1' data-status='Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-backend</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-backend/pull/407' target='_blank'>docs: MCP API</a></td>
                     <td class='author'>makeev-pavel</td>
                     <td class='status'>Draft</td>
-                    <td class='age'>187 days</td>
+                    <td class='age'>188 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -751,14 +918,14 @@
                     
                 
                 
-                <tr class='color-2' data-status='Draft'>
+                <tr class='color-2' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-ui</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-ui/pull/331' target='_blank'>fix: stretch change rows to the full width of the API changes table</a></td>
                     <td class='author'>iurii-golovinskii</td>
-                    <td class='status'>Draft</td>
-                    <td class='age'>3 days</td>
+                    <td class='status'>Not Draft</td>
+                    <td class='age'>4 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -769,14 +936,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-2' data-status='Not Draft'>
+                <tr class='color-2' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-ui</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-ui/pull/322' target='_blank'>fix: agent snapshot status stops updating before all builds are created</a></td>
                     <td class='author'>makeev-pavel</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>20 days</td>
+                    <td class='age'>21 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/820' target='_blank'>[Bug]: Snapshot status is not updated for long running builds</a>
                         
@@ -789,14 +956,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-2' data-status='Draft'>
+                <tr class='color-2' data-status='Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-ui</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-ui/pull/278' target='_blank'>feat: test Grafana Faro integration</a></td>
                     <td class='author'>asatt</td>
                     <td class='status'>Draft</td>
-                    <td class='age'>118 days</td>
+                    <td class='age'>119 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -807,14 +974,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-2' data-status='Draft'>
+                <tr class='color-2' data-status='Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-ui</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-ui/pull/136' target='_blank'>chore: code style pilot</a></td>
                     <td class='author'>b41ex</td>
                     <td class='status'>Draft</td>
-                    <td class='age'>438 days</td>
+                    <td class='age'>439 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/171' target='_blank'>[FE] Setup Consistent Code Style Environment</a>
                         
@@ -827,14 +994,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-2' data-status='Not Draft'>
+                <tr class='color-2' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-ui</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-ui/pull/100' target='_blank'>chore(code-style): example eslint</a></td>
                     <td class='author'>vOrigins</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>517 days</td>
+                    <td class='age'>518 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/171' target='_blank'>[FE] Setup Consistent Code Style Environment</a>
                         
@@ -847,14 +1014,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-2' data-status='Not Draft'>
+                <tr class='color-2' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-ui</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-ui/pull/99' target='_blank'>chore(code-style): example dprint</a></td>
                     <td class='author'>vOrigins</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>517 days</td>
+                    <td class='age'>518 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/171' target='_blank'>[FE] Setup Consistent Code Style Environment</a>
                         
@@ -867,14 +1034,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-2' data-status='Draft'>
+                <tr class='color-2' data-status='Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-ui</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-ui/pull/47' target='_blank'>docs: user guide for dashboard version and operation group creation from CSV file</a></td>
                     <td class='author'>nilesh25890</td>
                     <td class='status'>Draft</td>
-                    <td class='age'>581 days</td>
+                    <td class='age'>582 days</td>
                     <td class='assignee'>zloiadil</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -890,14 +1057,14 @@
                     
                 
                 
-                <tr class='color-3' data-status='Not Draft'>
+                <tr class='color-3' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-postman-collections</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-postman-collections/pull/81' target='_blank'>fix: update tests for role</a></td>
                     <td class='author'>dmuratkan</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>7 days</td>
+                    <td class='age'>8 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/734' target='_blank'>[Bug][FE] Changed Roles Hierarchy can't be saved</a>
                         
@@ -907,14 +1074,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-3' data-status='Draft'>
+                <tr class='color-3' data-status='Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-postman-collections</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-postman-collections/pull/71' target='_blank'>feat: Add MCP E2E collection</a></td>
                     <td class='author'>viacheslav-lunev</td>
                     <td class='status'>Draft</td>
-                    <td class='age'>87 days</td>
+                    <td class='age'>88 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -925,14 +1092,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-3' data-status='Draft'>
+                <tr class='color-3' data-status='Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-postman-collections</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-postman-collections/pull/59' target='_blank'>Add retries to some steps</a></td>
                     <td class='author'>viacheslav-lunev</td>
                     <td class='status'>Draft</td>
-                    <td class='age'>168 days</td>
+                    <td class='age'>169 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -948,14 +1115,14 @@
                     
                 
                 
-                <tr class='color-4' data-status='Not Draft'>
+                <tr class='color-4' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-api-linter-service</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-api-linter-service/pull/135' target='_blank'>fix(validation): return one response body and keep partial linter results</a></td>
                     <td class='author'>alagishev</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>17 days</td>
+                    <td class='age'>18 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -966,14 +1133,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-4' data-status='Not Draft'>
+                <tr class='color-4' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-api-linter-service</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-api-linter-service/pull/110' target='_blank'>feat: retry validation</a></td>
                     <td class='author'>dmuratkan</td>
                     <td class='status'>Not Draft</td>
                     <td class='age'>68 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/669' target='_blank'>[Bug][BE] Quality validation failed due to failed attempt to get operation</a>
                         
@@ -986,14 +1153,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-4' data-status='Not Draft'>
+                <tr class='color-4' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-api-linter-service</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-api-linter-service/pull/68' target='_blank'>fix: enable score calculation for graphql APIs in version task processor</a></td>
                     <td class='author'>sujithn-nc</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>188 days</td>
+                    <td class='age'>189 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/860' target='_blank'>[Bug]: Scoring API gives 404 Validation not found, for graphQL APIs</a>
                         
@@ -1011,14 +1178,14 @@
                     
                 
                 
-                <tr class='color-0' data-status='Not Draft'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub-aux-tools</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-aux-tools/pull/11' target='_blank'>feat: DDL export and import tool</a></td>
                     <td class='author'>viacheslav-lunev</td>
                     <td class='status'>Not Draft</td>
                     <td class='age'>47 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -1039,14 +1206,14 @@
                     
                 
                 
-                <tr class='color-2' data-status='Draft'>
+                <tr class='color-2' data-status='Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-agents-backend</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-agents-backend/pull/43' target='_blank'>fix: snapshot groups creation</a></td>
                     <td class='author'>viacheslav-lunev</td>
                     <td class='status'>Draft</td>
-                    <td class='age'>302 days</td>
+                    <td class='age'>303 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -1062,124 +1229,19 @@
                     
                 
                 
-                <tr class='color-3' data-status='Not Draft'>
-                    <td class='repo'>Netcracker/qubership-apihub-sniffer-agent</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-sniffer-agent/pull/70' target='_blank'>chore: deps: bump github.com/netcracker/qubership-core-lib-go-paas-mediation-client/v8 from 8.0.1 to 8.6.3 in /qubership-apihub-sniffer-agent</a></td>
-                    <td class='author'>dependabot[bot]</td>
-                    <td class='status'>Not Draft</td>
-                    <td class='age'>168 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-3' data-status='Not Draft'>
-                    <td class='repo'>Netcracker/qubership-apihub-sniffer-agent</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-sniffer-agent/pull/69' target='_blank'>chore: deps: bump github.com/netcracker/qubership-core-lib-go/v3 from 3.0.1 to 3.9.1 in /qubership-apihub-sniffer-agent</a></td>
-                    <td class='author'>dependabot[bot]</td>
-                    <td class='status'>Not Draft</td>
-                    <td class='age'>168 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-3' data-status='Not Draft'>
-                    <td class='repo'>Netcracker/qubership-apihub-sniffer-agent</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-sniffer-agent/pull/66' target='_blank'>chore: deps: bump github.com/minio/minio-go/v7 from 7.0.97 to 7.1.0 in /qubership-apihub-sniffer-agent</a></td>
-                    <td class='author'>dependabot[bot]</td>
-                    <td class='status'>Not Draft</td>
-                    <td class='age'>182 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-3' data-status='Not Draft'>
-                    <td class='repo'>Netcracker/qubership-apihub-sniffer-agent</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-sniffer-agent/pull/50' target='_blank'>chore: deps: bump github.com/netcracker/qubership-core-lib-go/v3 from 3.0.1 to 3.4.0 in /qubership-apihub-sniffer-agent</a></td>
-                    <td class='author'>dependabot[bot]</td>
-                    <td class='status'>Not Draft</td>
-                    <td class='age'>259 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-3' data-status='Not Draft'>
-                    <td class='repo'>Netcracker/qubership-apihub-sniffer-agent</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-sniffer-agent/pull/49' target='_blank'>chore: deps: bump github.com/netcracker/qubership-core-lib-go-paas-mediation-client/v8 from 8.0.1 to 8.3.0 in /qubership-apihub-sniffer-agent</a></td>
-                    <td class='author'>dependabot[bot]</td>
-                    <td class='status'>Not Draft</td>
-                    <td class='age'>259 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
-                        
-                    </td>
-                </tr>
-                
             
                 
                     
                 
                 
-            
-                
-                    
-                
-                
-            
-                
-                    
-                
-                
-            
-                
-                    
-                
-                
-                <tr class='color-2' data-status='Draft'>
+                <tr class='color-4' data-status='Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-api-diff</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-diff/pull/68' target='_blank'>feat: introduce classifyRuleId's for rules</a></td>
                     <td class='author'>b41ex</td>
                     <td class='status'>Draft</td>
-                    <td class='age'>199 days</td>
+                    <td class='age'>200 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/503' target='_blank'>[FE] BWC engine - separate change identification and classification</a>
                         
@@ -1192,14 +1254,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-2' data-status='Not Draft'>
+                <tr class='color-4' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-api-diff</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-diff/pull/64' target='_blank'>feat: rules reclassification part 1</a></td>
                     <td class='author'>vOrigins</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>235 days</td>
+                    <td class='age'>236 days</td>
                     <td class='assignee'>b41ex</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/250' target='_blank'>[FE] api-diff rules reclassification - part 1</a>
                         
@@ -1217,14 +1279,19 @@
                     
                 
                 
-                <tr class='color-3' data-status='Not Draft'>
+            
+                
+                    
+                
+                
+                <tr class='color-1' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-compatibility-suites</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-compatibility-suites/pull/35' target='_blank'>feat: rules reclassification part 1</a></td>
                     <td class='author'>vOrigins</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>235 days</td>
+                    <td class='age'>236 days</td>
                     <td class='assignee'>b41ex</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/250' target='_blank'>[FE] api-diff rules reclassification - part 1</a>
                         
@@ -1237,14 +1304,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-3' data-status='Draft'>
+                <tr class='color-1' data-status='Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-compatibility-suites</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-compatibility-suites/pull/34' target='_blank'>fix: exclude openapi-only test ids for non-openapi specs</a></td>
                     <td class='author'>vOrigins</td>
                     <td class='status'>Draft</td>
-                    <td class='age'>243 days</td>
+                    <td class='age'>244 days</td>
                     <td class='assignee'>b41ex</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/483' target='_blank'>[FE] AsyncAPI: API Change Classification- reuse JSON Schema compatibility suite cases/tests</a>
                         
@@ -1272,111 +1339,14 @@
                     
                 
                 
-            
-                
-                    
-                
-                
-            
-                
-                    
-                
-                
-            
-                
-                    
-                
-                
-                <tr class='color-4' data-status='Not Draft'>
-                    <td class='repo'>Netcracker/qubership-apihub-traffic-analyzer</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-traffic-analyzer/pull/38' target='_blank'>chore: deps: bump github.com/minio/minio-go/v7 from 7.0.97 to 7.0.100 in /qubership-apihub-traffic-analyzer</a></td>
-                    <td class='author'>dependabot[bot]</td>
-                    <td class='status'>Not Draft</td>
-                    <td class='age'>203 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-4' data-status='Not Draft'>
-                    <td class='repo'>Netcracker/qubership-apihub-traffic-analyzer</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-traffic-analyzer/pull/37' target='_blank'>chore: deps: bump github.com/fatih/color from 1.18.0 to 1.19.0 in /qubership-apihub-traffic-analyzer</a></td>
-                    <td class='author'>dependabot[bot]</td>
-                    <td class='status'>Not Draft</td>
-                    <td class='age'>217 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-4' data-status='Not Draft'>
-                    <td class='repo'>Netcracker/qubership-apihub-traffic-analyzer</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-traffic-analyzer/pull/35' target='_blank'>chore: deps: bump github.com/xuri/excelize/v2 from 2.8.1 to 2.10.1 in /qubership-apihub-traffic-analyzer</a></td>
-                    <td class='author'>dependabot[bot]</td>
-                    <td class='status'>Not Draft</td>
-                    <td class='age'>238 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-4' data-status='Not Draft'>
-                    <td class='repo'>Netcracker/qubership-apihub-traffic-analyzer</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-traffic-analyzer/pull/34' target='_blank'>chore: deps: bump github.com/sirupsen/logrus from 1.9.3 to 1.9.4 in /qubership-apihub-traffic-analyzer</a></td>
-                    <td class='author'>dependabot[bot]</td>
-                    <td class='status'>Not Draft</td>
-                    <td class='age'>280 days</td>
-                    <td class='assignee'>Empty</td>
-                    <td>
-                        
-                    </td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
-                        
-                    </td>
-                </tr>
-                
-            
-                
-                    
-                
-                
-            
-                
-                    
-                
-                
-                <tr class='color-1' data-status='Draft'>
+                <tr class='color-4' data-status='Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-api-doc-viewer</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-doc-viewer/pull/83' target='_blank'>feat!: Replacement of `qubership-apihub-apispec-view` with new `OpenApiOperationViewer` and `OpenApiOperationDiffsViewer`</a></td>
                     <td class='author'>JayLim2</td>
                     <td class='status'>Draft</td>
-                    <td class='age'>7 days</td>
+                    <td class='age'>8 days</td>
                     <td class='assignee'>alagishev</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/783' target='_blank'>[FE] Update OpenAPI DocView/DiffView with new elements</a>
                         
@@ -1411,14 +1381,34 @@
                     
                 
                 
-                <tr class='color-1' data-status='Not Draft'>
+            
+                
+                    
+                
+                
+            
+                
+                    
+                
+                
+            
+                
+                    
+                
+                
+            
+                
+                    
+                
+                
+                <tr class='color-3' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-api-unifier</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-unifier/pull/55' target='_blank'>fix: null not considered a valid JSON value</a></td>
                     <td class='author'>b41ex</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>246 days</td>
+                    <td class='age'>247 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -1429,14 +1419,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-1' data-status='Not Draft'>
+                <tr class='color-3' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-api-unifier</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-unifier/pull/54' target='_blank'>feat: add specific protocols to bindings</a></td>
                     <td class='author'>b41ex</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>246 days</td>
+                    <td class='age'>247 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -1472,19 +1462,14 @@
                     
                 
                 
-            
-                
-                    
-                
-                
-                <tr class='color-2' data-status='Not Draft'>
+                <tr class='color-3' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-api-processor</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-processor/pull/126' target='_blank'>chore: refactor the api-processor test helpers</a></td>
                     <td class='author'>makeev-pavel</td>
                     <td class='status'>Not Draft</td>
                     <td class='age'>34 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/809' target='_blank'>[FE] api-processor test helpers/matchers refactoring</a>
                         
@@ -1497,14 +1482,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-2' data-status='Not Draft'>
+                <tr class='color-3' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-api-processor</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-processor/pull/125' target='_blank'>fix: report an operation change only from the pair that owns it</a></td>
                     <td class='author'>makeev-pavel</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>39 days</td>
+                    <td class='age'>40 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/834' target='_blank'>[Bug][FE] Empty Number of affected operations having breaking change</a>
                         
@@ -1517,14 +1502,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-2' data-status='Not Draft'>
+                <tr class='color-3' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-api-processor</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-processor/pull/122' target='_blank'>feat: report an operationId collision only when the documents differ</a></td>
                     <td class='author'>makeev-pavel</td>
                     <td class='status'>Not Draft</td>
-                    <td class='age'>41 days</td>
+                    <td class='age'>42 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                             <a href='https://github.com/Netcracker/qubership-apihub/issues/799' target='_blank'>[FE] Enhance builder validation to handle operationId collisions based on content comparison</a>
                         
@@ -1537,14 +1522,14 @@
                     </td>
                 </tr>
                 
-                <tr class='color-2' data-status='Draft'>
+                <tr class='color-3' data-status='Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-api-processor</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-processor/pull/107' target='_blank'>docs: plan for split APIHUB validation results by specification type</a></td>
                     <td class='author'>b41ex</td>
                     <td class='status'>Draft</td>
-                    <td class='age'>90 days</td>
+                    <td class='age'>91 days</td>
                     <td class='assignee'>Empty</td>
-                    <td>
+                    <td class='issues'>
                         
                     </td>
                     <td class='attention'>
@@ -1566,37 +1551,297 @@
                 
                 
             
+                
+                    
+                
+                
+                <tr class='color-1' data-status='Not Draft' data-user-group='dependabot' data-repo-group='archived'>
+                    <td class='repo'>Netcracker/qubership-apihub-sniffer-agent</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-sniffer-agent/pull/70' target='_blank'>chore: deps: bump github.com/netcracker/qubership-core-lib-go-paas-mediation-client/v8 from 8.0.1 to 8.6.3 in /qubership-apihub-sniffer-agent</a></td>
+                    <td class='author'>dependabot[bot]</td>
+                    <td class='status'>Not Draft</td>
+                    <td class='age'>169 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td class='issues'>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-1' data-status='Not Draft' data-user-group='dependabot' data-repo-group='archived'>
+                    <td class='repo'>Netcracker/qubership-apihub-sniffer-agent</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-sniffer-agent/pull/69' target='_blank'>chore: deps: bump github.com/netcracker/qubership-core-lib-go/v3 from 3.0.1 to 3.9.1 in /qubership-apihub-sniffer-agent</a></td>
+                    <td class='author'>dependabot[bot]</td>
+                    <td class='status'>Not Draft</td>
+                    <td class='age'>169 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td class='issues'>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-1' data-status='Not Draft' data-user-group='dependabot' data-repo-group='archived'>
+                    <td class='repo'>Netcracker/qubership-apihub-sniffer-agent</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-sniffer-agent/pull/66' target='_blank'>chore: deps: bump github.com/minio/minio-go/v7 from 7.0.97 to 7.1.0 in /qubership-apihub-sniffer-agent</a></td>
+                    <td class='author'>dependabot[bot]</td>
+                    <td class='status'>Not Draft</td>
+                    <td class='age'>183 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td class='issues'>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-1' data-status='Not Draft' data-user-group='dependabot' data-repo-group='archived'>
+                    <td class='repo'>Netcracker/qubership-apihub-sniffer-agent</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-sniffer-agent/pull/50' target='_blank'>chore: deps: bump github.com/netcracker/qubership-core-lib-go/v3 from 3.0.1 to 3.4.0 in /qubership-apihub-sniffer-agent</a></td>
+                    <td class='author'>dependabot[bot]</td>
+                    <td class='status'>Not Draft</td>
+                    <td class='age'>260 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td class='issues'>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-1' data-status='Not Draft' data-user-group='dependabot' data-repo-group='archived'>
+                    <td class='repo'>Netcracker/qubership-apihub-sniffer-agent</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-sniffer-agent/pull/49' target='_blank'>chore: deps: bump github.com/netcracker/qubership-core-lib-go-paas-mediation-client/v8 from 8.0.1 to 8.3.0 in /qubership-apihub-sniffer-agent</a></td>
+                    <td class='author'>dependabot[bot]</td>
+                    <td class='status'>Not Draft</td>
+                    <td class='age'>260 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td class='issues'>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+            
+                
+                    
+                
+                
+            
+                
+                    
+                
+                
+            
+                
+                    
+                
+                
+                <tr class='color-4' data-status='Not Draft' data-user-group='dependabot' data-repo-group='archived'>
+                    <td class='repo'>Netcracker/qubership-apihub-traffic-analyzer</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-traffic-analyzer/pull/38' target='_blank'>chore: deps: bump github.com/minio/minio-go/v7 from 7.0.97 to 7.0.100 in /qubership-apihub-traffic-analyzer</a></td>
+                    <td class='author'>dependabot[bot]</td>
+                    <td class='status'>Not Draft</td>
+                    <td class='age'>204 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td class='issues'>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-4' data-status='Not Draft' data-user-group='dependabot' data-repo-group='archived'>
+                    <td class='repo'>Netcracker/qubership-apihub-traffic-analyzer</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-traffic-analyzer/pull/37' target='_blank'>chore: deps: bump github.com/fatih/color from 1.18.0 to 1.19.0 in /qubership-apihub-traffic-analyzer</a></td>
+                    <td class='author'>dependabot[bot]</td>
+                    <td class='status'>Not Draft</td>
+                    <td class='age'>218 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td class='issues'>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-4' data-status='Not Draft' data-user-group='dependabot' data-repo-group='archived'>
+                    <td class='repo'>Netcracker/qubership-apihub-traffic-analyzer</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-traffic-analyzer/pull/35' target='_blank'>chore: deps: bump github.com/xuri/excelize/v2 from 2.8.1 to 2.10.1 in /qubership-apihub-traffic-analyzer</a></td>
+                    <td class='author'>dependabot[bot]</td>
+                    <td class='status'>Not Draft</td>
+                    <td class='age'>239 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td class='issues'>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-4' data-status='Not Draft' data-user-group='dependabot' data-repo-group='archived'>
+                    <td class='repo'>Netcracker/qubership-apihub-traffic-analyzer</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-traffic-analyzer/pull/34' target='_blank'>chore: deps: bump github.com/sirupsen/logrus from 1.9.3 to 1.9.4 in /qubership-apihub-traffic-analyzer</a></td>
+                    <td class='author'>dependabot[bot]</td>
+                    <td class='status'>Not Draft</td>
+                    <td class='age'>281 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td class='issues'>
+                        
+                    </td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">PR open for more than 10 days<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+            
         </tbody>
     </table>
+    </div>
     <script>
-        var showCLPLCI = false;
-
-        function toggleCLPLCI() {
-            showCLPLCI = !showCLPLCI;
-            document.getElementById('toggleButton').textContent = showCLPLCI
-                ? 'Hide PRs from NetcrackerCLPLCI'
-                : 'Show PRs from NetcrackerCLPLCI';
-            applyFilters();
-        }
-
-        function applyFilters() {
-            var statusValue = document.getElementById('statusFilter').value;
-            document.querySelectorAll('tbody.list tr').forEach(function(row) {
-                var visible = true;
-                if (!showCLPLCI && row.getAttribute('data-clplci') === 'true') {
-                    visible = false;
-                }
-                if (statusValue !== 'all' && row.getAttribute('data-status') !== statusValue) {
-                    visible = false;
-                }
-                row.style.display = visible ? '' : 'none';
+        function closeDropdowns() {
+            document.querySelectorAll('#pr-report .filter-dropdown.open').forEach(function(dropdown) {
+                dropdown.classList.remove('open');
+                dropdown.querySelector('.filter-toggle').setAttribute('aria-expanded', 'false');
             });
         }
 
-        var options = {
-            valueNames: ['repo', 'title', 'author', 'status', 'age', 'assignee', 'attention']
-        };
-        var prList = new List('pr-table', options);
+        function updateToggleLabel(dropdown) {
+            var boxes = dropdown.querySelectorAll('input[type="checkbox"]');
+            var selected = [];
+            boxes.forEach(function(box) {
+                if (box.checked) {
+                    selected.push(box.parentElement.textContent.trim());
+                }
+            });
+            var prefix = dropdown.getAttribute('data-prefix');
+            var text;
+            if (selected.length === 0) {
+                text = prefix + ': None';
+            } else if (selected.length === boxes.length) {
+                text = prefix + ': All';
+            } else {
+                text = prefix + ': ' + selected.join(', ');
+            }
+            var button = dropdown.querySelector('.filter-toggle');
+            button.textContent = text;
+            button.title = text;
+        }
+
+        function applyFilters() {
+            var query = document.querySelector('#pr-report .pr-search').value.trim().toLowerCase();
+            var criteria = [];
+            document.querySelectorAll('#pr-report .filter-dropdown').forEach(function(dropdown) {
+                var values = [];
+                dropdown.querySelectorAll('input[type="checkbox"]:checked').forEach(function(box) {
+                    values.push(box.value);
+                });
+                criteria.push({
+                    attr: dropdown.getAttribute('data-attr'),
+                    values: values
+                });
+                updateToggleLabel(dropdown);
+            });
+
+            var visibleCount = 0;
+            document.querySelectorAll('#pr-report tbody.list tr').forEach(function(row) {
+                var visible = true;
+                for (var i = 0; i < criteria.length; i++) {
+                    if (criteria[i].values.indexOf(row.getAttribute(criteria[i].attr)) === -1) {
+                        visible = false;
+                        break;
+                    }
+                }
+                if (visible && query && row.textContent.toLowerCase().indexOf(query) === -1) {
+                    visible = false;
+                }
+                row.style.display = visible ? '' : 'none';
+                if (visible) {
+                    visibleCount++;
+                }
+            });
+            var countLabel = visibleCount === 1 ? '1 pull request' : visibleCount + ' pull requests';
+            document.getElementById('visible-count').textContent = countLabel;
+        }
+
+        var prList = new List('pr-report', {
+            valueNames: ['repo', 'title', 'author', 'status', 'age', 'assignee', 'issues', 'attention'],
+            page: 10000
+        });
+
+        document.querySelectorAll('#pr-report .filter-toggle').forEach(function(button) {
+            button.addEventListener('click', function(event) {
+                event.stopPropagation();
+                var dropdown = button.parentElement;
+                var willOpen = !dropdown.classList.contains('open');
+                closeDropdowns();
+                if (willOpen) {
+                    dropdown.classList.add('open');
+                    button.setAttribute('aria-expanded', 'true');
+                }
+            });
+        });
+
+        document.querySelectorAll('#pr-report .filter-dropdown').forEach(function(dropdown) {
+            dropdown.addEventListener('click', function(event) {
+                event.stopPropagation();
+            });
+            dropdown.querySelectorAll('input[type="checkbox"]').forEach(function(box) {
+                box.addEventListener('change', applyFilters);
+            });
+        });
+
+        document.querySelector('#pr-report .pr-search').addEventListener('input', applyFilters);
+        document.addEventListener('click', closeDropdowns);
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeDropdowns();
+            }
+        });
+
+        document.querySelectorAll('#pr-report th.sort').forEach(function(header) {
+            header.addEventListener('click', function() {
+                applyFilters();
+            });
+        });
 
         applyFilters();
     </script>
