@@ -259,6 +259,180 @@
                 
                 <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
                     <td class='repo'>Netcracker/qubership-apihub</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/983' target='_blank'>fix(portal-backend): role hierarchy</a></td>
+                    <td class='author'>dmuratkan</td>
+                    <td class='status'>Not Draft</td>
+                    <td class='ci'>
+                        
+                        <span class='ci-mark ci-red' title='At least one check failed'>red</span>
+                        
+                    </td>
+                    <td class='approval'>not approved yet</td>
+                    <td class='age'>0 days</td>
+                    <td class='assignee'>alagishev</td>
+                    <td class='issues'>
+                        
+                    </td>
+                    <td class='comment'><div class='comment-clip' title='AI review of 67c2257: 1 inline finding(s). The summary is in the AI review comment of this pull request.'>AI review of 67c2257: 1 inline finding(s). The summary is in the AI review comment of this pull request.</div></td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">No linked issues and title does not start with 'chore', 'doc', or 'tech'<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
+                    <td class='repo'>Netcracker/qubership-apihub</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/982' target='_blank'>fix(portal-backend): recover panics in SafeSync</a></td>
+                    <td class='author'>dmuratkan</td>
+                    <td class='status'>Not Draft</td>
+                    <td class='ci'>
+                        
+                        <span class='ci-mark ci-red' title='At least one check failed'>red</span>
+                        
+                    </td>
+                    <td class='approval'>not approved yet</td>
+                    <td class='age'>0 days</td>
+                    <td class='assignee'>alagishev</td>
+                    <td class='issues'>
+                        
+                    </td>
+                    <td class='comment'><div class='comment-clip' title='<!-- ai-autonomous-state --> ### AI review of 47dd284 You move `recover()` into `noPanicFuncWErr.run`'s deferred closure, allowing `SafeSync` to return a converted error instead of letting a panic escape. The change is limited to `portal-backend`, and the added tests cover both panic-recovery paths. The implementation matches the migration FSM's existing expectation that stage panics return as er…'><!-- ai-autonomous-state --> ### AI review of 47dd284 You move `recover()` into `noPanicFuncWErr.run`'s deferred closure, allowing `SafeSync` to return a conve…</div></td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">No linked issues and title does not start with 'chore', 'doc', or 'tech'<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
+                    <td class='repo'>Netcracker/qubership-apihub</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/981' target='_blank'>fix(portal-backend): invalid suspicious builds for dashboard comparisons</a></td>
+                    <td class='author'>dmuratkan</td>
+                    <td class='status'>Not Draft</td>
+                    <td class='ci'>
+                        
+                        <span class='ci-mark ci-red' title='At least one check failed'>red</span>
+                        
+                    </td>
+                    <td class='approval'>not approved yet</td>
+                    <td class='age'>0 days</td>
+                    <td class='assignee'>alagishev</td>
+                    <td class='issues'>
+                        
+                    </td>
+                    <td class='comment'><div class='comment-clip' title='<!-- ai-autonomous-state --> ### AI review of be93077 You add referenced comparison rows to partial operations-migration snapshots and make comparison-document cleanup respect cached comparisons. I found no confirmed correctness or contract defect; the change affects database-backed migration validation and comparison-document persistence only. **Risk: medium.** The main exposure is partial dashb…'><!-- ai-autonomous-state --> ### AI review of be93077 You add referenced comparison rows to partial operations-migration snapshots and make comparison-document…</div></td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">No linked issues and title does not start with 'chore', 'doc', or 'tech'<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
+                    <td class='repo'>Netcracker/qubership-apihub</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/980' target='_blank'>feat(portal-backend): support refPackageId in operation changes</a></td>
+                    <td class='author'>dmuratkan</td>
+                    <td class='status'>Not Draft</td>
+                    <td class='ci'>
+                        
+                        <span class='ci-mark ci-red' title='At least one check failed'>red</span>
+                        
+                    </td>
+                    <td class='approval'>not approved yet</td>
+                    <td class='age'>0 days</td>
+                    <td class='assignee'>alagishev</td>
+                    <td class='issues'>
+                        
+                            <a href='https://github.com/Netcracker/qubership-apihub/issues/766' target='_blank'>[BE] Support refPackageId for Dashboard context in Operation Changes API</a>
+                        
+                    </td>
+                    <td class='comment'><div class='comment-clip' title='<!-- ai-autonomous-state --> ### AI review of 407d1b8 You add an optional `refPackageId` filter to single-operation change lookups and expand dashboard lookups across referenced package comparisons. The REST change is additive and does not require schema or deployment changes. I found no confirmed implementation defect, but the new selection behavior lacks a regression assertion. **Risk: low.** I…'><!-- ai-autonomous-state --> ### AI review of 407d1b8 You add an optional `refPackageId` filter to single-operation change lookups and expand dashboard lookups…</div></td>
+                    <td class='attention'>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
+                    <td class='repo'>Netcracker/qubership-apihub</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/979' target='_blank'>fix(linter): return one response body and keep partial linter results</a></td>
+                    <td class='author'>alagishev</td>
+                    <td class='status'>Not Draft</td>
+                    <td class='ci'>
+                        
+                        <span class='ci-mark ci-red' title='At least one check failed'>red</span>
+                        
+                    </td>
+                    <td class='approval'>not approved yet</td>
+                    <td class='age'>0 days</td>
+                    <td class='assignee'>alagishev</td>
+                    <td class='issues'>
+                        
+                    </td>
+                    <td class='comment'><div class='comment-clip' title='AI review of fa5540c: 2 inline finding(s). The summary is in the AI review comment of this pull request.'>AI review of fa5540c: 2 inline finding(s). The summary is in the AI review comment of this pull request.</div></td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">No linked issues and title does not start with 'chore', 'doc', or 'tech'<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
+                    <td class='repo'>Netcracker/qubership-apihub</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/978' target='_blank'>feat(logging): write one log line format in every service</a></td>
+                    <td class='author'>alagishev</td>
+                    <td class='status'>Not Draft</td>
+                    <td class='ci'>
+                        
+                        <span class='ci-mark ci-red' title='At least one check failed'>red</span>
+                        
+                    </td>
+                    <td class='approval'>not approved yet</td>
+                    <td class='age'>0 days</td>
+                    <td class='assignee'>alagishev</td>
+                    <td class='issues'>
+                        
+                    </td>
+                    <td class='comment'><div class='comment-clip' title='AI review of 3aace32: 1 inline finding(s). The summary is in the AI review comment of this pull request.'>AI review of 3aace32: 1 inline finding(s). The summary is in the AI review comment of this pull request.</div></td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">No linked issues and title does not start with 'chore', 'doc', or 'tech'<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
+                    <td class='repo'>Netcracker/qubership-apihub</td>
+                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/977' target='_blank'>fix(api-doc-viewer): keep React and its subpaths external without the plugin</a></td>
+                    <td class='author'>makeev-pavel</td>
+                    <td class='status'>Not Draft</td>
+                    <td class='ci'>
+                        
+                        <span class='ci-mark ci-progress' title='Checks are still running'>in progress</span>
+                        
+                    </td>
+                    <td class='approval'>not approved yet</td>
+                    <td class='age'>0 days</td>
+                    <td class='assignee'>Empty</td>
+                    <td class='issues'>
+                        
+                    </td>
+                    <td class='comment'><div class='comment-clip' title='AI review of fead00f: 1 inline finding(s). The summary is in the AI review comment of this pull request.'>AI review of fead00f: 1 inline finding(s). The summary is in the AI review comment of this pull request.</div></td>
+                    <td class='attention'>
+                        
+                            <span class="attention-icon">❗</span>
+                            <div class="attention-text">No linked issues and title does not start with 'chore', 'doc', or 'tech'<br/>No linked issues and not assigned to any GitHub Project</div>
+                        
+                    </td>
+                </tr>
+                
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='monorepo'>
+                    <td class='repo'>Netcracker/qubership-apihub</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/976' target='_blank'>fix: [FE][UI] stretch change rows to the full width of the API change…</a></td>
                     <td class='author'>iurii-golovinskii</td>
                     <td class='status'>Not Draft</td>
@@ -268,7 +442,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>0 days</td>
+                    <td class='age'>1 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
@@ -293,7 +467,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>0 days</td>
+                    <td class='age'>1 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
@@ -314,16 +488,16 @@
                     <td class='status'>Not Draft</td>
                     <td class='ci'>
                         
-                        <span class='ci-mark ci-progress' title='Checks are still running'>in progress</span>
+                        <span class='ci-mark ci-green' title='No failing checks'>green</span>
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>0 days</td>
+                    <td class='age'>1 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
                     </td>
-                    <td class='comment'><div class='comment-clip' title='<!-- ai-autonomous-state --> ### AI review of 5946073 You now install the agent in Kind without Helm's initial wait, patch its pod template with the ingress host aliases, and wait for the patched rollout. This is a focused CI fix for the agent's startup DNS path, and I found no correctness issue in the diff. **Risk: low.** A regression is unlikely to affect anything beyond agent-enabled Kind E2E…'><!-- ai-autonomous-state --> ### AI review of 5946073 You now install the agent in Kind without Helm's initial wait, patch its pod template with the ingress ho…</div></td>
+                    <td class='comment'><div class='comment-clip' title='AI review of c3a1675: 1 inline finding(s). The summary is in the AI review comment of this pull request.'>AI review of c3a1675: 1 inline finding(s). The summary is in the AI review comment of this pull request.</div></td>
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
@@ -343,7 +517,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>0 days</td>
+                    <td class='age'>1 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -368,7 +542,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>0 days</td>
+                    <td class='age'>1 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
@@ -392,7 +566,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>0 days</td>
+                    <td class='age'>1 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
@@ -417,7 +591,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>0 days</td>
+                    <td class='age'>1 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
@@ -441,7 +615,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>1 days</td>
+                    <td class='age'>2 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
@@ -465,7 +639,7 @@
                         
                     </td>
                     <td class='approval'>approved</td>
-                    <td class='age'>1 days</td>
+                    <td class='age'>2 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
@@ -489,7 +663,7 @@
                         
                     </td>
                     <td class='approval'>approved</td>
-                    <td class='age'>2 days</td>
+                    <td class='age'>3 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
@@ -514,7 +688,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>2 days</td>
+                    <td class='age'>3 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
@@ -539,7 +713,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>2 days</td>
+                    <td class='age'>3 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
@@ -564,7 +738,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>2 days</td>
+                    <td class='age'>3 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
@@ -589,7 +763,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>2 days</td>
+                    <td class='age'>3 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
@@ -614,7 +788,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>3 days</td>
+                    <td class='age'>4 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
@@ -638,7 +812,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>4 days</td>
+                    <td class='age'>5 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
@@ -663,7 +837,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>4 days</td>
+                    <td class='age'>5 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
@@ -688,7 +862,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>5 days</td>
+                    <td class='age'>6 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
@@ -712,7 +886,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>5 days</td>
+                    <td class='age'>6 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
@@ -737,7 +911,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>5 days</td>
+                    <td class='age'>6 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
@@ -762,7 +936,7 @@
                         
                     </td>
                     <td class='approval'>approved</td>
-                    <td class='age'>5 days</td>
+                    <td class='age'>6 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
@@ -787,7 +961,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>5 days</td>
+                    <td class='age'>6 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
@@ -811,7 +985,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>5 days</td>
+                    <td class='age'>6 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
@@ -820,181 +994,6 @@
                     </td>
                     <td class='comment'><div class='comment-clip' title=''></div></td>
                     <td class='attention'>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-0' data-status='Not Draft' data-user-group='dependabot' data-repo-group='monorepo'>
-                    <td class='repo'>Netcracker/qubership-apihub</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/906' target='_blank'>chore: deps: bump nx in /</a></td>
-                    <td class='author'>dependabot[bot]</td>
-                    <td class='status'>Not Draft</td>
-                    <td class='ci'>
-                        
-                        <span class='ci-mark ci-green' title='No failing checks'>green</span>
-                        
-                    </td>
-                    <td class='approval'>not approved yet</td>
-                    <td class='age'>5 days</td>
-                    <td class='assignee'>alagishev</td>
-                    <td class='issues'>
-                        
-                    </td>
-                    <td class='comment'><div class='comment-clip' title='Closing #903 and #906: Nx 24 goes in as one migration PR made with `nx migrate`, not as separate Dependabot bumps. ### Why [Nx 24.0.0](https://github.com/nrwl/nx/releases/tag/24.0.0) (October 21, 2026) is a major release with 18 breaking changes, and 24.0.2 is already out. These PRs have three problems: - **Split Nx versions.** Our Dependabot config groups npm updates by dependency name, so every…'>Closing #903 and #906: Nx 24 goes in as one migration PR made with `nx migrate`, not as separate Dependabot bumps. ### Why [Nx 24.0.0](https://github.com/nrwl/…</div></td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <div class="attention-text">No linked issues and not assigned to any GitHub Project</div>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-0' data-status='Not Draft' data-user-group='dependabot' data-repo-group='monorepo'>
-                    <td class='repo'>Netcracker/qubership-apihub</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/905' target='_blank'>chore: deps: bump @types/react in /frontend/api-doc-viewer</a></td>
-                    <td class='author'>dependabot[bot]</td>
-                    <td class='status'>Not Draft</td>
-                    <td class='ci'>
-                        
-                        <span class='ci-mark ci-red' title='At least one check failed'>red</span>
-                        
-                    </td>
-                    <td class='approval'>not approved yet</td>
-                    <td class='age'>5 days</td>
-                    <td class='assignee'>alagishev</td>
-                    <td class='issues'>
-                        
-                    </td>
-                    <td class='comment'><div class='comment-clip' title='Close. The react needs to be updated from the root.'>Close. The react needs to be updated from the root.</div></td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <div class="attention-text">No linked issues and not assigned to any GitHub Project</div>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-0' data-status='Not Draft' data-user-group='dependabot' data-repo-group='monorepo'>
-                    <td class='repo'>Netcracker/qubership-apihub</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/903' target='_blank'>chore: deps: bump @nx/js in /</a></td>
-                    <td class='author'>dependabot[bot]</td>
-                    <td class='status'>Not Draft</td>
-                    <td class='ci'>
-                        
-                        <span class='ci-mark ci-green' title='No failing checks'>green</span>
-                        
-                    </td>
-                    <td class='approval'>not approved yet</td>
-                    <td class='age'>5 days</td>
-                    <td class='assignee'>alagishev</td>
-                    <td class='issues'>
-                        
-                    </td>
-                    <td class='comment'><div class='comment-clip' title='Closing #903 and #906: Nx 24 goes in as one migration PR made with `nx migrate`, not as separate Dependabot bumps. ### Why [Nx 24.0.0](https://github.com/nrwl/nx/releases/tag/24.0.0) (October 21, 2026) is a major release with 18 breaking changes, and 24.0.2 is already out. These PRs have three problems: - **Split Nx versions.** Our Dependabot config groups npm updates by dependency name, so every…'>Closing #903 and #906: Nx 24 goes in as one migration PR made with `nx migrate`, not as separate Dependabot bumps. ### Why [Nx 24.0.0](https://github.com/nrwl/…</div></td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <div class="attention-text">No linked issues and not assigned to any GitHub Project</div>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-0' data-status='Not Draft' data-user-group='dependabot' data-repo-group='monorepo'>
-                    <td class='repo'>Netcracker/qubership-apihub</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/895' target='_blank'>chore: deps: bump k8s.io/apimachinery in /backend/agent</a></td>
-                    <td class='author'>dependabot[bot]</td>
-                    <td class='status'>Not Draft</td>
-                    <td class='ci'>
-                        
-                        <span class='ci-mark ci-red' title='At least one check failed'>red</span>
-                        
-                    </td>
-                    <td class='approval'>not approved yet</td>
-                    <td class='age'>5 days</td>
-                    <td class='assignee'>alagishev</td>
-                    <td class='issues'>
-                        
-                    </td>
-                    <td class='comment'><div class='comment-clip' title='@dependabot recreate'>@dependabot recreate</div></td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <div class="attention-text">No linked issues and not assigned to any GitHub Project</div>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-0' data-status='Not Draft' data-user-group='dependabot' data-repo-group='monorepo'>
-                    <td class='repo'>Netcracker/qubership-apihub</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/894' target='_blank'>chore: deps: bump github.com/spf13/viper in /backend/agent</a></td>
-                    <td class='author'>dependabot[bot]</td>
-                    <td class='status'>Not Draft</td>
-                    <td class='ci'>
-                        
-                        <span class='ci-mark ci-green' title='No failing checks'>green</span>
-                        
-                    </td>
-                    <td class='approval'>not approved yet</td>
-                    <td class='age'>5 days</td>
-                    <td class='assignee'>alagishev</td>
-                    <td class='issues'>
-                        
-                    </td>
-                    <td class='comment'><div class='comment-clip' title='@dependabot recreate'>@dependabot recreate</div></td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <div class="attention-text">No linked issues and not assigned to any GitHub Project</div>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-0' data-status='Not Draft' data-user-group='dependabot' data-repo-group='monorepo'>
-                    <td class='repo'>Netcracker/qubership-apihub</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/893' target='_blank'>chore: deps: bump github.com/shaj13/libcache in /backend/agent</a></td>
-                    <td class='author'>dependabot[bot]</td>
-                    <td class='status'>Not Draft</td>
-                    <td class='ci'>
-                        
-                        <span class='ci-mark ci-red' title='At least one check failed'>red</span>
-                        
-                    </td>
-                    <td class='approval'>not approved yet</td>
-                    <td class='age'>5 days</td>
-                    <td class='assignee'>alagishev</td>
-                    <td class='issues'>
-                        
-                    </td>
-                    <td class='comment'><div class='comment-clip' title='@alagishev, CI check of #893 at f8ea8f22657d: I could not establish the cause (medium confidence). **Root cause.** E2E fails during deployment, before tests run: three services repeatedly crash, so Helm reaches its deadline. The linter exits because fetching the portal's RSA public key returns no key; this happens before its libcache initialisation. The portal and agents-backend exit with code 2,…'>@alagishev, CI check of #893 at f8ea8f22657d: I could not establish the cause (medium confidence). **Root cause.** E2E fails during deployment, before tests ru…</div></td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <div class="attention-text">No linked issues and not assigned to any GitHub Project</div>
-                        
-                    </td>
-                </tr>
-                
-                <tr class='color-0' data-status='Not Draft' data-user-group='dependabot' data-repo-group='monorepo'>
-                    <td class='repo'>Netcracker/qubership-apihub</td>
-                    <td class='title'><a href='https://github.com/Netcracker/qubership-apihub/pull/890' target='_blank'>chore: deps: bump github.com/netcracker/qubership-core-lib-go-paas-mediation-client/v8 in /backend/agent</a></td>
-                    <td class='author'>dependabot[bot]</td>
-                    <td class='status'>Not Draft</td>
-                    <td class='ci'>
-                        
-                        <span class='ci-mark ci-green' title='No failing checks'>green</span>
-                        
-                    </td>
-                    <td class='approval'>not approved yet</td>
-                    <td class='age'>5 days</td>
-                    <td class='assignee'>alagishev</td>
-                    <td class='issues'>
-                        
-                    </td>
-                    <td class='comment'><div class='comment-clip' title='@dependabot recreate'>@dependabot recreate</div></td>
-                    <td class='attention'>
-                        
-                            <span class="attention-icon">❗</span>
-                            <div class="attention-text">No linked issues and not assigned to any GitHub Project</div>
                         
                     </td>
                 </tr>
@@ -1015,7 +1014,7 @@
                         
                     </td>
                     <td class='approval'>approved</td>
-                    <td class='age'>5 days</td>
+                    <td class='age'>6 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1040,7 +1039,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>6 days</td>
+                    <td class='age'>7 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1064,7 +1063,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>12 days</td>
+                    <td class='age'>13 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1091,7 +1090,7 @@
                         
                     </td>
                     <td class='approval'>approved</td>
-                    <td class='age'>15 days</td>
+                    <td class='age'>16 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1118,7 +1117,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>38 days</td>
+                    <td class='age'>39 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1145,7 +1144,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>42 days</td>
+                    <td class='age'>43 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1170,7 +1169,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>43 days</td>
+                    <td class='age'>44 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1197,7 +1196,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>48 days</td>
+                    <td class='age'>49 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1224,7 +1223,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>125 days</td>
+                    <td class='age'>126 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1249,7 +1248,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>188 days</td>
+                    <td class='age'>189 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1278,8 +1277,8 @@
                         <span class='ci-mark ci-red' title='At least one check failed'>red</span>
                         
                     </td>
-                    <td class='approval'>not approved yet</td>
-                    <td class='age'>4 days</td>
+                    <td class='approval'>approved</td>
+                    <td class='age'>5 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1304,7 +1303,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>21 days</td>
+                    <td class='age'>22 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1331,7 +1330,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>119 days</td>
+                    <td class='age'>120 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1356,7 +1355,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>439 days</td>
+                    <td class='age'>440 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1383,7 +1382,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>518 days</td>
+                    <td class='age'>519 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1410,7 +1409,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>518 days</td>
+                    <td class='age'>519 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1437,7 +1436,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>582 days</td>
+                    <td class='age'>583 days</td>
                     <td class='assignee'>zloiadil</td>
                     <td class='issues'>
                         
@@ -1467,7 +1466,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>8 days</td>
+                    <td class='age'>9 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1491,7 +1490,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>88 days</td>
+                    <td class='age'>89 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1516,7 +1515,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>169 days</td>
+                    <td class='age'>170 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1545,13 +1544,13 @@
                         <span class='ci-mark ci-red' title='At least one check failed'>red</span>
                         
                     </td>
-                    <td class='approval'>not approved yet</td>
-                    <td class='age'>18 days</td>
+                    <td class='approval'>approved</td>
+                    <td class='age'>19 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
                     </td>
-                    <td class='comment'><div class='comment-clip' title=''></div></td>
+                    <td class='comment'><div class='comment-clip' title='Ported to monorepo in https://github.com/Netcracker/qubership-apihub/pull/979'>Ported to monorepo in https://github.com/Netcracker/qubership-apihub/pull/979</div></td>
                     <td class='attention'>
                         
                             <span class="attention-icon">❗</span>
@@ -1571,7 +1570,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>69 days</td>
+                    <td class='age'>70 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1598,7 +1597,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>189 days</td>
+                    <td class='age'>190 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1630,7 +1629,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>48 days</td>
+                    <td class='age'>49 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
@@ -1665,7 +1664,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>303 days</td>
+                    <td class='age'>304 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1689,7 +1688,12 @@
                     
                 
                 
-                <tr class='color-4' data-status='Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
+            
+                
+                    
+                
+                
+                <tr class='color-0' data-status='Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-api-diff</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-diff/pull/68' target='_blank'>feat: introduce classifyRuleId's for rules</a></td>
                     <td class='author'>b41ex</td>
@@ -1700,7 +1704,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>200 days</td>
+                    <td class='age'>201 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1716,7 +1720,7 @@
                     </td>
                 </tr>
                 
-                <tr class='color-4' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
+                <tr class='color-0' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-api-diff</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-diff/pull/64' target='_blank'>feat: rules reclassification part 1</a></td>
                     <td class='author'>vOrigins</td>
@@ -1727,7 +1731,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>236 days</td>
+                    <td class='age'>237 days</td>
                     <td class='assignee'>b41ex</td>
                     <td class='issues'>
                         
@@ -1748,11 +1752,6 @@
                     
                 
                 
-            
-                
-                    
-                
-                
                 <tr class='color-1' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-compatibility-suites</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-compatibility-suites/pull/35' target='_blank'>feat: rules reclassification part 1</a></td>
@@ -1764,7 +1763,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>236 days</td>
+                    <td class='age'>237 days</td>
                     <td class='assignee'>b41ex</td>
                     <td class='issues'>
                         
@@ -1791,7 +1790,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>244 days</td>
+                    <td class='age'>245 days</td>
                     <td class='assignee'>b41ex</td>
                     <td class='issues'>
                         
@@ -1833,7 +1832,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>8 days</td>
+                    <td class='age'>9 days</td>
                     <td class='assignee'>alagishev</td>
                     <td class='issues'>
                         
@@ -1902,7 +1901,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>247 days</td>
+                    <td class='age'>248 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1927,7 +1926,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>247 days</td>
+                    <td class='age'>248 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1966,7 +1965,12 @@
                     
                 
                 
-                <tr class='color-3' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
+            
+                
+                    
+                
+                
+                <tr class='color-4' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-api-processor</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-processor/pull/126' target='_blank'>chore: refactor the api-processor test helpers</a></td>
                     <td class='author'>makeev-pavel</td>
@@ -1977,7 +1981,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>35 days</td>
+                    <td class='age'>36 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -1993,7 +1997,7 @@
                     </td>
                 </tr>
                 
-                <tr class='color-3' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
+                <tr class='color-4' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-api-processor</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-processor/pull/125' target='_blank'>fix: report an operation change only from the pair that owns it</a></td>
                     <td class='author'>makeev-pavel</td>
@@ -2004,7 +2008,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>40 days</td>
+                    <td class='age'>41 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -2020,7 +2024,7 @@
                     </td>
                 </tr>
                 
-                <tr class='color-3' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
+                <tr class='color-4' data-status='Not Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-api-processor</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-processor/pull/122' target='_blank'>feat: report an operationId collision only when the documents differ</a></td>
                     <td class='author'>makeev-pavel</td>
@@ -2031,7 +2035,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>42 days</td>
+                    <td class='age'>43 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -2047,7 +2051,7 @@
                     </td>
                 </tr>
                 
-                <tr class='color-3' data-status='Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
+                <tr class='color-4' data-status='Draft' data-user-group='humans' data-repo-group='old-polyrepos'>
                     <td class='repo'>Netcracker/qubership-apihub-api-processor</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-api-processor/pull/107' target='_blank'>docs: plan for split APIHUB validation results by specification type</a></td>
                     <td class='author'>b41ex</td>
@@ -2058,7 +2062,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>91 days</td>
+                    <td class='age'>92 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -2082,11 +2086,6 @@
                     
                 
                 
-            
-                
-                    
-                
-                
                 <tr class='color-1' data-status='Not Draft' data-user-group='dependabot' data-repo-group='archived'>
                     <td class='repo'>Netcracker/qubership-apihub-sniffer-agent</td>
                     <td class='title'><a href='https://github.com/Netcracker/qubership-apihub-sniffer-agent/pull/70' target='_blank'>chore: deps: bump github.com/netcracker/qubership-core-lib-go-paas-mediation-client/v8 from 8.0.1 to 8.6.3 in /qubership-apihub-sniffer-agent</a></td>
@@ -2098,7 +2097,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>169 days</td>
+                    <td class='age'>170 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -2123,7 +2122,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>169 days</td>
+                    <td class='age'>170 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -2148,7 +2147,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>183 days</td>
+                    <td class='age'>184 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -2173,7 +2172,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>260 days</td>
+                    <td class='age'>261 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -2198,7 +2197,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>260 days</td>
+                    <td class='age'>261 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -2238,7 +2237,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>204 days</td>
+                    <td class='age'>205 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -2263,7 +2262,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>218 days</td>
+                    <td class='age'>219 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -2288,7 +2287,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>239 days</td>
+                    <td class='age'>240 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
@@ -2313,7 +2312,7 @@
                         
                     </td>
                     <td class='approval'>not approved yet</td>
-                    <td class='age'>281 days</td>
+                    <td class='age'>282 days</td>
                     <td class='assignee'>Empty</td>
                     <td class='issues'>
                         
