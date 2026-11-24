@@ -1,5 +1,5 @@
 name: development-conventions
-version: 0.3.0
+version: 0.4.0
 description: Cross-repository development practices — clarification workflow and CI super-linter rules
 author: Qubership
 dependencies:
